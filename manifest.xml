@@ -1,0 +1,38 @@
+<package>
+    <description brief="mars_core">
+      This library contains the core functionality of mars2
+    </description>
+    <author>Malte Langosz and Team</author>
+    <maintainer>Malte Langosz/malte.langosz@dfki.de</maintainer>
+    <maintainer>Anna Born/anna.born@dfki.de</maintainer>
+    <license>BSD</license>
+
+    <depend package="simulation/lib_manager" />
+    <depend package="simulation/cfg_manager" />
+    <depend package="simulation/utils" />
+    <depend package="simulation/graphics_collection/osg_lines" />
+    <depend package="tools/configmaps" />
+    <depend package="simulation/mars2/mars_interfaces" />
+    <depend package="simulation/mars2/mars_ode_physics" />
+    <depend package="simulation/mars2/mars_ode_collision" />
+    <depend package="envire/envire_core" />
+    <tags>needs_opt</tags>
+
+    <keywords>
+        <keyword>simulation</keyword>
+        <keyword>physics</keyword>
+        <keyword>core</keyword>
+    </keywords>
+
+    <stage>1</stage>
+    <use>multi project</use>
+    <activity>active</activity>
+
+    <classifiers>
+        <classifier>c++</classifier>
+        <classifier>library</classifier>
+    </classifiers>
+
+</package>
+
+
