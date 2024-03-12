@@ -53,7 +53,7 @@ namespace mars
                     handlerIt = collisionHandlers.find(std::make_pair(ci1PluginName,
                                                                       ci2PluginName));
                     if(handlerIt != collisionHandlers.end())
-										{
+                    {
                         // extends contacts
                         handlerIt->second->getContacts(ci1, ci2, contactVector);
                         continue;
@@ -62,7 +62,7 @@ namespace mars
                     handlerIt = collisionHandlers.find(std::make_pair(ci2PluginName,
                                                                       ci1PluginName));
                     if(handlerIt != collisionHandlers.end())
-										{
+                    {
                         // extends contacts
                         handlerIt->second->getContacts(ci2, ci1, contactVector);
                         continue;

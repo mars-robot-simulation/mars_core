@@ -157,7 +157,7 @@ namespace mars
         void RaySensor::receiveData(const data_broker::DataInfo &info,
                                     const data_broker::DataPackage &package,
                                     int callbackParam)
-				{
+        {
             CPP_UNUSED(info);
             CPP_UNUSED(callbackParam);
             long id;
@@ -240,19 +240,19 @@ namespace mars
             cfg->groupName << (*config)["groupName"];
             cfg->dataName << (*config)["dataName"];
             if((it = config->find("pos_offset")) != config->end())
-						{
+            {
                 vectorFromConfigItem(it->second, &(cfg->pos_offset));
             }
             if((it = config->find("ori_offset")) != config->end())
-						{
+            {
                 quaternionFromConfigItem(it->second, &(cfg->ori_offset));
             }
             if((it = config->find("init_position")) != config->end())
-						{
+            {
                 vectorFromConfigItem(it->second, &(cfg->init_position));
             }
             if((it = config->find("init_orientation")) != config->end())
-						{
+            {
                 quaternionFromConfigItem(it->second, &(cfg->init_orientation));
             }
 

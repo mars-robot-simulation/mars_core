@@ -27,11 +27,11 @@ CMAKE_USE_FULL_RPATH("${CMAKE_INSTALL_PREFIX}/lib")
 
 #Get linker and compiler flags from pkg-config
 pkg_check_modules(PKGCONFIG REQUIRED
-#			    ode
-			    lib_manager
-#			    data_broker
-			    cfg_manager
-			    mars_interfaces
+#         ode
+          lib_manager
+#         data_broker
+          cfg_manager
+          mars_interfaces
           mars_utils
           configmaps
           osg_lines

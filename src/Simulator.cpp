@@ -215,7 +215,7 @@ namespace mars
             getTimeMutex.unlock();
 
             if(control->cfg)
-						{
+            {
                 configPath = control->cfg->getOrCreateProperty("Config", "config_path",
                                                                config_dir);
 
@@ -231,7 +231,7 @@ namespace mars
                 control->cfg->getPropertyValue("Config", "loadLastSave", "value",
                                                &loadLastSave);
                 if (loadLastSave)
-								{
+                {
                     loadFile = configPath.sValue+"/mars_saveOnClose.yaml";
                     control->cfg->loadConfig(loadFile.c_str());
                 }
@@ -266,7 +266,7 @@ namespace mars
             //if (control->controllers) delete control->controllers;
 
             if(control->cfg)
-						{
+            {
                 string saveFile = configPath.sValue;
                 saveFile.append("/mars_Config.yaml");
                 control->cfg->writeConfig(saveFile.c_str(), "Config");
@@ -299,17 +299,17 @@ namespace mars
         }
 
         void Simulator::newLibLoaded(const std::string &libName)
-				{
+        {
             checkOptionalDependency(libName);
         }
 
         void Simulator::checkOptionalDependency(const string &libName)
-				{
+        {
             if(libName == "data_broker")
-						{
+            {
                 ControlCenter::theDataBroker = libManager->getLibraryAs<data_broker::DataBrokerInterface>("data_broker");
                 if(ControlCenter::theDataBroker)
-								{
+                {
                     // control->dataBroker is deprecated
                     // TODO: we keep control->dataBroker for backwards compatibility
                     control->dataBroker = ControlCenter::theDataBroker;
@@ -343,14 +343,14 @@ namespace mars
                                                             data_broker::DB_MESSAGE_TYPE_DEBUG);
                     LOG_DEBUG("Simulator: no console loaded. output to stdout!");
                 } else
-								{
+                {
                     fprintf(stderr, "ERROR: could not get DataBroker!\n");
                 }
             } else if(libName == "cfg_manager")
-						{
+            {
                 control->cfg = libManager->getLibraryAs<cfg_manager::CFGManagerInterface>("cfg_manager");
             } else if(libName == "mars_graphics" and !control->graphics)
-						{
+            {
                 control->graphics = libManager->getLibraryAs<interfaces::GraphicsManagerInterface>("mars_graphics", true);
                 if(control->graphics)
                 {
@@ -360,17 +360,17 @@ namespace mars
                 }
                 control->graphics->initializeOSG(NULL);
             } else if(libName == "log_console")
-						{
+            {
                 LibInterface *lib = libManager->getLibrary("log_console");
                 if(ControlCenter::theDataBroker)
-								{
+                {
                     if(lib)
-										{
+                    {
                         LOG_DEBUG("Simulator: console loaded. stop output to stdout!");
                         ControlCenter::theDataBroker->unregisterSyncReceiver(this, "_MESSAGES_", "*");
                     }
                 } else
-								{
+                {
                     LOG_ERROR("Simulator: try to setup log_console, but there is not data broker.");
                 }
             }
@@ -378,7 +378,7 @@ namespace mars
         }
 
         void Simulator::runSimulation(bool startThread)
-				{
+        {
 
             // init the physics-engine
             //Convention startPhysics function
@@ -402,14 +402,14 @@ namespace mars
 #endif
 
             while(arg_v_scene_name.size() > 0)
-						{
+            {
                 LOG_INFO("Simulator: scene to load: %s",
                          arg_v_scene_name.back().c_str());
                 loadScene(arg_v_scene_name.back());
                 arg_v_scene_name.pop_back();
             }
             if (arg_run)
-						{
+            {
                 simulationStatus = RUNNING;
                 arg_run = 0;
                 simStartTime = dbSimTimePackage[0].d;
@@ -486,42 +486,42 @@ namespace mars
          *
          */
         void Simulator::run()
-				{
+        {
 
             while (!kill_sim)
-						{
+            {
                 stepping_mutex.lock();
                 if(simulationStatus == STOPPING)
                     simulationStatus = STOPPED;
 
                 if(!isSimRunning())
-								{
+                {
                     stepping_wc.wait(&stepping_mutex);
                     if(kill_sim)
-										{
+                    {
                         stepping_mutex.unlock();
                         break;
                     }
                 }
 
                 if (sync_graphics && !sync_count)
-								{
+                {
                     msleep(2);
                     stepping_mutex.unlock();
                     continue;
                 }
 
                 if(simulationStatus == STEPPING)
-								{
+                {
                     simulationStatus = STOPPING;
                 }
                 stepping_mutex.unlock();
 
                 if(my_real_time)
-								{
+                {
                     myRealTime();
                 } else if(physics_mutex_count > 0)
-								{
+                {
                     myRealTime();
                     // if not in realtime this thread would lock the physicsThread right
                     // after releasing it. If an other thread is trying to lock
@@ -539,7 +539,7 @@ namespace mars
         }
 
         void Simulator::step(bool setState)
-				{
+        {
             std::vector<pluginStruct>::iterator p_iter;
             long time;
             Status oldState;
@@ -550,7 +550,7 @@ namespace mars
             physicsThreadLock();
 
             if(setState)
-						{
+            {
                 oldState = simulationStatus;
                 simulationStatus = STEPPING;
             }
@@ -558,7 +558,7 @@ namespace mars
             time = utils::getTime();
 
             if(ControlCenter::theDataBroker)
-						{
+            {
                 ControlCenter::theDataBroker->trigger("mars_sim/prePhysicsUpdate");
             }
             for(auto &it: subWorlds)
@@ -597,7 +597,7 @@ namespace mars
             for(auto &it: subWorlds)
             {
                 while(it.second->calcStep == true)
-								{
+                {
                     select(0, 0, 0, 0, &tv);
                 }
             }
@@ -613,7 +613,7 @@ namespace mars
             dbSimTimePackage[0].d += calc_ms;
             getTimeMutex.unlock();
             if(ControlCenter::theDataBroker)
-						{
+            {
                 ControlCenter::theDataBroker->pushData(dbSimTimeId,
                                               dbSimTimePackage);
                 ControlCenter::theDataBroker->stepTimer("mars_sim/simTimer", calc_ms);
@@ -621,7 +621,7 @@ namespace mars
 
             avg_log_time += getTimeDiff(time);
             if(++count > avg_count_steps)
-						{
+            {
                 avg_log_time /= count;
                 avg_step_time /= count;
                 count = 0;
@@ -635,19 +635,19 @@ namespace mars
             // the update call and get removed from the activePlugins list there.
             // We use erased_active to notify this loop about an erasure.
             for(unsigned int i = 0; i < activePlugins.size();)
-						{
+            {
                 erased_active = false;
                 time = utils::getTime();
 
                 activePlugins[i].p_interface->update(calc_ms);
 
                 if(!erased_active)
-								{
+                {
                     time = getTimeDiff(time);
                     activePlugins[i].timer += time;
                     activePlugins[i].t_count++;
                     if(activePlugins[i].t_count > avg_count_steps)
-										{
+                    {
                         activePlugins[i].timer /= activePlugins[i].t_count;
                         activePlugins[i].t_count = 0;
                         //fprintf(stderr, "debug_time: %s: %g\n",
@@ -663,15 +663,15 @@ namespace mars
             }
             pluginLocker.unlock();
             if(ControlCenter::theDataBroker)
-						{
+            {
                 ControlCenter::theDataBroker->pushData(dbSimDebugId,
                                               dbSimDebugPackage);
             }
             if (sync_graphics)
-						{
+            {
                 calc_time += calc_ms;
                 if (calc_time >= sync_time)
-								{
+                {
                     sync_count = 0;
                     if(control->graphics)
                         this->allowDraw();
@@ -679,12 +679,12 @@ namespace mars
                 }
             }
             if(ControlCenter::theDataBroker)
-						{
+            {
                 ControlCenter::theDataBroker->trigger("mars_sim/postPhysicsUpdate");
             }
 
             if(setState)
-						{
+            {
                 simulationStatus = oldState;
             }
 
@@ -706,12 +706,12 @@ namespace mars
          * \return \c true if started, \c false if stopped
          */
         bool Simulator::startStopTrigger()
-				{
+        {
             //LOG_INFO("Simulator start/stop command.");
             stepping_mutex.lock();
 
             switch(simulationStatus)
-						{
+            {
 
             case RUNNING:
                 // Allow update process to finish -> transition from 2 -> 0 in main loop
@@ -745,7 +745,7 @@ namespace mars
 
         //consider the case where the time step is smaller than 1 ms
         void Simulator::myRealTime()
-				{
+        {
             static long myTime = utils::getTime();
             static long myTime2 = utils::getTime();
             long timeDiff = getTimeDiff(myTime);
@@ -783,7 +783,7 @@ namespace mars
 
             //sleep...
             if(my_real_time)
-						{
+            {
                 retval = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, 0);
                 if (retval != 0)
                 {
@@ -798,7 +798,7 @@ namespace mars
             }
 #else
             if(my_real_time)
-						{
+            {
                 if(dbSimTimePackage[0].d-simStartTime > simRealTime)
                 {
                     long valSleep = (dbSimTimePackage[0].d-simStartTime)-simRealTime;//calc_ms - timeDiff;
@@ -810,7 +810,7 @@ namespace mars
             //avgTime += timeDiff;
             //myTime = utils::getTime();
             if(count+1 > avg_count_steps)
-						{
+            {
                 avgTime /= count+1;
                 dbSimDebugPackage[0].d = avgTime;
                 avgTime = 0;
@@ -819,17 +819,17 @@ namespace mars
 
 
         bool Simulator::isSimRunning() const
-				{
+        {
             return (simulationStatus != STOPPED);
         }
 
         bool Simulator::sceneChanged() const
-				{
+        {
             return b_SceneChanged;
         }
 
         std::string Simulator::getTmpPath() const
-				{
+        {
 #ifdef __linux__
             std::stringstream str;
             str << "/tmp/mars2/" << (int) getpid() << "/";
@@ -841,26 +841,26 @@ namespace mars
         }
 
         void Simulator::sceneHasChanged(bool reseted)
-				{
+        {
             if (reseted)
-						{
+            {
                 b_SceneChanged = false;
             } else
-						{
+            {
                 b_SceneChanged = true;
             }
         }
 
         int Simulator::loadScene(const std::string &filename, const std::string &robotname, bool threadsave, bool blocking)
-				{
+        {
             return loadScene(filename, false, robotname,threadsave,blocking);
         }
 
         int Simulator::loadScene(const std::string &filename,
                                  bool wasrunning, const std::string &robotname, bool threadsave, bool blocking)
-				{
+        {
             if(!threadsave)
-						{
+            {
                 return loadScene_internal(filename,wasrunning, robotname);
             }
 
@@ -875,7 +875,7 @@ namespace mars
             externalMutex.unlock();
 
             while(blocking && !filesToLoad.empty())
-						{
+            {
                 msleep(10); // maybe std::this_thread::yield(); is better here?
             }
             return 1;
@@ -887,7 +887,7 @@ namespace mars
                                  utils::Vector rot, bool threadsave, bool blocking, bool wasrunning)
         {
             if(!threadsave)
-						{
+            {
                 return loadScene_internal(filename, robotname, pos, rot, wasrunning);
             }
 
@@ -904,7 +904,7 @@ namespace mars
             externalMutex.unlock();
 
             while(blocking && !filesToLoad.empty())
-						{
+            {
                 msleep(10);
             }
             return 1;
@@ -915,42 +915,42 @@ namespace mars
                                           const std::string &robotname,
                                           utils::Vector pos, utils::Vector rot,
                                           bool wasrunning)
-				{
+        {
 
             LOG_DEBUG("[Simulator::loadScene_internal] Loading scene internal with given position\n");
 
             if(control->loadCenter->loadScene.empty())
-						{
+            {
                 LOG_ERROR("Simulator:: no module to load scene found");
                 return 0;
             }
 
             try
-						{
+            {
                 std::string suffix = utils::getFilenameSuffix(filename);
                 LOG_DEBUG("[Simulator::loadScene] suffix: %s", suffix.c_str());
                 if( control->loadCenter->loadScene.find(suffix) !=
                     control->loadCenter->loadScene.end() )
-								{
+                {
                     if (! control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str(), pos, rot))
-										{
+                    {
                         return 0; //failed
                     }
                 }
                 else
-								{
+                {
                     // no scene loader found
                     LOG_ERROR("Simulator: Could not find scene loader for: %s (%s)",
                               filename.c_str(), suffix.c_str());
                     return 0; //failed
                 }
             } catch(SceneParseException& e)
-						{
+            {
                 LOG_ERROR("Could not parse scene: %s", e.what());
             }
 
             if (wasrunning)
-						{
+            {
                 startStopTrigger();//if the simulation has been stopped for loading, now it continues
             }
             sceneHasChanged(false);
@@ -959,41 +959,41 @@ namespace mars
 
         int Simulator::loadScene_internal(const std::string &filename,
                                           bool wasrunning, const std::string &robotname)
-				{
+        {
 
             LOG_DEBUG("Loading scene internal\n");
 
             if(control->loadCenter->loadScene.empty())
-						{
+            {
                 LOG_ERROR("Simulator:: no module to load scene found");
                 return 0;
             }
 
             try
-						{
+            {
                 std::string suffix = utils::getFilenameSuffix(filename);
                 if( control->loadCenter->loadScene.find(suffix) !=
                     control->loadCenter->loadScene.end() )
-								{
+                {
                     if (! control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str()))
-										{
+                    {
                         return 0; //failed
                     }
                 }
                 else
-								{
+                {
                     // no scene loader found
                     LOG_ERROR("Simulator: Could not find scene loader for: %s (%s)",
                               filename.c_str(), suffix.c_str());
                     return 0; //failed
                 }
             } catch(SceneParseException& e)
-						{
+            {
                 LOG_ERROR("Could not parse scene: %s", e.what());
             }
 
             if (wasrunning)
-						{
+            {
                 startStopTrigger();//if the simulation has been stopped for loading, now it continues
             }
             sceneHasChanged(false);
@@ -1001,15 +1001,15 @@ namespace mars
         }
 
         int Simulator::saveScene(const std::string &filename, bool wasrunning)
-				{
+        {
             std::string suffix = utils::getFilenameSuffix(filename);
             if (control->loadCenter->loadScene[suffix]->saveFile(filename, getTmpPath())!=1)
-						{
+            {
                 LOG_ERROR("Simulator: an error somewhere while saving scene");
                 return 0;
             }
             if (wasrunning)
-						{
+            {
                 startStopTrigger(); // resuming the simulation
             }
             sceneHasChanged(true);
@@ -1017,7 +1017,7 @@ namespace mars
         }
 
         void Simulator::addLight(LightData light)
-				{
+        {
             // sceneHasChanged(false);
             // if (control->graphics && control->controllers->isLoadingAllowed()) {
             //     unsigned long id = control->nodes->getID(light.node);
@@ -1030,17 +1030,17 @@ namespace mars
 
 
         void Simulator::finishedDraw(void)
-				{
+        {
             long time;
             processRequests();
 
             if (reloadSim)
-						{
+            {
                 while (simulationStatus != STOPPED)
-								{
+                {
 
                     if(simulationStatus == RUNNING)
-										{
+                    {
                         StopSimulation();
                     }
 
@@ -1067,7 +1067,7 @@ namespace mars
                     allPlugins[i].p_interface->reset();
                 //control->controllers->setLoadingAllowed(true);
                 if (was_running)
-								{
+                {
                     StartSimulation();
                 }
                 reloadGraphics = true;
@@ -1077,10 +1077,10 @@ namespace mars
 
             // Add plugins that have been added via Simulator::addPlugin
             if(haveNewPlugin)
-						{
+            {
                 pluginLocker.lockForWrite();
                 for (unsigned int i=0; i<newPlugins.size(); i++)
-								{
+                {
                     allPlugins.push_back(newPlugins[i]);
                     activePlugins.push_back(newPlugins[i]);
                     getTimeMutex.lock();
@@ -1095,7 +1095,7 @@ namespace mars
 
             pluginLocker.lockForRead();
             for (unsigned int i=0; i<guiPlugins.size(); i++)
-						{
+            {
                 guiPlugins[i].p_interface->update(0);
                 // todo: fix time debuging for gui plugins
                 /*
@@ -1311,7 +1311,7 @@ namespace mars
         }
 
         void Simulator::newWorld(bool clear_all)
-				{
+        {
             physicsThreadLock();
             // reset simTime
             realStartTime = utils::getTime();
@@ -1322,10 +1322,10 @@ namespace mars
             // control->joints->clearAllJoints(clear_all);
             // control->nodes->clearAllNodes(clear_all, reloadGraphics);
             if(control->graphics)
-						{
+            {
                 control->graphics->clearDrawItems();
                 if(reloadGraphics)
-								{
+                {
                     control->graphics->reset();
                 }
             }
@@ -1340,7 +1340,7 @@ namespace mars
         }
 
         void Simulator::resetSim(bool resetGraphics)
-				{
+        {
             reloadSim = true;
             reloadGraphics = resetGraphics;
             stepping_mutex.lock();
@@ -1350,7 +1350,7 @@ namespace mars
                 was_running = false;
 
             if(simulationStatus != STOPPED)
-						{
+            {
                 simulationStatus = STOPPING;
             }
             if(control->graphics)
@@ -1361,7 +1361,7 @@ namespace mars
 
 
         void Simulator::reloadWorld(void)
-				{
+        {
             // control->nodes->reloadNodes(reloadGraphics);
             // control->joints->reloadJoints();
             // control->motors->reloadMotors();
@@ -1369,7 +1369,7 @@ namespace mars
         }
 
         void Simulator::readArguments(int argc, char **argv)
-				{
+        {
             int c;
             int option_index = 0;
             int psflag = 0;
@@ -1391,23 +1391,23 @@ namespace mars
 
             // pipe arguments into cfg_manager
             if(control->cfg)
-						{
+            {
                 std::vector<std::string> arguments;
                 for(int i=0; i<argc; ++i)
-								{
+                {
                     arguments.push_back(argv[i]);
                 }
                 char label[55];
                 for(size_t i=0; i<arguments.size(); ++i)
-								{
+                {
                     size_t f = arguments[i].find("=");
                     if(f != std::string::npos)
-										{
+                    {
                         control->cfg->getOrCreateProperty("Config", arguments[i].substr(0, f),
                                                           arguments[i].substr(f+1));
                     }
                     else
-										{
+                    {
                         sprintf(label, "arg%zu", i);
                         control->cfg->getOrCreateProperty("Config", label, arguments[i]);
                     }
@@ -1415,24 +1415,24 @@ namespace mars
             }
 
             while (1)
-						{
+            {
                 c = getopt_long(argc, argv, "hrgoGs:C:p:", long_options, &option_index);
                 if (c == -1)
                     break;
                 switch (c)
-								{
+                {
                 case 's':
                 {
                     std::vector<std::string> tmp_v_s;
                     tmp_v_s = explodeString(';', optarg);
                     for(unsigned int i=0; i<tmp_v_s.size(); ++i)
-										{
+                    {
                         if(pathExists(tmp_v_s[i]))
-												{
+                        {
                             arg_v_scene_name.push_back(tmp_v_s[i]);
                         }
                         else
-												{
+                        {
                             LOG_ERROR("The given scene file does not exists: %s\n",
                                       tmp_v_s[i].c_str());
                         }
@@ -1476,7 +1476,7 @@ namespace mars
         }
 
         void Simulator::physicsThreadLock(void)
-				{
+        {
             // physics_mutex_count is used to see how many threads are trying to
             // acquire the lock. Also see Simulator::run() on how this is used.
             physicsCountMutex.lock();
@@ -1486,7 +1486,7 @@ namespace mars
         }
 
         void Simulator::physicsThreadUnlock(void)
-				{
+        {
             // physics_mutex_count is used to see how many threads are trying to
             // acquire the lock. Also see Simulator::run() on how this is used.
             physicsCountMutex.lock();
@@ -1496,40 +1496,40 @@ namespace mars
         }
 
         std::shared_ptr<PhysicsInterface> Simulator::getPhysics(void) const
-				{
+        {
             return physics;
         }
 
         void Simulator::preGraphicsUpdate(void)
-				{
+        {
             contactLinesDataMutex.lock();
             contactLines->setData(contactLinesData);
             contactLinesDataMutex.unlock();
         }
 
         void Simulator::postGraphicsUpdate(void)
-				{
+        {
             //finishedDraw();
         }
 
         void Simulator::exitMars(void)
-				{
+        {
             stepping_mutex.lock();
             kill_sim = 1;
             stepping_wc.wakeAll();
             stepping_mutex.unlock();
             if(isCurrentThread())
-						{
+            {
                 return;
             }
             while(this->isRunning())
-						{
+            {
                 msleep(1);
             }
         }
 
         void Simulator::connectNodes(unsigned long id1, unsigned long id2)
-				{
+        {
             // JointData connect_joint;
             // connect_joint.nodeIndex1 = id1;
             // connect_joint.nodeIndex2 = id2;
@@ -1538,7 +1538,7 @@ namespace mars
         }
 
         void Simulator::disconnectNodes(unsigned long id1, unsigned long id2)
-				{
+        {
             //control->joints->removeJointByIDs(id1, id2);
         }
 
@@ -1553,7 +1553,7 @@ namespace mars
 
 
         void Simulator::singleStep(void)
-				{
+        {
             stepping_mutex.lock();
             simulationStatus = STEPPING;
             stepping_wc.wakeAll();
@@ -1561,7 +1561,7 @@ namespace mars
         }
 
         void Simulator::switchPluginUpdateMode(int mode, PluginInterface *pl)
-				{
+        {
             std::vector<pluginStruct>::iterator p_iter;
             bool afound = false;
             bool gfound = false;
@@ -1571,12 +1571,12 @@ namespace mars
             size_t i=0;
             for(p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
                 p_iter++, ++i)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     afound = true;
                     if(!(mode & PLUGIN_SIM_MODE))
-										{
+                    {
                         activePlugins.erase(p_iter);
                         erased_active = true;
                         bfound = true;
@@ -1585,15 +1585,15 @@ namespace mars
                 }
             }
             if(bfound)
-						{
+            {
                 size_t offset = 3;
                 tmpPackage.add(dbSimDebugPackage[0]);
                 tmpPackage.add(dbSimDebugPackage[1]);
                 tmpPackage.add(dbSimDebugPackage[2]);
                 for(size_t k=0; k<activePlugins.size(); ++k)
-								{
+                {
                     if(i==k)
-										{
+                    {
                         offset = 4;
                     }
                     tmpPackage.add(dbSimDebugPackage[k+offset]);
@@ -1604,9 +1604,9 @@ namespace mars
             }
             for(p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
                 p_iter++)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     gfound = true;
                     if(!(mode & PLUGIN_GUI_MODE))
                         guiPlugins.erase(p_iter);
@@ -1616,11 +1616,11 @@ namespace mars
 
             for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     if(mode & PLUGIN_SIM_MODE && !afound)
-										{
+                    {
                         activePlugins.push_back(*p_iter);
                         getTimeMutex.lock();
                         dbSimDebugPackage.add(p_iter->name, 0.0);
@@ -1640,16 +1640,16 @@ namespace mars
          * \return \c true if the simulation thread was not interrupted by ODE
          */
         bool Simulator::hasSimFault() const
-				{
+        {
             return sim_fault;
         }
 
         void Simulator::handleError(PhysicsError error)
-				{
+        {
             std::vector<pluginStruct>::iterator p_iter;
 
             switch(error)
-						{
+            {
             case PHYSICS_NO_ERROR:
             case PHYSICS_DEBUG:
             case PHYSICS_ERROR:
@@ -1661,7 +1661,7 @@ namespace mars
 
             for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
-						{
+            {
                 (*p_iter).p_interface->handleError();
             }
 
@@ -1673,22 +1673,22 @@ namespace mars
             std::transform(onError.begin(), onError.end(),
                            onError.begin(), ::tolower);
             if("abort" == onError || "" == onError)
-						{
+            {
                 abort();
             } else if("reset" == onError)
-						{
+            {
                 resetSim();
             } else if("warn" == onError)
-						{
+            {
                 // warning already happend in message handler
             } else if("shutdown" == onError)
-						{
+            {
                 //Killing the simulation thread, means the simulation gui still runs but the simulation thread get's stopped
                 //In this state the the sim_fault is set to true which can be checked externally to react to this fault
                 sim_fault = true;
                 kill_sim = true;
             } else
-						{
+            {
                 LOG_WARN("unsupported config value for \"Simulator/onPhysicsError\": \"%s\"", onError.c_str());
                 LOG_WARN("aborting by default...");
                 abort();
@@ -1696,9 +1696,9 @@ namespace mars
         }
 
         void Simulator::setGravity(const Vector &gravity)
-				{
+        {
             if(control->cfg)
-						{
+            {
                 control->cfg->setPropertyValue("Simulator", "Gravity x", "value",
                                                gravity.x());
                 control->cfg->setPropertyValue("Simulator", "Gravity y", "value",
@@ -1710,18 +1710,18 @@ namespace mars
 
 
         void Simulator::noGUITimerUpdate(void)
-				{
+        {
             finishedDraw();
         }
 
 
         ControlCenter* Simulator::getControlCenter(void) const
-				{
+        {
             return control;
         }
 
         void Simulator::addPlugin(const pluginStruct& plugin)
-				{
+        {
             pluginLocker.lockForWrite();
             newPlugins.push_back(plugin);
             haveNewPlugin = true;
@@ -1729,7 +1729,7 @@ namespace mars
         }
 
         void Simulator::removePlugin(PluginInterface *pl)
-				{
+        {
             std::vector<pluginStruct>::iterator p_iter;
 
             pluginLocker.lockForWrite();
@@ -1737,9 +1737,9 @@ namespace mars
             size_t i=0;
             for(p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
                 p_iter++, ++i)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     activePlugins.erase(p_iter);
                     data_broker::DataPackage tmpPackage;
                     size_t offset = 3;
@@ -1747,9 +1747,9 @@ namespace mars
                     tmpPackage.add(dbSimDebugPackage[1]);
                     tmpPackage.add(dbSimDebugPackage[2]);
                     for(size_t k=0; k<activePlugins.size(); ++k)
-										{
+                    {
                         if(i==k)
-												{
+                        {
                             offset = 4;
                         }
                         tmpPackage.add(dbSimDebugPackage[k+offset]);
@@ -1763,9 +1763,9 @@ namespace mars
 
             for(p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
                 p_iter++)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     guiPlugins.erase(p_iter);
                     break;
                 }
@@ -1773,9 +1773,9 @@ namespace mars
 
             for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
-						{
+            {
                 if((*p_iter).p_interface == pl)
-								{
+                {
                     allPlugins.erase(p_iter);
                     break;
                 }
@@ -1785,13 +1785,13 @@ namespace mars
         }
 
         int Simulator::checkCollisions(void)
-				{
+        {
             // todo: reimplement on collision space
             return 0; //physics->checkCollisions();
         }
 
         void Simulator::sendDataToPlugin(int plugin_index, void* data)
-				{
+        {
             if(plugin_index < 0 || plugin_index+1 > (int)allPlugins.size()) return;
 
             allPlugins[plugin_index].p_interface->getSomeData(data);
@@ -1799,7 +1799,7 @@ namespace mars
 
 
         void Simulator::setSyncThreads(bool value)
-				{
+        {
             sync_graphics = value;
         }
 
@@ -1807,7 +1807,7 @@ namespace mars
          * Calls GraphicsManager::update() method to redraw all OSG objects in the simulation.
          */
         void Simulator::updateSim()
-				{
+        {
             if(control->graphics)
                 control->graphics->update();
         }
@@ -1816,7 +1816,7 @@ namespace mars
          * This method is used for gui and simulation synchronization.
          */
         void Simulator::allowDraw(void)
-				{
+        {
             allow_draw = 1;
         }
 
@@ -1824,7 +1824,7 @@ namespace mars
          * \return \c true if no external requests are open.
          */
         bool Simulator::allConcurrencysHandled()
-				{
+        {
             return filesToLoad.empty();
         }
 
@@ -1833,16 +1833,16 @@ namespace mars
          * this method, which is called by Simulator::run().
          */
         void Simulator::processRequests()
-				{
+        {
             externalMutex.lock();
             if(filesToLoad.size() > 0)
-						{
+            {
                 bool wasrunning = false;
                 while (simulationStatus != STOPPED)
-								{
+                {
 
                     if(simulationStatus == RUNNING)
-										{
+                    {
                         StopSimulation();
                         wasrunning = true;
                     }
@@ -1851,7 +1851,7 @@ namespace mars
                 }
 
                 for(unsigned int i=0;i<filesToLoad.size();i++)
-								{
+                {
                     if (filesToLoad[i].zeroPose == true)
                     {
                         loadScene_internal(filesToLoad[i].filename, false,
@@ -1867,7 +1867,7 @@ namespace mars
                 filesToLoad.clear();
 
                 if(wasrunning)
-								{
+                {
                     StartSimulation();
                 }
             }
@@ -1876,9 +1876,9 @@ namespace mars
 
 
         void Simulator::exportScene(void) const
-				{
+        {
             if(control->graphics)
-						{
+            {
                 string filename = "export.obj";
                 control->graphics->exportScene(filename);
                 filename = "export.osg";
@@ -1887,10 +1887,10 @@ namespace mars
         }
 
         void Simulator::cfgUpdateProperty(cfg_manager::cfgPropertyStruct _property)
-				{
+        {
 
             if(_property.paramId == cfgCalcMs.paramId)
-						{
+            {
                 calc_ms = _property.dValue;
                 for(auto &it: subWorlds)
                 {
@@ -1901,7 +1901,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgFaststep.paramId)
-						{
+            {
                 for(auto &it: subWorlds)
                 {
                     it.second->control->physics->fast_step = _property.bValue;
@@ -1910,25 +1910,25 @@ namespace mars
             }
 
             if(_property.paramId == cfgRealtime.paramId)
-						{
+            {
                 my_real_time = _property.bValue;
                 return;
             }
 
             if(_property.paramId == cfgSyncGui.paramId)
-						{
+            {
                 this->setSyncThreads(_property.bValue);
                 return;
             }
 
             if(_property.paramId == cfgSyncTime.paramId)
-						{
+            {
                 sync_time = _property.dValue;
                 return;
             }
 
             if(_property.paramId == cfgDrawContact.paramId)
-						{
+            {
                 for(auto &it: subWorlds)
                 {
                     //it.second->control->physics->draw_contact_points = _property.bValue;
@@ -1951,7 +1951,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgGX.paramId)
-						{
+            {
                 gravity.x() = _property.dValue;
                 for(auto &it: subWorlds)
                 {
@@ -1961,7 +1961,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgGY.paramId)
-						{
+            {
                 gravity.y() = _property.dValue;
                 for(auto &it: subWorlds)
                 {
@@ -1971,7 +1971,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgGZ.paramId)
-						{
+            {
                 gravity.z() = _property.dValue;
                 for(auto &it: subWorlds)
                 {
@@ -1981,7 +1981,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgWorldErp.paramId)
-						{
+            {
                 for(auto &it: subWorlds)
                 {
                     it.second->control->physics->world_erp = _property.dValue;
@@ -1990,7 +1990,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgWorldCfm.paramId)
-						{
+            {
                 for(auto &it: subWorlds)
                 {
                     it.second->control->physics->world_cfm = _property.dValue;
@@ -2009,7 +2009,7 @@ namespace mars
             }
 
             if(_property.paramId == cfgAvgCountSteps.paramId)
-						{
+            {
                 avg_count_steps = _property.iValue;
                 return;
             }
@@ -2017,7 +2017,7 @@ namespace mars
         }
 
         void Simulator::initCfgParams(void)
-				{
+        {
             if(!control->cfg)
                 return;
             cfgCalcMs = control->cfg->getOrCreateProperty("Simulator", "calc_ms",
@@ -2073,9 +2073,9 @@ namespace mars
         void Simulator::receiveData(const data_broker::DataInfo &info,
                                     const data_broker::DataPackage &package,
                                     int callbackParam)
-				{
+        {
             if(info.groupName != "_MESSAGES_")
-						{
+            {
                 fprintf(stderr, "got unexpected data broker package: %s %s\n",
                         info.groupName.c_str(), info.dataName.c_str());
                 return;
@@ -2084,7 +2084,7 @@ namespace mars
             std::string message;
             package.get(0, &message);
             switch(callbackParam)
-						{
+            {
             case data_broker::DB_MESSAGE_TYPE_FATAL:
 #ifndef WIN32
                 fprintf(stderr, "\033[31mfatal: %s\033[0m\n", message.c_str());
@@ -2121,20 +2121,20 @@ namespace mars
         }
 
         const utils::Vector& Simulator::getGravity(void)
-				{
+        {
             return gravity;
         }
 
         unsigned long Simulator::getTime()
-				{
+        {
             unsigned long returnTime;
             getTimeMutex.lock();
             if(cfgUseNow.bValue)
-						{
+            {
                 returnTime = utils::getTime();
             }
             else
-						{
+            {
                 returnTime = realStartTime+dbSimTimePackage[0].d;
             }
             getTimeMutex.unlock();

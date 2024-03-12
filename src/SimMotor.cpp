@@ -18,7 +18,7 @@ namespace mars
 
         double SpaceClimberCurrent(double* torque, double* velocity,
                                    std::vector<interfaces::sReal>* c)
-				{
+        {
             return fabs((*c)[0]*fabs((*torque)*(*velocity)) +
                         (*c)[1]*fabs((*torque)) +
                         (*c)[2]*fabs((*velocity)) + (*c)[3]);
@@ -26,7 +26,7 @@ namespace mars
 
         SimMotor::SimMotor(ControlCenter *c, const MotorData &sMotor_, JointInterface *joint)
             : control(c), joint(joint)
-				{
+        {
 
             sMotor.index = sMotor_.index;
             sMotor.type = sMotor_.type;
@@ -79,11 +79,11 @@ namespace mars
             pushToDataBroker = 2;
             configmaps::ConfigMap &map = sMotor.config;
             if(map.hasKey("noDataPackage") && (bool)map["noDataPackage"] == true)
-						{
+            {
                 pushToDataBroker = 0;
             }
             if(pushToDataBroker > 0)
-						{
+            {
                 cmdPackage.add("value", 0.0);
                 dbPackage.add("id", (long)sMotor.index);
                 dbPackage.add("value", controlValue);
@@ -102,7 +102,7 @@ namespace mars
                 std::string groupName, dataName;
                 getDataBrokerNames(&groupName, &dataName);
                 if(control && control->dataBroker)
-								{
+                {
                     dbPushId = control->dataBroker->pushData(groupName, dataName,
                                                              dbPackage, NULL,
                                                              data_broker::DATA_PACKAGE_READ_FLAG);
@@ -117,13 +117,13 @@ namespace mars
         }
 
         SimMotor::~SimMotor(void)
-				{
+        {
             std::string groupName, dataName;
             getDataBrokerNames(&groupName, &dataName);
             if(control && control->dataBroker)
-						{
+            {
                 if(pushToDataBroker)
-								{
+                {
                     control->dataBroker->unregisterTimedProducer(this, groupName, dataName,
                                                                  "mars_sim/simTimer");
                 }
@@ -143,22 +143,22 @@ namespace mars
         }
 
         void SimMotor::addMimic(SimMotor* mimic)
-				{
+        {
             mimics[mimic->getName()] = mimic;
         }
 
         void SimMotor::removeMimic(std::string mimicname)
-				{
+        {
             mimics.erase(mimicname);
         }
 
         void SimMotor::clearMimics()
-				{
+        {
             mimics.clear();
         }
 
         void SimMotor::setMimic(sReal multiplier, sReal offset)
-				{
+        {
             mimic = true;
             mimic_multiplier = multiplier;
             mimic_offset = offset;
@@ -166,9 +166,9 @@ namespace mars
 
         void SimMotor::setMaxEffortApproximation(utils::ApproximationFunction type,
                                                  std::vector<double>* coefficients)
-				{
+        {
             switch (type)
-						{
+            {
             case FUNCTION_PIPE:
                 maxEffortApproximation =&utils::pipe;
                 maxeffort_x = &sMotor.maxEffort;
@@ -199,9 +199,9 @@ namespace mars
 
         void SimMotor::setMaxSpeedApproximation(utils::ApproximationFunction type,
                                                 std::vector<double>* coefficients)
-				{
+        {
             switch (type)
-						{
+            {
             case FUNCTION_PIPE:
                 maxSpeedApproximation = &utils::pipe;
                 maxspeed_x = &sMotor.maxSpeed;
@@ -232,9 +232,9 @@ namespace mars
 
         void SimMotor::setCurrentApproximation(utils::ApproximationFunction2D type,
                                                std::vector<double>* coefficients)
-				{
+        {
             switch (type)
-						{
+            {
             case FUNCTION_UNKNOWN2D:
                 LOG_WARN("SimMotor: Approximation function not implemented or unknown.");
                 break;
@@ -249,10 +249,10 @@ namespace mars
         }
 
         void SimMotor::updateController()
-				{
+        {
             axis = (unsigned char) sMotor.axis;
             switch (sMotor.type)
-						{
+            {
             case MOTOR_TYPE_POSITION:
             case MOTOR_TYPE_PID: // deprecated
                 controlParameter = &velocity;
@@ -296,11 +296,11 @@ namespace mars
                 controlLimit = &(sMotor.maxEffort);
                 if(sMotor.config.hasKey("maxEffortControl") and
                    (bool)(sMotor.config["maxEffortControl"]) == true)
-								{
+                {
                     controlParameter = &velocity;
                     setJointControlParameter = &JointInterface::setVelocity;
                 } else
-								{
+                {
                     controlParameter = &effort;
                     // todo: handle axis
                     setJointControlParameter = &JointInterface::setTorque;
@@ -327,7 +327,7 @@ namespace mars
         }
 
         void SimMotor::runEffortController(sReal time)
-				{
+        {
             // limit to range of motion
             controlValue = std::max(sMotor.minValue,
                                     std::min(controlValue, sMotor.maxValue));
@@ -356,16 +356,16 @@ namespace mars
         }
 
         void SimMotor::runEffortPipe(sReal time)
-				{
+        {
             // limit to range of motion
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
             if(sMotor.config.hasKey("maxEffortControl") and
                (bool)sMotor.config["maxEffortControl"] == true)
-						{
+            {
                 if(controlValue >= 0)
-								{
+                {
                     velocity = 10000;
                 } else {
                     velocity = -10000;
@@ -379,18 +379,18 @@ namespace mars
                     joint->setForceLimit2(fabs(controlValue));
                 }
             } else
-						{
+            {
                 effort = controlValue;
             }
         }
 
         void SimMotor::runVelocityController(sReal time)
-				{
+        {
             *controlParameter = controlValue;
         }
 
         void SimMotor::runPositionController(sReal time)
-				{
+        {
             // the following implements a simple PID controller using the value
             // pointed to by controlParameter
 
@@ -448,7 +448,7 @@ namespace mars
             last_error = error;
 
             if(sMotor.config.hasKey("spring"))
-						{
+            {
                 if(axis == 1)
                 {
                     joint->setForceLimit(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
@@ -461,7 +461,7 @@ namespace mars
         }
 
         void SimMotor::update(sReal time_ms)
-				{
+        {
             time = time_ms;// / 1000;
             sReal play_position = 0.0;
 
@@ -469,7 +469,7 @@ namespace mars
             //if (!myJoint) deactivate();
 
             if(active)
-						{
+            {
                 // set play offset to 0
                 //if(myPlayJoint) play_position = myPlayJoint->getPosition();
 
@@ -488,12 +488,12 @@ namespace mars
                 // cap speed
                 tmpmaxspeed = getMomentaryMaxSpeed();
                 //if(sMotor.type != MOTOR_TYPE_DIRECT_EFFORT) {
-								velocity = std::max(-tmpmaxspeed, std::min(velocity, tmpmaxspeed));
-								//}
+                velocity = std::max(-tmpmaxspeed, std::min(velocity, tmpmaxspeed));
+                //}
 
                 // cap effort
                 if(!effortMotor && sMotor.type != MOTOR_TYPE_DIRECT_EFFORT)
-								{
+                {
                     tmpmaxeffort = getMomentaryMaxEffort();
                     effort = std::max(-tmpmaxeffort, std::min(effort, tmpmaxeffort));
                     //myJoint->setEffortLimit(tmpmaxeffort, sMotor.axis);
@@ -501,7 +501,7 @@ namespace mars
 
                 for(std::map<std::string, SimMotor*>::iterator it = mimics.begin();
                     it != mimics.end(); ++it)
-								{
+                {
                     it->second->setControlValue(controlValue);
                     //it->second->setControlValue(*position);
                 }
@@ -521,14 +521,14 @@ namespace mars
         }
 
         void SimMotor::estimateCurrent()
-				{
+        {
             // calculate current
             //sReal joint_velocity = myJoint->getVelocity();
             //current = (*currentApproximation)(&sensedEffort, &joint_velocity, current_coefficients);
         }
 
         void SimMotor::estimateTemperature(sReal time_ms)
-				{
+        {
             temperature = temperature - calcHeatDissipation(time_ms) + calcHeatProduction(time_ms);
         }
 
@@ -542,7 +542,7 @@ namespace mars
          * in our case, heatTransferCoefficient = k*A/d and thus:
          */
         sReal SimMotor::calcHeatDissipation(sReal time_ms) const
-				{
+        {
             return (heatTransferCoefficient * (temperature - ambientTemperature))*time_ms/1000.0;
         }
 
@@ -552,12 +552,12 @@ namespace mars
          * power supply which gets transformed into heat energy.
          */
         sReal SimMotor::calcHeatProduction(sReal time_ms) const
-				{
+        {
             return (current * voltage * heatlossCoefficient)*time_ms/1000.0;
         }
 
         void SimMotor::initTemperatureEstimation()
-				{
+        {
             temperature = 0;
             voltage = 0;
             heatlossCoefficient = 0;
@@ -566,7 +566,7 @@ namespace mars
         }
 
         void SimMotor::initCurrentEstimation()
-				{
+        {
             kXY = 100.0*((0.00002) / ((9.81*0.07)*(2*M_PI/60)));
             kX  = 0.00512 / (9.81*0.07);
             kY  = 100.0*(0.00006 / (2*M_PI/60));
@@ -581,7 +581,7 @@ namespace mars
         }
 
         void SimMotor::refreshPosition()
-				{
+        {
             if(sMotor.axis == 1)
                 position1 = joint->getPosition();
             else
@@ -589,13 +589,13 @@ namespace mars
         }
 
         void SimMotor::refreshPositions()
-				{
+        {
             position1 = joint->getPosition();
             position2 = joint->getPosition2();
         }
 
         void SimMotor::refreshAngle()
-				{ // deprecated
+        { // deprecated
             refreshPosition();
         }
 
@@ -604,7 +604,7 @@ namespace mars
          * implement a specifically variable effort.
          */
         sReal SimMotor::getMomentaryMaxEffort()
-				{
+        {
             return (*maxEffortApproximation)(maxeffort_x, maxeffort_coefficients);
         }
 
@@ -613,7 +613,7 @@ namespace mars
          * implement a specifically speed.
          */
         sReal SimMotor::getMomentaryMaxSpeed()
-				{
+        {
             return (*maxSpeedApproximation)(maxspeed_x, maxspeed_coefficients);
         }
 
@@ -637,24 +637,24 @@ namespace mars
         // }
 
         int SimMotor::getAxis() const
-				{
+        {
             return sMotor.axis;
         }
 
         const std::string SimMotor::getName() const
-				{
+        {
             return sMotor.name;
         }
 
         void SimMotor::setName(const std::string &newname)
-				{
+        {
             sMotor.name = newname;
         }
 
         void SimMotor::setDesiredMotorAngle(sReal angle)
-				{ // deprecated
+        { // deprecated
             switch(sMotor.type)
-						{
+            {
             case MOTOR_TYPE_PID:
             case MOTOR_TYPE_POSITION:
             case MOTOR_TYPE_PID_FORCE:
@@ -670,9 +670,9 @@ namespace mars
         }
 
         void SimMotor::setDesiredMotorVelocity(sReal velocity)
-				{ // deprecated
+        { // deprecated
             switch(sMotor.type)
-						{
+            {
             case MOTOR_TYPE_DC:
             case MOTOR_TYPE_VELOCITY:
                 controlValue = velocity;
@@ -688,9 +688,9 @@ namespace mars
         }
 
         sReal SimMotor::getDesiredMotorAngle() const
-				{ // deprecated
+        { // deprecated
             switch(sMotor.type)
-						{
+            {
             case MOTOR_TYPE_PID:
             case MOTOR_TYPE_POSITION:
             case MOTOR_TYPE_PID_FORCE:
@@ -707,7 +707,7 @@ namespace mars
         }
 
         void SimMotor::setMaxEffort(sReal force)
-				{
+        {
             sMotor.maxEffort = force;
             if(sMotor.axis == 1)
             {
@@ -720,77 +720,77 @@ namespace mars
         }
 
         void SimMotor::setMotorMaxForce(sReal force)
-				{ // deprecated
+        { // deprecated
             setMaxEffort(force);
         }
 
         sReal SimMotor::getMaxEffort() const
-				{
+        {
             return sMotor.maxEffort;
         }
 
         sReal SimMotor::getMotorMaxForce() const
-				{ // deprecated
+        { // deprecated
             return getMaxEffort();
         }
 
         sReal SimMotor::getPosition() const
-				{
+        {
             return position1;
         }
 
         sReal SimMotor::getActualPosition() const
-				{ // deprecated
+        { // deprecated
             return getPosition();
         }
 
         void SimMotor::setPosition(sReal angle)
-				{
+        {
             position1 = angle;
         }
 
         void SimMotor::setActualAngle(sReal angle)
-				{ // deprecated
+        { // deprecated
             setPosition(angle);
         }
 
         void SimMotor::setMaxSpeed(sReal speed)
-				{
+        {
             sMotor.maxSpeed = fabs(speed);
         }
 
         void SimMotor::setMaximumVelocity(sReal v)
-				{ // deprecated
+        { // deprecated
             setMaxSpeed(v);
         }
 
         sReal SimMotor::getMaxSpeed() const
-				{
+        {
             return sMotor.maxSpeed;
         }
 
         sReal SimMotor::getMaximumVelocity() const
-				{ // deprecated
+        { // deprecated
             return getMaxSpeed();
         }
 
         bool SimMotor::isServo() const
-				{
+        {
             return !(sMotor.type == MOTOR_TYPE_DC ||
                      sMotor.type == MOTOR_TYPE_VELOCITY ||
                      sMotor.type == MOTOR_TYPE_UNDEFINED);
         }
 
         void SimMotor::setType(interfaces::MotorType mtype)
-				{
+        {
             sMotor.type = mtype;
             updateController();
         }
 
         void SimMotor::setVelocity(sReal v)
-				{
+        {
             switch(sMotor.type)
-						{
+            {
             case MOTOR_TYPE_DC:
             case MOTOR_TYPE_VELOCITY:
                 setControlValue(v);
@@ -806,82 +806,82 @@ namespace mars
         }
 
         sReal SimMotor::getControlParameter(void) const
-				{
+        {
             return *controlParameter;
         }
 
         sReal SimMotor::getVelocity() const
-				{ // deprecated
+        { // deprecated
             return velocity;
         }
 
         void SimMotor::setMinValue(interfaces::sReal d)
-				{
+        {
             sMotor.minValue = d;
         }
 
         void SimMotor::setMaxValue(interfaces::sReal d)
-				{
+        {
             sMotor.maxValue = d;
         }
 
         void SimMotor::setP(sReal p)
-				{
+        {
             sMotor.p = p;
         }
 
         void SimMotor::setI(sReal i)
-				{
+        {
             sMotor.i = i;
         }
 
         void SimMotor::setD(sReal d)
-				{
+        {
             sMotor.d = d;
         }
 
         sReal SimMotor::getP() const
-				{
+        {
             return sMotor.p;
         }
 
         sReal SimMotor::getI() const
-				{
+        {
             return sMotor.i;
         }
 
         sReal SimMotor::getD() const
-				{
+        {
             return sMotor.d;
         }
 
         void SimMotor::setSMotor(const MotorData &sMotor)
-				{
+        {
             // todo: handle name change correctly
             this->sMotor = sMotor;
             filterValue = 0.0;
             if(this->sMotor.config.hasKey("filterValue"))
-						{
+            {
                 filterValue = this->sMotor.config["filterValue"];
             }
             effortMotor = false;
             if(sMotor.type == MOTOR_TYPE_PID_FORCE ||
                sMotor.type == MOTOR_TYPE_EFFORT)
-						{
+            {
                 effortMotor = true;
             }
             else if(sMotor.type == MOTOR_TYPE_DIRECT_EFFORT)
-						{
+            {
                 effortMotor = true;
                 ConfigMap map = sMotor.config;
                 if(map.hasKey("maxEffortControl") and
                    (bool)map["maxEffortControl"])
-								{
+                {
                     effortMotor = false;
                 }
             }
             if(!effortMotor)
-						{
+            {
                 //myJoint->attachMotor(sMotor.axis);
                 if(sMotor.axis == 1)
                 {
@@ -895,24 +895,24 @@ namespace mars
         }
 
         const MotorData SimMotor::getSMotor(void) const
-				{
+        {
             return sMotor;
         }
 
         void SimMotor::setValue(sReal value)
-				{
+        {
             setControlValue(value);
         }
 
         void SimMotor::setOfflinePosition(interfaces::sReal value)
-				{
+        {
             if(control && control->sim->isSimRunning())
-						{
+            {
                 LOG_WARN("SimMotor: Setting the \"offline\" position if the simulation is running can produce bad simulation states!");
             }
             if(sMotor.type == MOTOR_TYPE_POSITION ||
                sMotor.type == MOTOR_TYPE_PID)
-						{
+            {
                 controlValue = value;
             }
             //myJoint->setOfflinePosition(value);
@@ -920,14 +920,14 @@ namespace mars
         }
 
         void SimMotor::setControlValue(interfaces::sReal value)
-				{
+        {
             controlValue = value;
             //fprintf(stderr, "control value: %g\n", controlValue);
             if(sMotor.type == MOTOR_TYPE_POSITION ||
                sMotor.type == MOTOR_TYPE_PID)
-						{
+            {
                 if(control && !control->sim->isSimRunning())
-								{
+                {
                     //myJoint->setOfflinePosition(value);
                     refreshPositions();
                 }
@@ -951,19 +951,19 @@ namespace mars
           }*/
 
         sReal SimMotor::getValue(void) const
-				{
+        {
             return getControlValue();
         }
 
         sReal SimMotor::getControlValue(void) const
-				{
+        {
             return controlValue;
         }
 
         void SimMotor::setPID(sReal mP, sReal mI, sReal mD)
-				{
+        {
             switch (sMotor.type)
-						{
+            {
             case MOTOR_TYPE_PID: // deprecated
             case MOTOR_TYPE_POSITION:
             case MOTOR_TYPE_PID_FORCE: // deprecated
@@ -982,22 +982,22 @@ namespace mars
         }
 
         unsigned long SimMotor::getIndex(void) const
-				{
+        {
             return sMotor.index;
         }
 
         unsigned long SimMotor::getJointIndex(void) const
-				{
+        {
             return sMotor.jointIndex;
         }
 
         std::string SimMotor::getJointName(void) const
-				{
+        {
             return sMotor.jointName;
         }
 
         void SimMotor::getCoreExchange(core_objects_exchange* obj) const
-				{
+        {
             obj->index = sMotor.index;
             obj->name = sMotor.name;
             obj->groupID = sMotor.type;
@@ -1005,33 +1005,33 @@ namespace mars
         }
 
         sReal SimMotor::getCurrent(void) const
-				{
+        {
             return current;
         }
 
         sReal SimMotor::getEffort() const
-				{
+        {
             return sensedEffort;
         }
 
         sReal SimMotor::getTorque(void) const
-				{ // deprecated
+        { // deprecated
             return getEffort();
         }
 
         void SimMotor::deactivate(void)
-				{
+        {
             active = false;
         }
 
         void SimMotor::activate(void)
-				{
+        {
             active = true;
         }
 
         void SimMotor::getDataBrokerNames(std::string *groupName,
                                           std::string *dataName) const
-				{
+        {
             char format[] = "Motors/%05lu_%s";
             int size = snprintf(0, 0, format, sMotor.index, sMotor.name.c_str());
             char buffer[size+1];
@@ -1043,7 +1043,7 @@ namespace mars
         void SimMotor::produceData(const data_broker::DataInfo &info,
                                    data_broker::DataPackage *dbPackage,
                                    int callbackParam)
-				{
+        {
             dbPackage->set(dbIdIndex, (long)sMotor.index);
             dbPackage->set(dbControlParameterIndex, controlValue);
             dbPackage->set(dbPositionIndex, getPosition());
@@ -1055,16 +1055,16 @@ namespace mars
         void SimMotor::receiveData(const data_broker::DataInfo& info,
                                    const data_broker::DataPackage& package,
                                    int id)
-				{
+        {
             sReal value;
             package.get(0, &value);
             setControlValue(value);
         }
 
         void SimMotor::setValueDesiredVelocity(interfaces::sReal value)
-				{
+        {
             switch (sMotor.type)
-						{
+            {
             case MOTOR_TYPE_VELOCITY:
             case MOTOR_TYPE_DC: //deprecated
                 setControlValue(value);

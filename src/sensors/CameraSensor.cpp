@@ -47,7 +47,7 @@ namespace mars
             have_new_data = false;
             maxDistance = 1000;
             if(this->config.map.hasKey("range"))
-						{
+            {
                 maxDistance = this->config.map["range"];
             }
             renderCam = 2 + config.frameOffset;
@@ -70,7 +70,7 @@ namespace mars
 
             cam_id=0;
             if(control->graphics)
-						{
+            {
 
                 //New
                 interfaces::hudElementStruct hudCam;
@@ -100,38 +100,38 @@ namespace mars
                 gw = control->graphics->get3DWindow(cam_window_id);
                 gw->setGrabFrames(false);
                 if(gw)
-								{
+                {
                     gc = gw->getCameraInterface();
                     control->graphics->addGraphicsUpdateInterface(this);
                     gc->setFrustumFromRad(config.opening_width/180.0*M_PI, config.opening_height/180.0*M_PI, 0.01, maxDistance);
                     ConfigMap map = config.map;
                     if(map.hasKey("distortion_factor"))
-										{
+                    {
                         gw->setupDistortion(map["distortion_factor"]);
                     }
                 }
             }
 
             if(!this->config.enabled)
-						{
+            {
                 control->graphics->deactivate3DWindow(cam_window_id);
             }
 
         }
 
         CameraSensor::~CameraSensor(void)
-				{
+        {
             control->dataBroker->unregisterTimedReceiver(this, "*", "*",
                                                          "mars_sim/simTimer");
 
             if(control->graphics)
-						{
+            {
                 if(cam_id)
-								{
+                {
                     control->graphics->removeHUDElement(cam_id);
                 }
                 if(cam_window_id)
-								{
+                {
                     control->graphics->remove3DWindow(cam_window_id);
                 }
                 control->graphics->removeGraphicsUpdateInterface(this);
@@ -255,9 +255,9 @@ namespace mars
         // NOTE: never use the cameraSensor in a controller list!!!!
         // TODO handle depth image and logicalImage
         int CameraSensor::getSensorData(sReal** data) const
-				{
+        {
             if(gw)
-						{
+            {
                 // get image
                 int width, height;
                 /* todo: handle depth image
@@ -301,7 +301,7 @@ namespace mars
                     *data = (sReal*)calloc(size*4, sizeof(sReal));
                     double s = 1./255;
                     for(unsigned int i=0; i<size; ++i)
-										{
+                    {
                         (*data)[i*4] = buffer[i*4]*s;
                         (*data)[i*4+1] = buffer[i*4+1]*s;
                         (*data)[i*4+2] = buffer[i*4+2]*s;
@@ -316,7 +316,7 @@ namespace mars
 
         void CameraSensor::getColoredPointcloud(std::vector<Vector> *points,
                                                 std::vector<base::Vector4d> *colors)
-				{
+        {
 
             if(!gw or !gc)
                 return;
@@ -332,12 +332,12 @@ namespace mars
             gw->getRTTDepthData((float**)&buffer2, width, height);
             unsigned int size2 = width*height;
             if(size2 == 0)
-						{
+            {
                 free(buffer);
                 return;
             }
             else if(size != size2)
-						{
+            {
                 free(buffer);
                 free(buffer2);
                 return;
@@ -355,14 +355,14 @@ namespace mars
             colors->reserve(width*height);
             points->reserve(width*height);
             for(unsigned int y=0; y<height; ++y)
-						{
+            {
                 for(unsigned int x=0; x<width; ++x)
-								{
+                {
                     index = (height-1-y)*width+(width-1-x);
                     index2 = (y*width+(width-1-x))*4;
                     depth = buffer2[index];
                     if((depth <= maxDistance) and !std::isnan(depth))
-										{
+                    {
                         dy = y;
                         dx = x;
                         // get the correct direction of the ray
@@ -391,9 +391,9 @@ namespace mars
         }
 
         void CameraSensor::deactivateRendering()
-				{
+        {
             if(config.enabled)
-						{
+            {
                 control->graphics->deactivate3DWindow(cam_window_id);
                 config.enabled = false;
             }
@@ -401,23 +401,23 @@ namespace mars
         }
 
         void CameraSensor::activateRendering()
-				{
+        {
             if(!config.enabled)
-						{
+            {
                 control->graphics->activate3DWindow(cam_window_id);
                 config.enabled = true;
             }
         }
 
         void CameraSensor::preGraphicsUpdate(void)
-				{
+        {
             mutex.lock();
             if(renderCam == 0)
-						{
+            {
                 renderCam = 2+config.frameSkip;
             }
             if(gc)
-						{
+            {
                 // todo: use pos_offset here too
                 Vector p = control->graphics->getDrawObjectPosition(draw_id);
                 Quaternion qcorrect = Quaternion(0.5, 0.5, -0.5, -0.5);
@@ -427,15 +427,15 @@ namespace mars
                                        q.x(), q.y(),
                                        q.z(), q.w());
                 if(config.enabled)
-								{
+                {
                     if(renderCam > 2) --renderCam;
                     else if(renderCam == 2)
-										{
+                    {
                         control->graphics->activate3DWindow(cam_window_id);
                         renderCam = 1;
                     }
                     else if(renderCam == 1)
-										{
+                    {
                         control->graphics->deactivate3DWindow(cam_window_id);
                         have_new_data = true;
                         renderCam = 0;
@@ -446,9 +446,9 @@ namespace mars
         }
 
         void CameraSensor::postGraphicsUpdate(void)
-				{
+        {
             if(gc && renderCam == 1)
-						{
+            {
                 position = control->graphics->getDrawObjectPosition(draw_id);
                 orientation = control->graphics->getDrawObjectQuaternion(draw_id) * config.ori_offset;
                 //Quaternion qcorrect = Quaternion(0.5, 0.5, -0.5, -0.5);
@@ -460,15 +460,15 @@ namespace mars
         void CameraSensor::receiveData(const data_broker::DataInfo &info,
                                        const data_broker::DataPackage &package,
                                        int callbackParam)
-				{
+        {
             CPP_UNUSED(info);
             mutex.lock();
             if(renderCam == 0)
-						{
+            {
                 renderCam = 2+config.frameSkip;
             }
             if(dbPosIndices[0] == -1)
-						{
+            {
                 dbPosIndices[0] = package.getIndexByName("position/x");
                 dbPosIndices[1] = package.getIndexByName("position/y");
                 dbPosIndices[2] = package.getIndexByName("position/z");
@@ -492,7 +492,7 @@ namespace mars
 
         BaseConfig* CameraSensor::parseConfig(ControlCenter *control,
                                               ConfigMap *config)
-				{
+        {
 
             //ConfigMap *config = new ConfigMap();
             //(*config) = (*config_);
@@ -502,7 +502,7 @@ namespace mars
             unsigned int mapIndex = (*config)["mapIndex"];
             unsigned long attachedNodeID = (*config)["attached_node"];
             if(mapIndex)
-						{
+            {
                 attachedNodeID = control->loadCenter->getMappedID(attachedNodeID,
                                                                   interfaces::MAP_TYPE_NODE,
                                                                   mapIndex);
@@ -549,10 +549,10 @@ namespace mars
                 cfg->opening_height = cfg->opening_width * ((double)cfg->height / (double)cfg->width);
 
             if((it = config->find("show_cam")) != config->end())
-						{
+            {
                 cfg->show_cam =  it->second;
                 if(cfg->show_cam)
-								{
+                {
                     if((it = config->find("hud_idx")) != config->end())
                         cfg->hud_pos = it->second;
                     if(cfg->hud_pos == -1)
@@ -561,20 +561,20 @@ namespace mars
                     }
                 }
             }else
-						{
+            {
                 cfg->show_cam = false;
             }
 
             if((it = config->find("enabled")) != config->end())
-						{
+            {
                 cfg->enabled =  it->second;
             }else
-						{
+            {
                 cfg->enabled = true;
             }
 
             if((it = config->find("hud_size")) != config->end())
-						{
+            {
                 cfg->hud_width = it->second["x"];
                 cfg->hud_height = it->second["y"];
             }
@@ -588,7 +588,7 @@ namespace mars
                 cfg->hud_height = cfg->hud_width * ((double)cfg->height / (double)cfg->width);
 
             if((it = config->find("position_offset")) != config->end())
-						{
+            {
                 cfg->pos_offset[0] = it->second["x"];
                 cfg->pos_offset[1] = it->second["y"];
                 cfg->pos_offset[2] = it->second["z"];
@@ -596,9 +596,9 @@ namespace mars
                           cfg->pos_offset[1], cfg->pos_offset[2]);
             }
             if((it = config->find("orientation_offset")) != config->end())
-						{
+            {
                 if(it->second.hasKey("yaw"))
-								{
+                {
                     Vector euler;
                     euler.x() = it->second["roll"];
                     euler.y() = it->second["pitch"];
@@ -606,7 +606,7 @@ namespace mars
                     cfg->ori_offset = eulerToQuaternion(euler);
                 }
                 else
-								{
+                {
                     cfg->ori_offset.x() = it->second["x"];
                     cfg->ori_offset.y() = it->second["y"];
                     cfg->ori_offset.z() = it->second["z"];
@@ -638,7 +638,7 @@ namespace mars
 
 
             if(config.show_cam)
-						{
+            {
                 cfg["show_cam"] = true;
                 cfg["hud_idx"] = config.hud_pos;
             }
