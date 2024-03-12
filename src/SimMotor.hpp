@@ -7,6 +7,7 @@
 #include <data_broker/DataPackage.h>
 #include <mars_interfaces/MotorData.h>
 #include <mars_interfaces/core_objects_exchange.h>
+#include <mars_interfaces/ConfigMapInterface.hpp>
 #include <mars_utils/mathUtils.h>
 
 #include <iostream>
@@ -37,7 +38,9 @@ namespace mars
          *  - "torque" (double)
          */
         class SimMotor : public data_broker::ProducerInterface ,
-                         public data_broker::ReceiverInterface {
+                         public data_broker::ReceiverInterface ,
+                         public mars::interfaces::ConfigMapInterface
+        {
 
         public:
             SimMotor(interfaces::ControlCenter *control,
@@ -127,6 +130,11 @@ namespace mars
             virtual void receiveData(const data_broker::DataInfo &info,
                                      const data_broker::DataPackage &package,
                                      int callbackParam);
+
+            // methods inherited from mars::interfaces::ConfigMapInterface
+            virtual configmaps::ConfigMap getConfigMap() const;
+            virtual std::vector<std::string> getEditPattern(const std::string& basePath) const;
+            virtual void edit(const std::string& configPath, const std::string& value);
 
             // methods to be deprecated in future MARS versions
             interfaces::sReal getMotorMaxForce() const __attribute__ ((deprecated("use getMaxEffort")));

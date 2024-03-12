@@ -1,4 +1,5 @@
 #include "SimMotor.hpp"
+#include <mars_utils/misc.h> // matchPattern
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_interfaces/sim/JointInterface.h>
@@ -1059,6 +1060,92 @@ namespace mars
             sReal value;
             package.get(0, &value);
             setControlValue(value);
+        }
+
+        // methods inherited from mars::interfaces::ConfigMapInterface
+        configmaps::ConfigMap SimMotor::getConfigMap() const
+        {
+            configmaps::ConfigMap result;
+
+            const mars::interfaces::MotorData& motorData{getSMotor()};
+            result["name"] = getName();
+            result["type"] = motorData.type;
+            result["axis"] = getAxis();
+            result["current"] = getCurrent();
+            result["effort"] = getEffort();
+            result["index"] = getIndex();
+            result["is servo"] = isServo();
+            result["joint name"] = getJointName();
+            result["maxEffort"] = getMaxEffort();
+            result["maxSpeed"] = getMaxSpeed();
+            result["position"] = getPosition();
+            result["velocity"] = getVelocity();
+            result["control parameter"] = getControlParameter();
+            result["control value"] = getControlValue();
+            result["p"] = getP();
+            result["i"] = getI();
+            result["d"] = getD();
+            result["minValue"] = motorData.minValue;
+            result["maxValue"] = motorData.maxValue;
+            return result;
+        }
+
+        std::vector<std::string> SimMotor::getEditPattern(const std::string& basePath) const
+        {
+            return std::vector<std::string>
+            {
+                basePath + "*p",
+                basePath + "*i",
+                basePath + "*d",
+                basePath + "*maxSpeed",
+                basePath + "*maxEffort",
+                basePath + "*minValue",
+                basePath + "*maxValue",
+                basePath + "*type"
+            };
+        }
+
+        void SimMotor::edit(const std::string& configPath, const std::string& value)
+        {
+                if(mars::utils::matchPattern("*/p", configPath))
+                {
+                    setP(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/i", configPath))
+                {
+                    setI(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/d", configPath))
+                {
+                    setI(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/maxSpeed", configPath))
+                {
+                    setMaxSpeed(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/maxEffort", configPath))
+                {
+                    setMaxEffort(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/minValue", configPath))
+                {
+                    setMinValue(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/maxValue", configPath))
+                {
+                    setMaxValue(atof(value.c_str()));
+                }
+                else if(mars::utils::matchPattern("*/type", configPath))
+                {
+                    if(value == "DC" || value == "2") 
+                    {
+                        setType(MOTOR_TYPE_VELOCITY);
+                    }
+                    else 
+                    {
+                        setType(MOTOR_TYPE_POSITION);
+                    }
+                }
         }
 
         void SimMotor::setValueDesiredVelocity(interfaces::sReal value)
