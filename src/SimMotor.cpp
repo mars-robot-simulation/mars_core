@@ -1094,14 +1094,14 @@ namespace mars
         {
             return std::vector<std::string>
             {
-                basePath + "*p",
-                basePath + "*i",
-                basePath + "*d",
-                basePath + "*maxSpeed",
-                basePath + "*maxEffort",
-                basePath + "*minValue",
-                basePath + "*maxValue",
-                basePath + "*type"
+                basePath + "p",
+                basePath + "i",
+                basePath + "d",
+                basePath + "maxSpeed",
+                basePath + "maxEffort",
+                basePath + "minValue",
+                basePath + "maxValue",
+                basePath + "type"
             };
         }
 
