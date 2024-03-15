@@ -243,7 +243,7 @@ namespace mars
             virtual std::shared_ptr<interfaces::SubControlCenter> createSubWorld(const std::string &name) override;
             std::shared_ptr<interfaces::SubControlCenter> getSubControl(envire::core::FrameId frame);
 
-            void saveGraph(const std::string &fileName);
+            void saveGraph(const std::string &fileName) override;
 
             static void updateChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
                                              const base::TransformWithCovariance& frameToRoot,
