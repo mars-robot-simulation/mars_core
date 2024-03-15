@@ -55,7 +55,7 @@ namespace mars
             /**
              * \brief Destructor.
              */
-            virtual ~SensorManager(){}
+            virtual ~SensorManager() override {}
 
             /**
              * \brief Add a sensor to the simulation.
@@ -76,7 +76,7 @@ namespace mars
              * \param id The id of the sensor to look for.
              * \return Whether the node exists.
              */
-            virtual bool exists(unsigned long index) const;
+            virtual bool exists(unsigned long index) const override;
 
             /**
              * \brief Gives information about core exchange data for sensors.
@@ -85,7 +85,7 @@ namespace mars
              * core_objects_exchange struct for every sensor. The vector is cleared
              * in the beginning of this function.
              */
-            virtual void getListSensors(std::vector<interfaces::core_objects_exchange> *sensorList) const;
+            virtual void getListSensors(std::vector<interfaces::core_objects_exchange> *sensorList) const override;
 
             /**
              * \brief Gives information about core exchange data for camera sensors.
@@ -104,14 +104,15 @@ namespace mars
              *
              * \return A pointer to the BaseSensor of the sensor with the given id.
              */
-            virtual const interfaces::BaseSensor* getFullSensor(unsigned long index) const;
+            virtual const interfaces::BaseSensor* getFullSensor(unsigned long index) const override;
+            unsigned long getSensorID(std::string name) const override;
 
             /**
              * \brief Removes a sensor from the simulation.
              *
              * \param index The unique id of the sensor to remove form the simulation.
              */
-            virtual void removeSensor(unsigned long index);
+            virtual void removeSensor(unsigned long index) override;
 
             /**
              * \brief This function returns the SimSensor object for a given index.
@@ -120,8 +121,7 @@ namespace mars
              *
              * \returns Returns a pointer to the corresponding sensor object.
              */
-            virtual interfaces::BaseSensor* getSimSensor(unsigned long index) const;
-            unsigned long getSensorID(std::string name) const;
+            virtual interfaces::BaseSensor* getSimSensor(unsigned long index) const override;
 #if 0
 
             /**
@@ -151,14 +151,14 @@ namespace mars
              *
              * \param index The index of the sensor to get the data
              */
-            virtual int getSensorData(unsigned long id, interfaces::sReal **data) const;
+            virtual int getSensorData(unsigned long id, interfaces::sReal **data) const override;
 
             /**
              *\brief Returns the number of sensors that are currently present in the simulation.
              *
              *\return The number of all sensors.
              */
-            virtual int getSensorCount(void) const;
+            virtual int getSensorCount(void) const override;
 
             /**
              * \brief Destroys all sensors in the simulation.
@@ -169,7 +169,7 @@ namespace mars
              * \param clear_all Indicates if the reload sensors should
              * be destroyed as well. If set to \c false they are left intact.
              */
-            virtual void clearAllSensors(bool clear_all = false);
+            virtual void clearAllSensors(bool clear_all = false) override;
 
             /**
              * \brief This function reloads all sensors from a temporary sensor pool.
@@ -177,7 +177,7 @@ namespace mars
              * \details All sensors that have been added with \c reload value as \c true
              * are added back to the simulation again with a \c reload value of \c true.
              */
-            virtual void reloadSensors(void) ;
+            virtual void reloadSensors(void) override;
 
             //virtual void addSensorType(const std::string &name,  BaseSensor* (*func)(interfaces::ControlCenter*,const unsigned long int,const std::string,QDomElement*));
             //void addSensorType(const std::string &name, BaseSensor* (*func)(interfaces::ControlCenter*,const unsigned long int, const std::string, mars::ConfigMap*));
@@ -186,11 +186,9 @@ namespace mars
             //void addQdomParser(const std::string, BaseConfig* (*)(QDomElement*));
             void addMarsParser(const std::string, interfaces::BaseConfig* (*)(interfaces::ControlCenter*, configmaps::ConfigMap*));
 
-
             //virtual BaseSensor* createAndAddSensor(const std::string &type_name, std::string name="",QDomElement* config=0, bool reload=true);
-            virtual unsigned long createAndAddSensor(configmaps::ConfigMap* config, bool reload=true);
-            virtual unsigned long createAndAddSensor(const std::string &type_name,interfaces::BaseConfig *config, bool reload=false);
-
+            virtual unsigned long createAndAddSensor(configmaps::ConfigMap* config, bool reload=true) override;
+            virtual unsigned long createAndAddSensor(const std::string &type_name,interfaces::BaseConfig *config, bool reload=false) override;
 
         private:
 
