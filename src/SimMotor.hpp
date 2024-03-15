@@ -104,6 +104,8 @@ namespace mars
             interfaces::sReal getI() const;
             interfaces::sReal getD() const;
 
+            void getDataBrokerNames(std::string *groupName, std::string *dataName) const;
+
             // setters
             void setPosition(interfaces::sReal angle);
             void setMaxEffort(interfaces::sReal effort);
@@ -121,20 +123,19 @@ namespace mars
             void setControlValue(interfaces::sReal value);
             void setMimic(interfaces::sReal multiplier, interfaces::sReal offset);
 
-            // methods inherited from data broker interfaces
-            void getDataBrokerNames(std::string *groupName, std::string *dataName) const;
 
+            // methods inherited from data broker interfaces
             virtual void produceData(const data_broker::DataInfo &info,
                                      data_broker::DataPackage *package,
-                                     int callbackParam);
+                                     int callbackParam) override;
             virtual void receiveData(const data_broker::DataInfo &info,
                                      const data_broker::DataPackage &package,
-                                     int callbackParam);
+                                     int callbackParam) override;
 
             // methods inherited from mars::interfaces::ConfigMapInterface
-            virtual configmaps::ConfigMap getConfigMap() const;
-            virtual std::vector<std::string> getEditPattern(const std::string& basePath) const;
-            virtual void edit(const std::string& configPath, const std::string& value);
+            virtual configmaps::ConfigMap getConfigMap() const override;
+            virtual std::vector<std::string> getEditPattern(const std::string& basePath) const override;
+            virtual void edit(const std::string& configPath, const std::string& value) override;
 
             // methods to be deprecated in future MARS versions
             interfaces::sReal getMotorMaxForce() const __attribute__ ((deprecated("use getMaxEffort")));
@@ -152,7 +153,6 @@ namespace mars
             void setDesiredMotorVelocity(interfaces::sReal value) __attribute__ ((deprecated("if use dc motor setControlValue otherwise you could use setMaxVelocity?")));
             void setValueDesiredVelocity(interfaces::sReal value) __attribute__ ((deprecated("if use dc motor setControlValue otherwise you could use setMaxVelocity?")));
             void refreshAngle() __attribute__ ((deprecated("use refreshPosition(s)")));
-
 
         private:
             // typedefs for function pointers
