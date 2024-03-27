@@ -593,48 +593,9 @@ namespace mars
                                 const std::string &value)
         {
             MutexLocker locker(&iMutex);
-            map<unsigned long, SimMotor*>::iterator iter = simMotors.find(id);
-            if(iter != simMotors.end())
+            if (simMotors.count(id) > 0)
             {
-                if(matchPattern("*/p", key))
-                {
-                    iter->second->setP(atof(value.c_str()));
-                }
-                if(matchPattern("*/i", key))
-                {
-                    iter->second->setI(atof(value.c_str()));
-                }
-                if(matchPattern("*/d", key))
-                {
-                    iter->second->setI(atof(value.c_str()));
-                }
-                if(matchPattern("*/maxSpeed", key))
-                {
-                    iter->second->setMaxSpeed(atof(value.c_str()));
-                }
-                if(matchPattern("*/maxEffort", key))
-                {
-                    iter->second->setMaxEffort(atof(value.c_str()));
-                }
-                if(matchPattern("*/minValue", key))
-                {
-                    iter->second->setMinValue(atof(value.c_str()));
-                }
-                if(matchPattern("*/maxValue", key))
-                {
-                    iter->second->setMaxValue(atof(value.c_str()));
-                }
-                if(matchPattern("*/type", key))
-                {
-                    if(value == "DC" || value == "2")
-                    {
-                        iter->second->setType(MOTOR_TYPE_VELOCITY);
-                    }
-                    else
-                    {
-                        iter->second->setType(MOTOR_TYPE_POSITION);
-                    }
-                }
+                simMotors.at(id)->edit(key, value);
             }
         }
 
