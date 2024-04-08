@@ -40,7 +40,6 @@ namespace mars
              * \param c The pointer to the ControlCenter of the simulation.
              */
             MotorManager(interfaces::ControlCenter *c);
-            MotorManager(interfaces::ControlCenter *c, std::shared_ptr<envire::core::EnvireGraph> envireGraph);
 
             /**
              * \brief Destructor.
@@ -295,8 +294,6 @@ namespace mars
                               const std::string &value) override;
 
         private:
-            std::shared_ptr<envire::core::EnvireGraph> envireGraph;
-
             //! the id of the next motor that is added to the simulation
             unsigned long next_motor_id;
 

@@ -17,8 +17,6 @@
 #include <mars_utils/mathUtils.h>
 #include <mars_utils/misc.h>
 
-#include <envire_core/graph/EnvireGraph.hpp>
-#include <envire_core/items/Item.hpp>
 
 namespace mars
 {
@@ -35,14 +33,6 @@ namespace mars
          * \param c The pointer to the ControlCenter of the simulation.
          */
         MotorManager::MotorManager(ControlCenter *c)
-        {
-            envireGraph = ControlCenter::envireGraph;
-            control = c;
-            next_motor_id = 1;
-        }
-
-        MotorManager::MotorManager(ControlCenter *c,
-                                   std::shared_ptr<envire::core::EnvireGraph> envireGraph) : envireGraph(envireGraph)
         {
             control = c;
             next_motor_id = 1;
@@ -79,16 +69,6 @@ namespace mars
             newMotor->setSMotor(*motorS);
             iMutex.lock();
             simMotors[newMotor->getIndex()] = newMotor;
-
-            // TODO: temporarly add sim motor into the graph
-            // TODO: THIS IS DIRTY and QUICK implementation
-            // TODO: we have to reorganise the motormanager, create BaseMotor, how it was done for BaseSennsor
-            // dont store SimMotor in the class, it will be in the graph
-            // we can replace it with the similar structure as DynamicObjectItem: BaseSensorItem
-            std::shared_ptr<SimMotor> baseMotor_ptr;
-            baseMotor_ptr.reset(newMotor);
-            envire::core::Item<std::shared_ptr<SimMotor>>::Ptr motorItemPtr(new envire::core::Item<std::shared_ptr<SimMotor>>(baseMotor_ptr));
-            envireGraph->addItemToFrame(frame, motorItemPtr);
             iMutex.unlock();
             if(control)
             {
