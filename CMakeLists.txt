@@ -61,6 +61,7 @@ set(SOURCES_H
        src/SimMotor.hpp
        src/MotorManager.hpp
        src/SensorManager.hpp
+       src/JointManager.hpp
        src/CollisionManager.hpp
        src/AbsolutePoseExtender.hpp
 )
@@ -73,8 +74,11 @@ set(TARGET_SRC
        src/Simulator.cpp
        src/SubWorld.cpp
        src/SimMotor.cpp
+       src/SimJoint.cpp
+       src/SimNode.cpp
        src/MotorManager.cpp
        src/SensorManager.cpp
+       src/JointManager.cpp
        src/sensors/CameraSensor.cpp
        src/sensors/RaySensor.cpp
        src/CollisionManager.cpp

@@ -17,6 +17,7 @@
 #include "Simulator.hpp"
 #include "MotorManager.hpp"
 #include "SensorManager.hpp"
+#include "JointManager.hpp"
 
 //#include "PhysicsMapper.h"
 
@@ -161,7 +162,10 @@ namespace mars
 
 
             ControlCenter::motors = std::shared_ptr<MotorManager>(new MotorManager(control));
+            ControlCenter::joints = std::make_shared<JointManager>(control);
             control->sensors = new SensorManager(control);
+
+            ControlCenter::jointIDManager = std::make_shared<IDManager>();
 
             // todo: add worldphysicsLoaderInterface to mars_interfaces
 
