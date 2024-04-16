@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <envire_core/items/ItemBase.hpp> // FrameId typedef
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/JointInterface.h>
 #include <mars_interfaces/sim/JointManagerInterface.h>
@@ -73,10 +74,12 @@ namespace mars
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
       mutable utils::Mutex iMutex;
+
       std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
       std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName) const;
-      std::list<interfaces::JointData>::iterator getReloadJoint(unsigned long id);
+      std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const;
 
+      std::list<interfaces::JointData>::iterator getReloadJoint(unsigned long id);
     };
   } // end of namespace core
 } // end of namespace mars

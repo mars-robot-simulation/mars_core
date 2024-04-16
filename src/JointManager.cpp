@@ -347,17 +347,14 @@ namespace mars
 
     unsigned long JointManager::getIDByNodeIDs(unsigned long id1, unsigned long id2)
     {
-      throw std::logic_error("getIDByNodeIDs not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
-
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++)
-      //   if((iter->second->getNodeId() == id1 &&
-      //       iter->second->getNodeId(2) == id2) ||
-      //      (iter->second->getNodeId() == id2 &&
-      //       iter->second->getNodeId(2) == id1)) {
-      //     return iter->first;
-      //   }
+      const envire::core::FrameId frameId1 = ControlCenter::nodeIDManager->getName(id1);
+      const envire::core::FrameId frameId2 = ControlCenter::nodeIDManager->getName(id2);
+      if (auto jointInterface = getJointInterface(frameId1, frameId2).lock())
+      {
+        std::string jointName;
+        jointInterface->getName(&jointName);
+        return ControlCenter::jointIDManager->getID(jointName);
+      }
       return 0;
     }
 
@@ -450,92 +447,95 @@ namespace mars
       }
     }
 
+    // todo: Is everything previously available covered by the delegation to Joint::edit?
     // todo: do we need to edit angle offsets
     void JointManager::edit(interfaces::JointId id, const std::string &key, const std::string &value)
+    {
+      if (auto jointInterface = getJointInterface(id).lock())
       {
-      MutexLocker locker(&iMutex);
-      
-      //   if(matchPattern("*/type", key)) {
-      //   }
-      //   else if(matchPattern("*/axis1/*", key)) {
-      //     double v = atof(value.c_str());
-      //     Vector axis = iter->second->getAxis();
-      //     if(key[key.size()-1] == 'x') axis.x() = v;
-      //     else if(key[key.size()-1] == 'y') axis.y() = v;
-      //     else if(key[key.size()-1] == 'z') axis.z() = v;
-      //     iter->second->setAxis(axis);
-      //   }
-      //   else if(matchPattern("*/lowStopAxis1", key)) {
-      //     iter->second->setLowerLimit(atof(value.c_str()));
-      //   }
-      //   else if(matchPattern("*/highStopAxis1", key)) {
-      //     iter->second->setUpperLimit(atof(value.c_str()));
-      //   }
-      //   else if(matchPattern("*/damping_const_constraint_axis1", key)) {
-      //     JointData jd = iter->second->getSJoint();
-      //     jd.damping_const_constraint_axis1 = atof(value.c_str());
-      //     iter->second->setSDParams(&jd);
-      //   }
-      //   else if(matchPattern("*/spring_const_constraint_axis1", key)) {
-      //     JointData jd = iter->second->getSJoint();
-      //     jd.spring_const_constraint_axis1 = atof(value.c_str());
-      //     iter->second->setSDParams(&jd);
-      //   }
-      //   else if(matchPattern("*/axis2/*", key)) {
-      //     double v = atof(value.c_str());
-      //     Vector axis = iter->second->getAxis(2);
-      //     if(key[key.size()-1] == 'x') axis.x() = v;
-      //     else if(key[key.size()-1] == 'y') axis.y() = v;
-      //     else if(key[key.size()-1] == 'z') axis.z() = v;
-      //     iter->second->setAxis(axis, 2);
-      //   }
-      //   else if(matchPattern("*/lowStopAxis2", key)) {
-      //     iter->second->setLowerLimit(atof(value.c_str()), 2);
-      //   }
-      //   else if(matchPattern("*/highStopAxis2", key)) {
-      //     iter->second->setUpperLimit(atof(value.c_str()), 2);
-      //   }
-      //   else if(matchPattern("*/damping_const_constraint_axis2", key)) {
-      //     JointData jd = iter->second->getSJoint();
-      //     jd.damping_const_constraint_axis2 = atof(value.c_str());
-      //     iter->second->setSDParams(&jd);
-      //   }
-      //   else if(matchPattern("*/spring_const_constraint_axis2", key)) {
-      //     JointData jd = iter->second->getSJoint();
-      //     jd.spring_const_constraint_axis2 = atof(value.c_str());
-      //     iter->second->setSDParams(&jd);
-      //   }
-      //   else if(matchPattern("*/anchorpos", key)) {
-      //     NodeId id1 = iter->second->getNodeId();
-      //     NodeId id2 = iter->second->getNodeId(2);
-      //     if(value == "node1") {
-      //       iter->second->setAnchor(control->nodes->getPosition(id1));
-      //     }
-      //     else if(value == "node2") {
-      //       iter->second->setAnchor(control->nodes->getPosition(id2));
-      //     }
-      //     else if(value == "center") {
-      //       Vector pos1 = control->nodes->getPosition(id1);
-      //       Vector pos2 = control->nodes->getPosition(id2);
-      //       iter->second->setAnchor((pos1 + pos2) / 2.);
-      //     }
-      //   }
-      //   else if(matchPattern("*/anchor/*", key)) {
-      //     double v = atof(value.c_str());
-      //     Vector anchor = iter->second->getAnchor();
-      //     if(key[key.size()-1] == 'x') anchor.x() = v;
-      //     else if(key[key.size()-1] == 'y') anchor.y() = v;
-      //     else if(key[key.size()-1] == 'z') anchor.z() = v;
-      //     iter->second->setAnchor(anchor);
-
-      //   }
-      //   else if(matchPattern("*/invertAxis", key)) {
-      //     ConfigItem b;
-      //     b = key;
-      //     iter->second->setInvertAxis(b);
-      //   }
-      // }
+        jointInterface->edit(key, value);
+      }
     }
+    //   if(matchPattern("*/type", key)) {
+    //   }
+    //   else if(matchPattern("*/axis1/*", key)) {
+    //     double v = atof(value.c_str());
+    //     Vector axis = iter->second->getAxis();
+    //     if(key[key.size()-1] == 'x') axis.x() = v;
+    //     else if(key[key.size()-1] == 'y') axis.y() = v;
+    //     else if(key[key.size()-1] == 'z') axis.z() = v;
+    //     iter->second->setAxis(axis);
+    //   }
+    //   else if(matchPattern("*/lowStopAxis1", key)) {
+    //     iter->second->setLowerLimit(atof(value.c_str()));
+    //   }
+    //   else if(matchPattern("*/highStopAxis1", key)) {
+    //     iter->second->setUpperLimit(atof(value.c_str()));
+    //   }
+    //   else if(matchPattern("*/damping_const_constraint_axis1", key)) {
+    //     JointData jd = iter->second->getSJoint();
+    //     jd.damping_const_constraint_axis1 = atof(value.c_str());
+    //     iter->second->setSDParams(&jd);
+    //   }
+    //   else if(matchPattern("*/spring_const_constraint_axis1", key)) {
+    //     JointData jd = iter->second->getSJoint();
+    //     jd.spring_const_constraint_axis1 = atof(value.c_str());
+    //     iter->second->setSDParams(&jd);
+    //   }
+    //   else if(matchPattern("*/axis2/*", key)) {
+    //     double v = atof(value.c_str());
+    //     Vector axis = iter->second->getAxis(2);
+    //     if(key[key.size()-1] == 'x') axis.x() = v;
+    //     else if(key[key.size()-1] == 'y') axis.y() = v;
+    //     else if(key[key.size()-1] == 'z') axis.z() = v;
+    //     iter->second->setAxis(axis, 2);
+    //   }
+    //   else if(matchPattern("*/lowStopAxis2", key)) {
+    //     iter->second->setLowerLimit(atof(value.c_str()), 2);
+    //   }
+    //   else if(matchPattern("*/highStopAxis2", key)) {
+    //     iter->second->setUpperLimit(atof(value.c_str()), 2);
+    //   }
+    //   else if(matchPattern("*/damping_const_constraint_axis2", key)) {
+    //     JointData jd = iter->second->getSJoint();
+    //     jd.damping_const_constraint_axis2 = atof(value.c_str());
+    //     iter->second->setSDParams(&jd);
+    //   }
+    //   else if(matchPattern("*/spring_const_constraint_axis2", key)) {
+    //     JointData jd = iter->second->getSJoint();
+    //     jd.spring_const_constraint_axis2 = atof(value.c_str());
+    //     iter->second->setSDParams(&jd);
+    //   }
+    //   else if(matchPattern("*/anchorpos", key)) {
+    //     NodeId id1 = iter->second->getNodeId();
+    //     NodeId id2 = iter->second->getNodeId(2);
+    //     if(value == "node1") {
+    //       iter->second->setAnchor(control->nodes->getPosition(id1));
+    //     }
+    //     else if(value == "node2") {
+    //       iter->second->setAnchor(control->nodes->getPosition(id2));
+    //     }
+    //     else if(value == "center") {
+    //       Vector pos1 = control->nodes->getPosition(id1);
+    //       Vector pos2 = control->nodes->getPosition(id2);
+    //       iter->second->setAnchor((pos1 + pos2) / 2.);
+    //     }
+    //   }
+    //   else if(matchPattern("*/anchor/*", key)) {
+    //     double v = atof(value.c_str());
+    //     Vector anchor = iter->second->getAnchor();
+    //     if(key[key.size()-1] == 'x') anchor.x() = v;
+    //     else if(key[key.size()-1] == 'y') anchor.y() = v;
+    //     else if(key[key.size()-1] == 'z') anchor.z() = v;
+    //     iter->second->setAnchor(anchor);
+
+    //   }
+    //   else if(matchPattern("*/invertAxis", key)) {
+    //     ConfigItem b;
+    //     b = key;
+    //     iter->second->setInvertAxis(b);
+    //   }
+    // }
 
     std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId) const
     {
@@ -556,10 +556,9 @@ namespace mars
           return;
         }
 
-        const size_t itemCount = ControlCenter::envireGraph->getItemCount<envire::core::Item<interfaces::JointInterfaceItem>>(node);
-        for (size_t i = 0; i < itemCount; ++i)
+        const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
+        for (auto item = range.first; item != range.second; item++)
         {
-          auto item = ControlCenter::envireGraph->getItem<envire::core::Item<interfaces::JointInterfaceItem>>(node);
           std::string currentJointName;
           item->getData().jointInterface->getName(&currentJointName);
           if (jointName == currentJointName)
@@ -573,6 +572,33 @@ namespace mars
       ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
 
       return foundJoint;
+    }
+
+    std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const
+    {
+      // Ensure that frames are directly connected.
+      const bool parent0 = ControlCenter::envireGraph->containsEdge(linkedFrame0, linkedFrame1);
+      const bool parent1 = ControlCenter::envireGraph->containsEdge(linkedFrame1, linkedFrame0);
+      if (!parent0 && !parent1)
+      {
+        throw std::logic_error((std::string{"Tried getting Joint between unconnected frames \""} + linkedFrame0 + "\" and \"" + linkedFrame1 + "\".").c_str());
+      }
+
+      const envire::core::FrameId& parentFrame = parent0 ? linkedFrame0 : linkedFrame1;
+      const envire::core::FrameId& childFrame = parent0 ? linkedFrame1 : linkedFrame0;
+
+      const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(childFrame);
+      for (auto item = range.first; item != range.second; item++)
+      {
+        auto configMap = item->getData().jointInterface->getConfigMap();
+        if (configMap["parent_link_name"] == std::string{parentFrame})
+        {
+          // This assumes there is maximally one joint between each pair of frames.
+          return item->getData().jointInterface;
+        }
+      }
+
+      throw std::logic_error((std::string{"There is no Joint between the frames \""} + linkedFrame0 + "\" and \"" + linkedFrame1 + "\".").c_str());
     }
   } // end of namespace core
 } // end of namespace mars
