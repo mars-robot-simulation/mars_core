@@ -161,11 +161,12 @@ namespace mars
             //checkOptionalDependency("envire_mls_tests");
 
 
-            ControlCenter::motors = std::shared_ptr<MotorManager>(new MotorManager(control));
+            ControlCenter::motors = std::make_shared<MotorManager>(control);
             ControlCenter::joints = std::make_shared<JointManager>(control);
             control->sensors = new SensorManager(control);
 
-            ControlCenter::jointIDManager = std::make_shared<IDManager>();
+            ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
+            ControlCenter::nodeIDManager = std::unique_ptr<IDManager>(new IDManager{});
 
             // todo: add worldphysicsLoaderInterface to mars_interfaces
 
