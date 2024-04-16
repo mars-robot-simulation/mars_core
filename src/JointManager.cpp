@@ -17,6 +17,7 @@
 
 #include <data_broker/DataBrokerInterface.h>
 #include <mars_interfaces/sim/JointInterface.h>
+#include <mars_interfaces/sim/MotorManagerInterface.h>
 
 #include <mars_utils/misc.h>
 #include <mars_utils/mathUtils.h>
@@ -54,19 +55,17 @@ namespace mars
 
     void JointManager::editJoint(JointData *jointS)
     {
-      MutexLocker locker(&iMutex);
-      throw std::logic_error("editJoint not implemented yet");
-      // TODO: Find by name in graph; edit if found
-      // std::map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter = simJoints.find(jointS->index);
-      // if (iter != simJoints.end()) {
-      //   iter->second->setAnchor(jointS->anchor);
-      //   iter->second->setAxis(jointS->axis1);
-      //   iter->second->setAxis(jointS->axis2, 2);
-      //   iter->second->setLowerLimit(jointS->lowStopAxis1);
-      //   iter->second->setUpperLimit(jointS->highStopAxis1);
-      //   iter->second->setLowerLimit(jointS->lowStopAxis2, 2);
-      //   iter->second->setUpperLimit(jointS->highStopAxis2, 2);
-      // }
+      const unsigned int& jointId = jointS->index;
+      if (auto jointInterface = getJointInterface(jointS->index).lock())
+      {
+        jointInterface->setAnchor(jointS->anchor);
+        jointInterface->setAxis(jointS->axis1);
+        jointInterface->setAxis2(jointS->axis2);
+        jointInterface->setLowStop(jointS->lowStopAxis1);
+        jointInterface->setLowStop2(jointS->lowStopAxis2);
+        jointInterface->setHighStop(jointS->highStopAxis1);
+        jointInterface->setHighStop2(jointS->highStopAxis2);
+      }
     }
 
     void JointManager::getListJoints(std::vector<core_objects_exchange>* jointList)
@@ -98,37 +97,28 @@ namespace mars
 
     const JointData JointManager::getFullJoint(unsigned long index)
     {
-      MutexLocker locker(&iMutex);
-
-      throw std::logic_error("getFullJoint not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter = simJoints.find(index);
-      // if (iter != simJoints.end())
-      //   return iter->second->getSJoint();
-      // else {
-      //   char msg[128];
-      //   sprintf(msg, "could not find joint with index: %lu", index);
-      //   throw std::runtime_error(msg);
-      // }
+      if (auto jointInterface = getJointInterface(index).lock())
+      {
+        JointData jointData;
+        // TODO: Create JointData from jointInterface
+        throw std::logic_error("getFullJoint not implemented yet");
+        return jointData;
+      }
+      throw std::runtime_error((std::string{"Could not find joint with index "} + std::to_string(index)).c_str());
     }
 
     void JointManager::removeJoint(unsigned long index)
     {
+      const MutexLocker locker{&iMutex};
+      auto jointInterfaceItemPtr = getItemBasePtr(index);
+      ControlCenter::jointIDManager->removeEntry(index);
+      ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
+      ControlCenter::motors->removeJointFromMotors(index);
 
-      throw std::logic_error("removeJoint not implemented yet");
-      // std::shared_ptr<SimJoint> tmpJoint = 0;
-      // MutexLocker locker(&iMutex);
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter = simJoints.find(index);
-
-      // if (iter != simJoints.end()) {
-      //   tmpJoint = iter->second;
-      //   simJoints.erase(iter);
-      // }
-
-      // control->motors->removeJointFromMotors(index);
-
-      // if (tmpJoint)
-      //   tmpJoint.reset();
-      // control->sim->sceneHasChanged(false);
+      // TODO: Remove envire joint item?
+      // TODO: Invalidate joint?
+      // TODO: Scene changed?
+      //  control->sim->sceneHasChanged(false);
     }
 
     void JointManager::removeJointByIDs(unsigned long id1, unsigned long id2)
@@ -537,6 +527,53 @@ namespace mars
     //   }
     // }
 
+
+    envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const
+    {
+      const std::string jointName{ControlCenter::jointIDManager->getName(jointId)};
+      return getItemBasePtr(jointName);
+    }
+
+    envire::core::ItemBase::Ptr JointManager::getItemBasePtr(const std::string& jointName) const
+    {
+      // TODO "world" as global define
+      const auto& rootVertex = ControlCenter::envireGraph->getVertex("world");
+      envire::core::ItemBase::Ptr foundItem = nullptr;
+
+      auto jointInterfaceSearchFunctor = [&foundItem, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+      {
+        // a item with the given name is already found
+        if (foundItem)
+        {
+          return;
+        }
+
+        // the current frame has no joint items
+        const size_t numItems = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+        if (numItems == 0)
+        {
+          return;
+        }
+
+        const std::type_index typeIndex{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
+        const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+        for (auto item : items)
+        {
+          std::string currentJointName;
+          auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
+          jointItemPtr->getData().jointInterface->getName(&currentJointName);
+          if (jointName == currentJointName)
+          {
+            foundItem = item;
+            return;
+          }
+        }
+      };
+
+      ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
+      return foundItem;
+    }
+
     std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId) const
     {
       const std::string jointName{ControlCenter::jointIDManager->getName(jointId)};
@@ -548,6 +585,7 @@ namespace mars
       // TODO "world" as global define
       const auto& rootVertex = ControlCenter::envireGraph->getVertex("world");
       std::shared_ptr<interfaces::JointInterface> foundJoint;
+
       auto jointInterfaceSearchFunctor = [&foundJoint, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
       {
         // a joint with the given name is already found
@@ -570,7 +608,6 @@ namespace mars
       };
 
       ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
-
       return foundJoint;
     }
 

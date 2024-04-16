@@ -534,6 +534,7 @@ namespace mars
         {
             map<unsigned long, SimMotor*>::iterator iter;
             MutexLocker locker(&iMutex);
+            throw std::logic_error("removeJointFromMotors not implemented yet.");
             // for (iter = simMotors.begin(); iter != simMotors.end(); iter++)
             //     if (iter->second->getJointIndex() == joint_index)
             //         iter->second->attachJoint(0);
