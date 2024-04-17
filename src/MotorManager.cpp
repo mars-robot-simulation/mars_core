@@ -49,7 +49,7 @@ namespace mars
          *
          * \return The unique id of the newly added motor.
          */
-        unsigned long MotorManager::addMotor(MotorData *motorS, std::weak_ptr<JointInterface> joint, std::string frame, bool reload)
+        unsigned long MotorManager::addMotor(MotorData *motorS, std::weak_ptr<JointInterface> joint, bool reload)
         {
             iMutex.lock();
             motorS->index = next_motor_id;

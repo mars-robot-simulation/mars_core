@@ -50,6 +50,8 @@ namespace mars
              * \brief Add a motor to the simulation.
              *
              * \param motorS A pointer to the MotorData that defines the new motor.
+             * 
+             * \param joint Reference to the joint being acuated by the motor.
              *
              * \param reload Used internally by the simulation. The
              * default value is \c false. If this param is set to \c true the new motor
@@ -57,8 +59,7 @@ namespace mars
              *
              * \return The unique id of the newly added motor.
              */
-            //virtual unsigned long addMotor(interfaces::MotorData *motorS, interfaces::JointInterface *joint, bool reload = false);
-            virtual unsigned long addMotor(interfaces::MotorData *motorS, std::weak_ptr<interfaces::JointInterface> joint, std::string frame, bool reload =  false) override;
+            virtual unsigned long addMotor(interfaces::MotorData *motorS, std::weak_ptr<interfaces::JointInterface> joint, bool reload =  false) override;
             /**
              *\brief Returns the number of motors that are currently present in the simulation.
              *
