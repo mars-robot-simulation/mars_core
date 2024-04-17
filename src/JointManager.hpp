@@ -70,6 +70,7 @@ namespace mars
       virtual void edit(interfaces::JointId id, const std::string &key,
                         const std::string &value);
 
+      std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
     private:
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
@@ -77,7 +78,6 @@ namespace mars
 
       envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId) const;
       envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName) const;
-      std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
       std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName) const;
       std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const;
 
