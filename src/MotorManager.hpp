@@ -58,7 +58,7 @@ namespace mars
              * \return The unique id of the newly added motor.
              */
             //virtual unsigned long addMotor(interfaces::MotorData *motorS, interfaces::JointInterface *joint, bool reload = false);
-            virtual unsigned long addMotor(interfaces::MotorData *motorS, interfaces::JointInterface *joint, std::string frame, bool reload =  false) override;
+            virtual unsigned long addMotor(interfaces::MotorData *motorS, std::weak_ptr<interfaces::JointInterface> joint, std::string frame, bool reload =  false) override;
             /**
              *\brief Returns the number of motors that are currently present in the simulation.
              *

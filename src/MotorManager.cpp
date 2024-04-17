@@ -49,7 +49,7 @@ namespace mars
          *
          * \return The unique id of the newly added motor.
          */
-        unsigned long MotorManager::addMotor(MotorData *motorS, JointInterface *joint, std::string frame, bool reload)
+        unsigned long MotorManager::addMotor(MotorData *motorS, std::weak_ptr<JointInterface> joint, std::string frame, bool reload)
         {
             iMutex.lock();
             motorS->index = next_motor_id;
@@ -532,12 +532,7 @@ namespace mars
          */
         void MotorManager::removeJointFromMotors(unsigned long joint_index)
         {
-            map<unsigned long, SimMotor*>::iterator iter;
-            MutexLocker locker(&iMutex);
-            throw std::logic_error("removeJointFromMotors not implemented yet.");
-            // for (iter = simMotors.begin(); iter != simMotors.end(); iter++)
-            //     if (iter->second->getJointIndex() == joint_index)
-            //         iter->second->attachJoint(0);
+            // This is handled indirectly by the weak_ptr to the joint being expired
         }
 
         void MotorManager::getDataBrokerNames(unsigned long jointId,

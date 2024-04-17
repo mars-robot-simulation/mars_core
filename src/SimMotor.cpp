@@ -25,7 +25,7 @@ namespace mars
                         (*c)[2]*fabs((*velocity)) + (*c)[3]);
         }
 
-        SimMotor::SimMotor(ControlCenter *c, const MotorData &sMotor_, JointInterface *joint)
+        SimMotor::SimMotor(ControlCenter *c, const MotorData &sMotor_, std::weak_ptr<JointInterface> joint)
             : control(c), joint(joint)
         {
 
@@ -362,24 +362,29 @@ namespace mars
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
-            if(sMotor.config.hasKey("maxEffortControl") and
+            if(sMotor.config.hasKey("maxEffortControl") &&
                (bool)sMotor.config["maxEffortControl"] == true)
             {
                 if(controlValue >= 0)
                 {
                     velocity = 10000;
-                } else {
+                } else 
+                {
                     velocity = -10000;
                 }
-                if(sMotor.axis == 1)
+                if (auto validJoint = joint.lock())
                 {
-                    joint->setForceLimit(fabs(controlValue));
+                    if(sMotor.axis == 1)
+                    {
+                        validJoint->setForceLimit(fabs(controlValue));
+                    }
+                    else
+                    {
+                        validJoint->setForceLimit2(fabs(controlValue));
+                    }
                 }
-                else
-                {
-                    joint->setForceLimit2(fabs(controlValue));
-                }
-            } else
+            }
+            else
             {
                 effort = controlValue;
             }
@@ -450,13 +455,16 @@ namespace mars
 
             if(sMotor.config.hasKey("spring"))
             {
-                if(axis == 1)
+                if (auto validJoint = joint.lock())
                 {
-                    joint->setForceLimit(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
-                }
-                else
-                {
-                    joint->setForceLimit2(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
+                    if(axis == 1)
+                    {
+                        validJoint->setForceLimit(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
+                    }
+                    else
+                    {
+                        validJoint->setForceLimit2(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
+                    }
                 }
             }
         }
@@ -481,7 +489,10 @@ namespace mars
                 //Vector v;
                 //joint->getAxisTorque(&v);
                 //sensedEffort = v.norm();
-                sensedEffort = joint->getMotorTorque();
+                if (auto validJoint = joint.lock())
+                {
+                    sensedEffort = validJoint->getMotorTorque();
+                }
                 // call control function for current motor type
                 //fprintf(stderr, "run controller - control value: %g\n", controlValue);
                 (this->*runController)(time_ms);
@@ -515,7 +526,10 @@ namespace mars
                 // pass speed (position/speed control) or torque to the attached
                 // joint's setSpeed1/2 or setTorque1/2 methods
                 //joint->setVelocity(controlParameter);
-                (joint->*setJointControlParameter)(*controlParameter);
+                if (auto validJoint = joint.lock())
+                {
+                    ((*validJoint).*setJointControlParameter)(*controlParameter);
+                }
                 //for mimic in myJoint->mimics:
                 //  mimic->*setJointControlParameter)(mimic_multiplier*controlParameter, axis);
             }
@@ -583,16 +597,22 @@ namespace mars
 
         void SimMotor::refreshPosition()
         {
-            if(sMotor.axis == 1)
-                position1 = joint->getPosition();
-            else
-                position2 = joint->getPosition2();
+            if (auto validJoint = joint.lock())
+            {
+                if(sMotor.axis == 1)
+                    position1 = validJoint->getPosition();
+                else
+                    position2 = validJoint->getPosition2();
+            }
         }
 
         void SimMotor::refreshPositions()
         {
-            position1 = joint->getPosition();
-            position2 = joint->getPosition2();
+            if (auto validJoint = joint.lock())
+            {
+                position1 = validJoint->getPosition();
+                position2 = validJoint->getPosition2();
+            }
         }
 
         void SimMotor::refreshAngle()
@@ -710,13 +730,16 @@ namespace mars
         void SimMotor::setMaxEffort(sReal force)
         {
             sMotor.maxEffort = force;
-            if(sMotor.axis == 1)
+            if (auto validJoint = joint.lock())
             {
-                joint->setForceLimit(sMotor.maxEffort);
-            }
-            else
-            {
-                joint->setForceLimit2(sMotor.maxEffort);
+                if(sMotor.axis == 1)
+                {
+                    validJoint->setForceLimit(sMotor.maxEffort);
+                }
+                else
+                {
+                    validJoint->setForceLimit2(sMotor.maxEffort);
+                }
             }
         }
 
@@ -884,13 +907,16 @@ namespace mars
             if(!effortMotor)
             {
                 //myJoint->attachMotor(sMotor.axis);
-                if(sMotor.axis == 1)
+                if (auto validJoint = joint.lock())
                 {
-                    joint->setForceLimit(sMotor.maxEffort);
-                }
-                else
-                {
-                    joint->setForceLimit2(sMotor.maxEffort);
+                    if(sMotor.axis == 1)
+                    {
+                        validJoint->setForceLimit(sMotor.maxEffort);
+                    }
+                    else
+                    {
+                        validJoint->setForceLimit2(sMotor.maxEffort);
+                    }
                 }
             }
         }
@@ -989,7 +1015,13 @@ namespace mars
 
         unsigned long SimMotor::getJointIndex(void) const
         {
-            return sMotor.jointIndex;
+            if (auto validJoint = joint.lock())
+            {
+                std::string jointName;           
+                validJoint->getName(&jointName);
+                return ControlCenter::jointIDManager->getID(jointName);
+            }
+            return 0;
         }
 
         std::string SimMotor::getJointName(void) const

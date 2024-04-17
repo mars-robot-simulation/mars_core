@@ -45,7 +45,7 @@ namespace mars
         public:
             SimMotor(interfaces::ControlCenter *control,
                      const interfaces::MotorData &sMotor,
-                     interfaces::JointInterface *joint);
+                     std::weak_ptr<interfaces::JointInterface> joint);
             ~SimMotor(void);
 
             void init(const std::string& name = "", interfaces::MotorType type = interfaces::MOTOR_TYPE_UNDEFINED);
@@ -166,7 +166,7 @@ namespace mars
             //std::shared_ptr<SimJoint>  myJoint, myPlayJoint;
             interfaces::ControlCenter *control;
             interfaces::MotorData sMotor;
-            interfaces::JointInterface *joint;
+            std::weak_ptr<interfaces::JointInterface> joint;
             interfaces::sReal time;
             interfaces::sReal lastVelocity, velocity, position1, position2, effort;
             interfaces::sReal sensedEffort;
