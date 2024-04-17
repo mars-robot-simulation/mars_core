@@ -9,6 +9,7 @@
 
 #include "SimMotor.hpp"
 #include "MotorManager.hpp"
+#include "JointManager.hpp"
 
 #include <stdexcept>
 
@@ -49,7 +50,7 @@ namespace mars
          *
          * \return The unique id of the newly added motor.
          */
-        unsigned long MotorManager::addMotor(MotorData *motorS, std::weak_ptr<JointInterface> joint, bool reload)
+        unsigned long MotorManager::addMotor(MotorData *motorS, bool reload)
         {
             iMutex.lock();
             motorS->index = next_motor_id;
@@ -63,6 +64,7 @@ namespace mars
                 iMutex.unlock();
             }
 
+            auto joint = std::dynamic_pointer_cast<JointManager>(ControlCenter::joints)->getJointInterface(motorS->jointIndex);
             SimMotor* newMotor = new SimMotor(control, *motorS, joint);
             //newMotor->attachJoint(control->joints->getSimJoint(motorS->jointIndex));
 
