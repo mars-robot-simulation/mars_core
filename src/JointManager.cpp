@@ -113,7 +113,6 @@ namespace mars
       auto jointInterfaceItemPtr = getItemBasePtr(index);
       ControlCenter::jointIDManager->removeEntry(index);
       ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
-      ControlCenter::motors->removeJointFromMotors(index);
 
       // TODO: Remove envire joint item?
       // TODO: Invalidate joint?
