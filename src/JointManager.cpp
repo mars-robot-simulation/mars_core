@@ -8,6 +8,9 @@
  */
 
 #include "JointManager.hpp"
+#ifndef SIM_CENTER_FRAME_NAME
+#define SIM_CENTER_FRAME_NAME "world"
+#endif
 
 #include <stdexcept>
 
@@ -44,12 +47,14 @@ namespace mars
 
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
+      const MutexLocker locker{&iMutex};
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
       return ControlCenter::jointIDManager->getID(jointS->name);
     }
 
     int JointManager::getJointCount()
     {
+      const MutexLocker locker{&iMutex};
       return ControlCenter::jointIDManager->size();
     }
 
@@ -115,7 +120,6 @@ namespace mars
       ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
       // TODO: Remove envire joint item?
-      // TODO: Invalidate joint?
       // TODO: Scene changed?
       //  control->sim->sceneHasChanged(false);
     }
@@ -315,6 +319,7 @@ namespace mars
 
     unsigned long JointManager::getID(const std::string& joint_name) const
     {
+      const MutexLocker locker{&iMutex};
       return ControlCenter::jointIDManager->getID(joint_name);
     }
 
@@ -436,8 +441,8 @@ namespace mars
       }
     }
 
-    // todo: Is everything previously available covered by the delegation to Joint::edit?
-    // todo: do we need to edit angle offsets
+    // TODO: Is everything previously available covered by the delegation to Joint::edit?
+    // TODO (old): do we need to edit angle offsets
     void JointManager::edit(interfaces::JointId id, const std::string &key, const std::string &value)
     {
       if (auto jointInterface = getJointInterface(id).lock())
@@ -445,87 +450,6 @@ namespace mars
         jointInterface->edit(key, value);
       }
     }
-    //   if(matchPattern("*/type", key)) {
-    //   }
-    //   else if(matchPattern("*/axis1/*", key)) {
-    //     double v = atof(value.c_str());
-    //     Vector axis = iter->second->getAxis();
-    //     if(key[key.size()-1] == 'x') axis.x() = v;
-    //     else if(key[key.size()-1] == 'y') axis.y() = v;
-    //     else if(key[key.size()-1] == 'z') axis.z() = v;
-    //     iter->second->setAxis(axis);
-    //   }
-    //   else if(matchPattern("*/lowStopAxis1", key)) {
-    //     iter->second->setLowerLimit(atof(value.c_str()));
-    //   }
-    //   else if(matchPattern("*/highStopAxis1", key)) {
-    //     iter->second->setUpperLimit(atof(value.c_str()));
-    //   }
-    //   else if(matchPattern("*/damping_const_constraint_axis1", key)) {
-    //     JointData jd = iter->second->getSJoint();
-    //     jd.damping_const_constraint_axis1 = atof(value.c_str());
-    //     iter->second->setSDParams(&jd);
-    //   }
-    //   else if(matchPattern("*/spring_const_constraint_axis1", key)) {
-    //     JointData jd = iter->second->getSJoint();
-    //     jd.spring_const_constraint_axis1 = atof(value.c_str());
-    //     iter->second->setSDParams(&jd);
-    //   }
-    //   else if(matchPattern("*/axis2/*", key)) {
-    //     double v = atof(value.c_str());
-    //     Vector axis = iter->second->getAxis(2);
-    //     if(key[key.size()-1] == 'x') axis.x() = v;
-    //     else if(key[key.size()-1] == 'y') axis.y() = v;
-    //     else if(key[key.size()-1] == 'z') axis.z() = v;
-    //     iter->second->setAxis(axis, 2);
-    //   }
-    //   else if(matchPattern("*/lowStopAxis2", key)) {
-    //     iter->second->setLowerLimit(atof(value.c_str()), 2);
-    //   }
-    //   else if(matchPattern("*/highStopAxis2", key)) {
-    //     iter->second->setUpperLimit(atof(value.c_str()), 2);
-    //   }
-    //   else if(matchPattern("*/damping_const_constraint_axis2", key)) {
-    //     JointData jd = iter->second->getSJoint();
-    //     jd.damping_const_constraint_axis2 = atof(value.c_str());
-    //     iter->second->setSDParams(&jd);
-    //   }
-    //   else if(matchPattern("*/spring_const_constraint_axis2", key)) {
-    //     JointData jd = iter->second->getSJoint();
-    //     jd.spring_const_constraint_axis2 = atof(value.c_str());
-    //     iter->second->setSDParams(&jd);
-    //   }
-    //   else if(matchPattern("*/anchorpos", key)) {
-    //     NodeId id1 = iter->second->getNodeId();
-    //     NodeId id2 = iter->second->getNodeId(2);
-    //     if(value == "node1") {
-    //       iter->second->setAnchor(control->nodes->getPosition(id1));
-    //     }
-    //     else if(value == "node2") {
-    //       iter->second->setAnchor(control->nodes->getPosition(id2));
-    //     }
-    //     else if(value == "center") {
-    //       Vector pos1 = control->nodes->getPosition(id1);
-    //       Vector pos2 = control->nodes->getPosition(id2);
-    //       iter->second->setAnchor((pos1 + pos2) / 2.);
-    //     }
-    //   }
-    //   else if(matchPattern("*/anchor/*", key)) {
-    //     double v = atof(value.c_str());
-    //     Vector anchor = iter->second->getAnchor();
-    //     if(key[key.size()-1] == 'x') anchor.x() = v;
-    //     else if(key[key.size()-1] == 'y') anchor.y() = v;
-    //     else if(key[key.size()-1] == 'z') anchor.z() = v;
-    //     iter->second->setAnchor(anchor);
-
-    //   }
-    //   else if(matchPattern("*/invertAxis", key)) {
-    //     ConfigItem b;
-    //     b = key;
-    //     iter->second->setInvertAxis(b);
-    //   }
-    // }
-
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const
     {
@@ -535,8 +459,7 @@ namespace mars
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(const std::string& jointName) const
     {
-      // TODO "world" as global define
-      const auto& rootVertex = ControlCenter::envireGraph->getVertex("world");
+      const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       envire::core::ItemBase::Ptr foundItem = nullptr;
 
       auto jointInterfaceSearchFunctor = [&foundItem, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
@@ -581,8 +504,7 @@ namespace mars
 
     std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName) const
     {
-      // TODO "world" as global define
-      const auto& rootVertex = ControlCenter::envireGraph->getVertex("world");
+      const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       std::shared_ptr<interfaces::JointInterface> foundJoint;
 
       auto jointInterfaceSearchFunctor = [&foundJoint, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
