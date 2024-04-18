@@ -458,7 +458,7 @@ namespace mars
 
     // TODO: Discuss: Is the format still up to date?
     // TODO: Refactor to make more readable.
-    std::string JointManager::constructDataBrokerName(const unsigned int jointId, const std::string& jointName)
+    std::string JointManager::constructDataBrokerName(const unsigned long jointId, const std::string& jointName)
     {
       char format[] = "Joints/%05lu_%s";
       int size = snprintf(0, 0, format, jointId, jointName.c_str());
@@ -471,13 +471,13 @@ namespace mars
     {
       std::string jointName;
       joint->getName(&jointName);
-      const unsigned int jointId = ControlCenter::jointIDManager->getID(jointName);
+      const unsigned long jointId = ControlCenter::jointIDManager->getID(jointName);
 
       auto configMap = joint->getConfigMap();
       const std::string parentNodeName = configMap["parent_link_name"];
       const std::string childNodeName = configMap["child_link_name"];
-      const unsigned int parentNodeId = ControlCenter::nodeIDManager->getID(parentNodeName);
-      const unsigned int childNodeId = ControlCenter::nodeIDManager->getID(childNodeName);
+      const unsigned long parentNodeId = ControlCenter::nodeIDManager->getID(parentNodeName);
+      const unsigned long childNodeId = ControlCenter::nodeIDManager->getID(childNodeName);
 
       return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
     }

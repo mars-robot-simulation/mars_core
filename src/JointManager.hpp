@@ -73,7 +73,7 @@ namespace mars
       // TODO: Discuss: Expose shared pointer counter for jointInterface? This may break internal working if user stores shared pointers to JointInterface.
       std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
     private:
-      static std::string constructDataBrokerName(const unsigned int jointId, const std::string& jointName);
+      static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
       static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
