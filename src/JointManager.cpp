@@ -57,12 +57,9 @@ namespace mars
       throw std::logic_error("addJoint is not implemented yet");
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
 
-      if (jointS->config.hasKey("desired_id"))
-      {
-        // TODO: Enable setting desired id
-        //return ControlCenter::jointIDManager->getID(jointS->name, jointS->config["desired_id"]);
-      }
-      return ControlCenter::jointIDManager->getID(jointS->name);
+      // id == 0 is invalid indicating getID that no specific id is desired
+      const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
+      return ControlCenter::jointIDManager->getID(jointS->name, desiredId);
     }
 
     int JointManager::getJointCount()
