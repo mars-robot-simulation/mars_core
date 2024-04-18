@@ -56,10 +56,12 @@ namespace mars
       const MutexLocker locker{&iMutex};
       throw std::logic_error("addJoint is not implemented yet");
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
+      // TODO: Scene changed?
+      //  control->sim->sceneHasChanged(false);
 
       // id == 0 is invalid indicating getID that no specific id is desired
       const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
-      return ControlCenter::jointIDManager->getID(jointS->name, desiredId);
+      return ControlCenter::jointIDManager->addIfUnknown(jointS->name, desiredId);
     }
 
     int JointManager::getJointCount()
@@ -326,6 +328,7 @@ namespace mars
       return ControlCenter::jointIDManager->getID(joint_name);
     }
 
+    // TODO: Discuss: Can this be dropped?
     std::vector<unsigned long> JointManager::getIDsByNodeID(unsigned long node_id)
     {
       throw std::logic_error("getIDsByNodeID not implemented yet");
