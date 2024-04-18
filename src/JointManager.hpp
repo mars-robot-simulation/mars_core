@@ -72,6 +72,7 @@ namespace mars
 
       std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
     private:
+      static std::string constructDataBrokerName(const unsigned int jointId, const std::string& jointName);
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
       mutable utils::Mutex iMutex;

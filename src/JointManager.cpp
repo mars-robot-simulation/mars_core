@@ -27,6 +27,10 @@
 #include <mars_utils/MutexLocker.h>
 #include <mars_interfaces/Logging.hpp>
 
+// TODO: Clean up mutexes!
+//    * Graph should be locked globally when it is being worked on
+//    * IDManager analogously
+
 namespace mars
 {
   namespace core
@@ -61,7 +65,7 @@ namespace mars
     void JointManager::editJoint(JointData *jointS)
     {
       const unsigned int& jointId = jointS->index;
-      if (auto jointInterface = getJointInterface(jointS->index).lock())
+      if (const auto jointInterface = getJointInterface(jointS->index).lock())
       {
         jointInterface->setAnchor(jointS->anchor);
         jointInterface->setAxis(jointS->axis1);
@@ -102,7 +106,7 @@ namespace mars
 
     const JointData JointManager::getFullJoint(unsigned long index)
     {
-      if (auto jointInterface = getJointInterface(index).lock())
+      if (const auto jointInterface = getJointInterface(index).lock())
       {
         JointData jointData;
         // TODO: Create JointData from jointInterface
@@ -115,7 +119,7 @@ namespace mars
     void JointManager::removeJoint(unsigned long index)
     {
       const MutexLocker locker{&iMutex};
-      auto jointInterfaceItemPtr = getItemBasePtr(index);
+      const auto jointInterfaceItemPtr = getItemBasePtr(index);
       ControlCenter::jointIDManager->removeEntry(index);
       ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
@@ -247,7 +251,7 @@ namespace mars
 
     void JointManager::setJointTorque(unsigned long id, sReal torque)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setTorque(torque);
       }
@@ -257,6 +261,10 @@ namespace mars
     void JointManager::changeStepSize(void) 
     {
       throw std::logic_error("changeStepSize not implemented yet");
+      // TODO: What does updateStepSize do?
+      // Ansätze: 
+      //   * Bfs envire graph to access all jointinterfacesitems
+      //   * Use new container with all jointinterfaceitems 
       // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
       // MutexLocker locker(&iMutex);
       // for (iter = simJoints.begin(); iter != simJoints.end(); iter++) {
@@ -285,7 +293,7 @@ namespace mars
 
     void JointManager::setVelocity(unsigned long id, sReal velocity)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setVelocity(velocity);
       }
@@ -294,7 +302,7 @@ namespace mars
 
     void JointManager::setVelocity2(unsigned long id, sReal velocity)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setVelocity2(velocity);
       }
@@ -303,7 +311,7 @@ namespace mars
 
     void JointManager::setForceLimit(unsigned long id, sReal max_force, bool first_axis)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         if (first_axis)
         {
@@ -343,7 +351,9 @@ namespace mars
     {
       const envire::core::FrameId frameId1 = ControlCenter::nodeIDManager->getName(id1);
       const envire::core::FrameId frameId2 = ControlCenter::nodeIDManager->getName(id2);
-      if (auto jointInterface = getJointInterface(frameId1, frameId2).lock())
+      
+      const MutexLocker locker{&iMutex};
+      if (const auto jointInterface = getJointInterface(frameId1, frameId2).lock())
       {
         std::string jointName;
         jointInterface->getName(&jointName);
@@ -354,23 +364,25 @@ namespace mars
 
     bool JointManager::getDataBrokerNames(unsigned long id, std::string *groupName, std::string *dataName) const
     {
-      throw std::logic_error("getDataBrokerNames not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::const_iterator iter;
-      // iter = simJoints.find(id);
-      // if(iter == simJoints.end())
-      //   return false;
-      // iter->second->getDataBrokerNames(groupName, dataName);
-      return true;
+      const MutexLocker locker{&iMutex};
+      if (const auto joint = getJointInterface(id).lock())
+      {
+        std::string jointName;
+        joint->getName(&jointName);
+        *groupName = "mars_sim";
+        *dataName = JointManager::constructDataBrokerName(id, jointName);
+        return true;
+      }
+      return false;
     }
 
     void JointManager::setOfflineValue(unsigned long id, sReal value)
     {
-      throw std::logic_error("setOfflineValue not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::const_iterator iter;
-      // iter = simJoints.find(id);
-      // if(iter == simJoints.end())
-      //   return;
-      // iter->second->setOfflinePosition(value);
+      const MutexLocker locker{&iMutex};
+      if (const auto joint = getJointInterface(id).lock())
+      {
+        joint->setOfflinePosition(value);
+      }
     }
 
     sReal JointManager::getLowStop(unsigned long id) const
@@ -411,7 +423,7 @@ namespace mars
 
     void JointManager::setLowStop(unsigned long id, sReal lowStop)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setLowStop(lowStop);
       }
@@ -419,7 +431,7 @@ namespace mars
 
     void JointManager::setHighStop(unsigned long id, sReal highStop)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setHighStop(highStop);
       }
@@ -427,7 +439,7 @@ namespace mars
 
     void JointManager::setLowStop2(unsigned long id, sReal lowStop2)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setLowStop2(lowStop2);
       }
@@ -435,20 +447,29 @@ namespace mars
 
     void JointManager::setHighStop2(unsigned long id, sReal highStop2)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->setHighStop2(highStop2);
       }
     }
 
-    // TODO: Is everything previously available covered by the delegation to Joint::edit?
-    // TODO (old): do we need to edit angle offsets
     void JointManager::edit(interfaces::JointId id, const std::string &key, const std::string &value)
     {
-      if (auto jointInterface = getJointInterface(id).lock())
+      if (const auto jointInterface = getJointInterface(id).lock())
       {
         jointInterface->edit(key, value);
       }
+    }
+
+    // TODO: Discuss: Is the format still up to date?
+    // TODO: Refactor to make more readable.
+    std::string JointManager::constructDataBrokerName(const unsigned int jointId, const std::string& jointName)
+    {
+        char format[] = "Joints/%05lu_%s";
+        int size = snprintf(0, 0, format, jointId, jointName.c_str());
+        char buffer[size+1];
+        sprintf(buffer, format, jointId, jointName.c_str());
+        return buffer;
     }
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const
@@ -479,7 +500,7 @@ namespace mars
 
         const std::type_index typeIndex{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
         const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
-        for (auto item : items)
+        for (const auto item : items)
         {
           std::string currentJointName;
           auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
