@@ -73,7 +73,6 @@ namespace mars {
      */
     class SimJoint : public data_broker::ProducerInterface {
     public:
-      static std::shared_ptr<SimJoint> fromJointInterface(std::shared_ptr<interfaces::JointInterface> joint);
       explicit SimJoint(interfaces::ControlCenter *control,
                         const interfaces::JointData &sJoint);
       ~SimJoint();

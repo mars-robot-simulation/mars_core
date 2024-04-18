@@ -70,12 +70,15 @@ namespace mars
       virtual void edit(interfaces::JointId id, const std::string &key,
                         const std::string &value);
 
+      // TODO: Discuss: Expose shared pointer counter for jointInterface? This may break internal working if user stores shared pointers to JointInterface.
       std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
     private:
       static std::string constructDataBrokerName(const unsigned int jointId, const std::string& jointName);
+      static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
       mutable utils::Mutex iMutex;
+
 
       envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId) const;
       envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName) const;

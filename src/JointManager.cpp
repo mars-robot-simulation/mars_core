@@ -56,6 +56,12 @@ namespace mars
       const MutexLocker locker{&iMutex};
       throw std::logic_error("addJoint is not implemented yet");
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
+
+      if (jointS->config.hasKey("desired_id"))
+      {
+        // TODO: Enable setting desired id
+        //return ControlCenter::jointIDManager->getID(jointS->name, jointS->config["desired_id"]);
+      }
       return ControlCenter::jointIDManager->getID(jointS->name);
     }
 
@@ -67,7 +73,6 @@ namespace mars
 
     void JointManager::editJoint(JointData *jointS)
     {
-      const unsigned int& jointId = jointS->index;
       if (const auto joint = getJointInterface(jointS->index).lock())
       {
         joint->setAnchor(jointS->anchor);
@@ -104,13 +109,11 @@ namespace mars
       }
     }
 
-
     const JointData JointManager::getFullJoint(unsigned long index)
     {
       if (const auto joint = getJointInterface(index).lock())
       {
-        const auto simJoint = sim::SimJoint::fromJointInterface(joint);
-        return simJoint->getSJoint();
+        return constructJointData(joint);
       }
       throw std::runtime_error((std::string{"Could not find joint with index "} + std::to_string(index)).c_str());
     }
@@ -132,16 +135,19 @@ namespace mars
       unsigned long id = getIDByNodeIDs(id1, id2);
       if (id != 0) 
       {
-          removeJoint(id);
-          return;
+        removeJoint(id);
+        return;
       }
     }
 
     std::shared_ptr<mars::sim::SimJoint> JointManager::getSimJoint(unsigned long id)
     {
       if (const auto joint = getJointInterface(id).lock())
-      {        
-        return sim::SimJoint::fromJointInterface(joint);
+      {
+        const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+        // simJoint->setAttachedNodes(node1, node2);
+        simJoint->setPhysicalJoint(joint);
+        return simJoint;
       }
       return nullptr;
     }
@@ -155,7 +161,10 @@ namespace mars
       {
         if (const auto joint = potentialJoint.lock())
         {
-          simJoints.emplace_back(sim::SimJoint::fromJointInterface(joint));
+          const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+          // simJoint->setAttachedNodes(node1, node2);
+          simJoint->setPhysicalJoint(joint);
+          simJoints.emplace_back(std::move(simJoint));
         }
       }
       return simJoints;
@@ -359,7 +368,7 @@ namespace mars
         std::string jointName;
         joint->getName(&jointName);
         *groupName = "mars_sim";
-        *dataName = JointManager::constructDataBrokerName(id, jointName);
+        *dataName = constructDataBrokerName(id, jointName);
         return true;
       }
       return false;
@@ -454,11 +463,26 @@ namespace mars
     // TODO: Refactor to make more readable.
     std::string JointManager::constructDataBrokerName(const unsigned int jointId, const std::string& jointName)
     {
-        char format[] = "Joints/%05lu_%s";
-        int size = snprintf(0, 0, format, jointId, jointName.c_str());
-        char buffer[size+1];
-        sprintf(buffer, format, jointId, jointName.c_str());
-        return buffer;
+      char format[] = "Joints/%05lu_%s";
+      int size = snprintf(0, 0, format, jointId, jointName.c_str());
+      char buffer[size+1];
+      sprintf(buffer, format, jointId, jointName.c_str());
+      return buffer;
+    }
+
+    const interfaces::JointData JointManager::constructJointData(const std::shared_ptr<interfaces::JointInterface> joint)
+    {
+      std::string jointName;
+      joint->getName(&jointName);
+      const unsigned int jointId = ControlCenter::jointIDManager->getID(jointName);
+
+      auto configMap = joint->getConfigMap();
+      const std::string parentNodeName = configMap["parent_link_name"];
+      const std::string childNodeName = configMap["child_link_name"];
+      const unsigned int parentNodeId = ControlCenter::nodeIDManager->getID(parentNodeName);
+      const unsigned int childNodeId = ControlCenter::nodeIDManager->getID(childNodeName);
+
+      return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
     }
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const
