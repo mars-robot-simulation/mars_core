@@ -8,6 +8,8 @@
  */
 
 #include "JointManager.hpp"
+#include "SimJoint.hpp"
+
 #ifndef SIM_CENTER_FRAME_NAME
 #define SIM_CENTER_FRAME_NAME "world"
 #endif
@@ -52,6 +54,7 @@ namespace mars
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
       const MutexLocker locker{&iMutex};
+      throw std::logic_error("addJoint is not implemented yet");
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
       return ControlCenter::jointIDManager->getID(jointS->name);
     }
@@ -65,53 +68,49 @@ namespace mars
     void JointManager::editJoint(JointData *jointS)
     {
       const unsigned int& jointId = jointS->index;
-      if (const auto jointInterface = getJointInterface(jointS->index).lock())
+      if (const auto joint = getJointInterface(jointS->index).lock())
       {
-        jointInterface->setAnchor(jointS->anchor);
-        jointInterface->setAxis(jointS->axis1);
-        jointInterface->setAxis2(jointS->axis2);
-        jointInterface->setLowStop(jointS->lowStopAxis1);
-        jointInterface->setLowStop2(jointS->lowStopAxis2);
-        jointInterface->setHighStop(jointS->highStopAxis1);
-        jointInterface->setHighStop2(jointS->highStopAxis2);
+        joint->setAnchor(jointS->anchor);
+        joint->setAxis(jointS->axis1);
+        joint->setAxis2(jointS->axis2);
+        joint->setLowStop(jointS->lowStopAxis1);
+        joint->setLowStop2(jointS->lowStopAxis2);
+        joint->setHighStop(jointS->highStopAxis1);
+        joint->setHighStop2(jointS->highStopAxis2);
       }
     }
 
     void JointManager::getListJoints(std::vector<core_objects_exchange>* jointList)
     {
       core_objects_exchange obj;
-
-      throw std::logic_error("getListJoints not implemented yet");
-      // std::map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
-      // jointList->clear();
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++) {
-      //   iter->second->getCoreExchange(&obj);
-      //   jointList->push_back(obj);
-      // }
+      jointList->clear();
+      for (const auto simJoint : getSimJoints())
+      {
+        simJoint->getCoreExchange(&obj);
+        jointList->push_back(obj);
+      }
     }
 
     void JointManager::getJointExchange(unsigned long id, core_objects_exchange* obj)
     {
-      MutexLocker locker(&iMutex);
-
-      throw std::logic_error("getJointExchange not implemented yet");
-      // std::map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter = simJoints.find(id);
-      // if (iter != simJoints.end())
-      //   iter->second->getCoreExchange(obj);
-      // else
-      //   obj = NULL;
+      const auto simJoint = getSimJoint(id);
+      if (simJoint)
+      {
+        simJoint->getCoreExchange(obj);
+      }
+      else
+      {
+        obj = nullptr;
+      }
     }
 
 
     const JointData JointManager::getFullJoint(unsigned long index)
     {
-      if (const auto jointInterface = getJointInterface(index).lock())
+      if (const auto joint = getJointInterface(index).lock())
       {
-        JointData jointData;
-        // TODO: Create JointData from jointInterface
-        throw std::logic_error("getFullJoint not implemented yet");
-        return jointData;
+        const auto simJoint = sim::SimJoint::fromJointInterface(joint);
+        return simJoint->getSJoint();
       }
       throw std::runtime_error((std::string{"Could not find joint with index "} + std::to_string(index)).c_str());
     }
@@ -140,25 +139,26 @@ namespace mars
 
     std::shared_ptr<mars::sim::SimJoint> JointManager::getSimJoint(unsigned long id)
     {
-      MutexLocker locker(&iMutex);
-      throw std::logic_error("getSimJoint not implemented yet");
-      // map<unsigned long, std::shared_ptr<mars::sim::SimJoint>>::iterator iter = simJoints.find(id);
-      // if (iter != simJoints.end())
-      //   return iter->second;
-      // else
-      //   return NULL;
+      if (const auto joint = getJointInterface(id).lock())
+      {        
+        return sim::SimJoint::fromJointInterface(joint);
+      }
+      return nullptr;
     }
-
 
     std::vector<std::shared_ptr<mars::sim::SimJoint>> JointManager::getSimJoints(void)
     {
-      vector<std::shared_ptr<mars::sim::SimJoint>> v_simJoints;
-      map<unsigned long, std::shared_ptr<mars::sim::SimJoint>>::iterator iter;
-      MutexLocker locker(&iMutex);
-      throw std::logic_error("getSimJoints not implemented yet");
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++)
-      //   v_simJoints.push_back(iter->second);
-      // return v_simJoints;
+      const MutexLocker locker{&iMutex};
+      vector<std::shared_ptr<mars::sim::SimJoint>> simJoints;
+      simJoints.reserve(ControlCenter::jointIDManager->size());
+      for (const auto potentialJoint : getJoints())
+      {
+        if (const auto joint = potentialJoint.lock())
+        {
+          simJoints.emplace_back(sim::SimJoint::fromJointInterface(joint));
+        }
+      }
+      return simJoints;
     }
 
     void JointManager::reattacheJoints(unsigned long node_id)
@@ -184,12 +184,8 @@ namespace mars
 
     void JointManager::updateJoints(sReal calc_ms)
     {
-      MutexLocker locker(&iMutex);
-      throw std::logic_error("updateJoints not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // for(iter = simJoints.begin(); iter != simJoints.end(); iter++) {
-      //   iter->second->update(calc_ms);
-      // }
+      // TODO: Discuss: Can this be dropped or should the interface still be provided?
+      throw std::logic_error("updateJoints is not implemented.");
     }
 
     void JointManager::clearAllJoints(bool clear_all)
@@ -251,25 +247,20 @@ namespace mars
 
     void JointManager::setJointTorque(unsigned long id, sReal torque)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setTorque(torque);
+        joint->setTorque(torque);
       }
     }
 
 
     void JointManager::changeStepSize(void) 
     {
-      throw std::logic_error("changeStepSize not implemented yet");
-      // TODO: What does updateStepSize do?
-      // Ansätze: 
-      //   * Bfs envire graph to access all jointinterfacesitems
-      //   * Use new container with all jointinterfaceitems 
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++) {
-      //   iter->second->updateStepSize();
-      // }
+      // This works because the constructed SimJoints contain a reference to their corresponding JointInterface.
+      for (const auto simJoint : getSimJoints())
+      {
+        simJoint->updateStepSize();
+      }
     }
 
     void JointManager::setReloadAnchor(unsigned long id, const Vector &anchor)
@@ -283,43 +274,41 @@ namespace mars
 
     void JointManager::setSDParams(unsigned long id, JointData *sJoint)
     {
-      MutexLocker locker(&iMutex);
-      throw std::logic_error("setSDParams not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter = simJoints.find(id);
-      // if (iter != simJoints.end())
-      //   iter->second->setSDParams(sJoint);
+      // This works because the constructed SimJoint contains a reference to the corresponding JointInterface.
+      const auto simJoint = getSimJoint(id);
+      simJoint->setSDParams(sJoint);
     }
 
 
     void JointManager::setVelocity(unsigned long id, sReal velocity)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setVelocity(velocity);
+        joint->setVelocity(velocity);
       }
     }
 
 
     void JointManager::setVelocity2(unsigned long id, sReal velocity)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setVelocity2(velocity);
+        joint->setVelocity2(velocity);
       }
     }
 
 
     void JointManager::setForceLimit(unsigned long id, sReal max_force, bool first_axis)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
         if (first_axis)
         {
-          jointInterface->setForceLimit(max_force);
+          joint->setForceLimit(max_force);
         }
         else
         {
-          jointInterface->setForceLimit2(max_force);
+          joint->setForceLimit2(max_force);
         }
       }
     }
@@ -353,10 +342,10 @@ namespace mars
       const envire::core::FrameId frameId2 = ControlCenter::nodeIDManager->getName(id2);
       
       const MutexLocker locker{&iMutex};
-      if (const auto jointInterface = getJointInterface(frameId1, frameId2).lock())
+      if (const auto joint = getJointInterface(frameId1, frameId2).lock())
       {
         std::string jointName;
-        jointInterface->getName(&jointName);
+        joint->getName(&jointName);
         return ControlCenter::jointIDManager->getID(jointName);
       }
       return 0;
@@ -387,77 +376,77 @@ namespace mars
 
     sReal JointManager::getLowStop(unsigned long id) const
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        return jointInterface->getLowStop();
+        return joint->getLowStop();
       }
       return 0.0;
     }
 
     sReal JointManager::getHighStop(unsigned long id) const
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        return jointInterface->getHighStop();
+        return joint->getHighStop();
       }
       return 0.0;
     }
 
     sReal JointManager::getLowStop2(unsigned long id) const
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        return jointInterface->getLowStop2();
+        return joint->getLowStop2();
       }
       return 0.0;
     }
 
     sReal JointManager::getHighStop2(unsigned long id) const 
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        return jointInterface->getHighStop2();
+        return joint->getHighStop2();
       }
       return 0.0;
     }
 
     void JointManager::setLowStop(unsigned long id, sReal lowStop)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setLowStop(lowStop);
+        joint->setLowStop(lowStop);
       }
     }
 
     void JointManager::setHighStop(unsigned long id, sReal highStop)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setHighStop(highStop);
+        joint->setHighStop(highStop);
       }
     }
 
     void JointManager::setLowStop2(unsigned long id, sReal lowStop2)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setLowStop2(lowStop2);
+        joint->setLowStop2(lowStop2);
       }
     }
 
     void JointManager::setHighStop2(unsigned long id, sReal highStop2)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->setHighStop2(highStop2);
+        joint->setHighStop2(highStop2);
       }
     }
 
     void JointManager::edit(interfaces::JointId id, const std::string &key, const std::string &value)
     {
-      if (const auto jointInterface = getJointInterface(id).lock())
+      if (const auto joint = getJointInterface(id).lock())
       {
-        jointInterface->edit(key, value);
+        joint->edit(key, value);
       }
     }
 
@@ -480,9 +469,7 @@ namespace mars
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(const std::string& jointName) const
     {
-      const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       envire::core::ItemBase::Ptr foundItem = nullptr;
-
       auto jointInterfaceSearchFunctor = [&foundItem, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
       {
         // a item with the given name is already found
@@ -513,6 +500,7 @@ namespace mars
         }
       };
 
+      const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
       return foundItem;
     }
@@ -525,9 +513,7 @@ namespace mars
 
     std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName) const
     {
-      const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       std::shared_ptr<interfaces::JointInterface> foundJoint;
-
       auto jointInterfaceSearchFunctor = [&foundJoint, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
       {
         // a joint with the given name is already found
@@ -549,6 +535,7 @@ namespace mars
         }
       };
 
+      const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
       ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
       return foundJoint;
     }
@@ -579,5 +566,31 @@ namespace mars
 
       throw std::logic_error((std::string{"There is no Joint between the frames \""} + linkedFrame0 + "\" and \"" + linkedFrame1 + "\".").c_str());
     }
+
+    std::list<std::weak_ptr<interfaces::JointInterface>> JointManager::getJoints() const
+    {
+      std::list<std::weak_ptr<interfaces::JointInterface>> joints;
+      auto jointCollector = [&joints](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+      {
+        const size_t numItems = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+        if (numItems == 0)
+        {
+          return;
+        }
+
+        const std::type_index typeIndex{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
+        const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+        for (const auto item : items)
+        {
+          const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
+          joints.emplace_back(jointItemPtr->getData().jointInterface);
+        }
+      };
+
+      const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+      ControlCenter::graphTreeView->visitBfs(rootVertex, jointCollector);
+      return joints;
+    }
+
   } // end of namespace core
 } // end of namespace mars

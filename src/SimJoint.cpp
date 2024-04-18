@@ -37,6 +37,12 @@ namespace mars {
     using namespace utils;
     using namespace interfaces;
 
+    std::shared_ptr<SimJoint> SimJoint::fromJointInterface(std::shared_ptr<interfaces::JointInterface> joint)
+    {
+      throw std::logic_error("fromJointInterface not implemented yet.");
+      return std::shared_ptr<SimJoint>{};
+    }
+
     SimJoint::SimJoint(ControlCenter *c, const JointData &sJoint_)
       : control(c) {
 
