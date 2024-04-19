@@ -11,13 +11,19 @@
 #include "SimJoint.hpp"
 
 #ifndef SIM_CENTER_FRAME_NAME
+// TODO: This should be done differently!
 #define SIM_CENTER_FRAME_NAME "world"
+#endif
+#ifndef JOINT_NAMESPACE
+// TODO: This should be done differently!
+#define JOINT_NAMESPACE "envire::base_types::joints::"
 #endif
 
 #include <stdexcept>
 
-#include <envire_core/graph/EnvireGraph.hpp>
+#include <envire_base_types/registration/TypeCreatorFactory.hpp>
 #include <envire_core/items/Item.hpp>
+#include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/GraphTypes.hpp>
 
 #include <data_broker/DataBrokerInterface.h>
@@ -55,14 +61,25 @@ namespace mars
 
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
-      const MutexLocker locker{&iMutex};
-
-      throw std::logic_error("addJoint is not implemented yet");
-      // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
+      {
+        // TODO: This should be delegated to envire...
+        configmaps::ConfigMap jointMap;
+        jointS->toConfigMap(&jointMap);
+        std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
+        envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
+        envire::core::FrameId jointFrame = envire::core::FrameId{jointMap["name"].toString()};
+        const std::string jointType = jointMap["type"];
+        if (jointType != "Fixed")
+        {
+          jointFrame += "_joint";
+        }
+        ControlCenter::envireGraph->addItemToFrame(jointFrame, item);
+      }
 
       constexpr bool sceneWasReseted = false;
       control->sim->sceneHasChanged(sceneWasReseted);
 
+      const MutexLocker locker{&iMutex};
       // id == 0 is invalid indicating getID that no specific id is desired
       const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
       return ControlCenter::jointIDManager->addIfUnknown(jointS->name, desiredId);
