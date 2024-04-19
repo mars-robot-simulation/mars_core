@@ -214,7 +214,8 @@ namespace mars
       //   simJoints.begin()->second.reset();
       //   simJoints.erase(simJoints.begin());
       // }
-      // control->sim->sceneHasChanged(false);
+      // constexpr bool sceneWasReseted = false;
+      // control->sim->sceneHasChanged(sceneWasReseted);
 
       // next_joint_id = 1;
     }
