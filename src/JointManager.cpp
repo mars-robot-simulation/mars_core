@@ -33,6 +33,7 @@
 // TODO: Clean up mutexes!
 //    * Graph should be locked globally when it is being worked on
 //    * IDManager analogously
+// TODO: Tests!
 
 namespace mars
 {
@@ -177,15 +178,32 @@ namespace mars
 
     void JointManager::reattacheJoints(unsigned long node_id)
     {
-      throw std::logic_error("reattacheJoints not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++) {
-      //   if (iter->second->getSJoint().nodeIndex1 == node_id ||
-      //       iter->second->getSJoint().nodeIndex2 == node_id) {
-      //     iter->second->reattachJoint();
-      //   }
-      // }
+      const envire::core::FrameId frameId = ControlCenter::nodeIDManager->getName(node_id);
+      auto jointReattachor = [frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+      {
+        const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+        if (numJoints == 0)
+        {
+          return;
+        }
+
+        const std::type_index typeIndex{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
+        const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+        for (const auto item : items)
+        {
+          const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
+          configmaps::ConfigMap configMap = jointItemPtr->getData().jointInterface->getConfigMap();
+          const std::string parentFrameId = configMap["parent_link_name"];
+          const std::string childFrameId = configMap["child_link_name"];
+          if (parentFrameId == frameId || childFrameId == frameId)
+          {
+            jointItemPtr->getData().jointInterface->reattacheJoint();
+          }
+        }
+      };
+
+      const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+      ControlCenter::graphTreeView->visitBfs(rootVertex, jointReattachor);
     }
 
     void JointManager::reloadJoints(void)
@@ -334,21 +352,39 @@ namespace mars
       return ControlCenter::jointIDManager->getID(joint_name);
     }
 
-    // TODO: Discuss: Can this be dropped?
     std::vector<unsigned long> JointManager::getIDsByNodeID(unsigned long node_id)
     {
-      throw std::logic_error("getIDsByNodeID not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
-      std::vector<unsigned long> out;
-      // for (iter = simJoints.begin(); iter != simJoints.end(); iter++)
-      //   if((iter->second->getNodeId() == node_id ||
-      //       iter->second->getNodeId(2) == node_id) ||
-      //      (iter->second->getNodeId() == node_id ||
-      //       iter->second->getNodeId(2) == node_id)) {
-      //     out.push_back(iter->first);
-      //   }
-      return out;
+      std::vector<unsigned long> jointIds;
+      const envire::core::FrameId frameId = ControlCenter::nodeIDManager->getName(node_id);
+      auto jointIdCollector = [&jointIds, frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+      {
+        const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+        if (numJoints == 0)
+        {
+          return;
+        }
+
+        const std::type_index typeIndex{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
+        const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+        for (const auto item : items)
+        {
+          const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
+          configmaps::ConfigMap configMap = jointItemPtr->getData().jointInterface->getConfigMap();
+          const std::string parentFrameId = configMap["parent_link_name"];
+          const std::string childFrameId = configMap["child_link_name"];
+          if (parentFrameId == frameId || childFrameId == frameId)
+          {
+            std::string jointName;
+            jointItemPtr->getData().jointInterface->getName(&jointName);
+            jointIds.push_back(ControlCenter::jointIDManager->getID(jointName));
+          }
+        }
+      };
+
+      const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+      ControlCenter::graphTreeView->visitBfs(rootVertex, jointIdCollector);
+
+      return jointIds;
     }
 
     unsigned long JointManager::getIDByNodeIDs(unsigned long id1, unsigned long id2)
@@ -373,7 +409,7 @@ namespace mars
       {
         std::string jointName;
         joint->getName(&jointName);
-        *groupName = "mars_sim";
+        *groupName = std::string{"mars_sim"};
         *dataName = constructDataBrokerName(id, jointName);
         return true;
       }
@@ -465,8 +501,8 @@ namespace mars
       }
     }
 
-    // TODO: Discuss: Is the format still up to date?
-    // TODO: Refactor to make more readable.
+    // TODO: Discuss: Is the format still up to date and is this maybe handled somewhere else?
+    // TODO if it is still up to date: Refactor method to make more readable.
     std::string JointManager::constructDataBrokerName(const unsigned long jointId, const std::string& jointName)
     {
       char format[] = "Joints/%05lu_%s";
@@ -621,6 +657,5 @@ namespace mars
       ControlCenter::graphTreeView->visitBfs(rootVertex, jointCollector);
       return joints;
     }
-
   } // end of namespace core
 } // end of namespace mars
