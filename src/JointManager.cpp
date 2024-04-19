@@ -23,6 +23,7 @@
 #include <data_broker/DataBrokerInterface.h>
 #include <mars_interfaces/sim/JointInterface.h>
 #include <mars_interfaces/sim/MotorManagerInterface.h>
+#include <mars_interfaces/sim/SimulatorInterface.h>
 
 #include <mars_utils/misc.h>
 #include <mars_utils/mathUtils.h>
@@ -54,10 +55,12 @@ namespace mars
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
       const MutexLocker locker{&iMutex};
+
       throw std::logic_error("addJoint is not implemented yet");
       // TODO Add suited envire joint item in graph; envire_mars_ode_phyics will do the rest
-      // TODO: Scene changed?
-      //  control->sim->sceneHasChanged(false);
+
+      constexpr bool sceneWasReseted = false;
+      control->sim->sceneHasChanged(sceneWasReseted);
 
       // id == 0 is invalid indicating getID that no specific id is desired
       const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
@@ -125,8 +128,9 @@ namespace mars
       ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
       // TODO: Remove envire joint item?
-      // TODO: Scene changed?
-      //  control->sim->sceneHasChanged(false);
+
+      constexpr bool sceneWasReseted = false;
+      control->sim->sceneHasChanged(sceneWasReseted);
     }
 
     void JointManager::removeJointByIDs(unsigned long id1, unsigned long id2)
@@ -144,6 +148,7 @@ namespace mars
       if (const auto joint = getJointInterface(id).lock())
       {
         const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+        // TODO: 
         // simJoint->setAttachedNodes(node1, node2);
         simJoint->setPhysicalJoint(joint);
         return simJoint;
@@ -161,6 +166,7 @@ namespace mars
         if (const auto joint = potentialJoint.lock())
         {
           const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+          // TODO: 
           // simJoint->setAttachedNodes(node1, node2);
           simJoint->setPhysicalJoint(joint);
           simJoints.emplace_back(std::move(simJoint));
@@ -215,7 +221,6 @@ namespace mars
 
     std::list<JointData>::iterator JointManager::getReloadJoint(unsigned long id)
     {
-
       throw std::logic_error("getReloadJoint not implemented yet");
       // std::list<JointData>::iterator iter = simJointsReload.begin();
       // for(;iter!=simJointsReload.end(); ++iter) {

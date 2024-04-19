@@ -847,13 +847,7 @@ namespace mars
 
         void Simulator::sceneHasChanged(bool reseted)
         {
-            if (reseted)
-            {
-                b_SceneChanged = false;
-            } else
-            {
-                b_SceneChanged = true;
-            }
+            b_SceneChanged = !reseted;
         }
 
         int Simulator::loadScene(const std::string &filename, const std::string &robotname, bool threadsave, bool blocking)
@@ -958,7 +952,8 @@ namespace mars
             {
                 startStopTrigger();//if the simulation has been stopped for loading, now it continues
             }
-            sceneHasChanged(false);
+            constexpr bool sceneWasReseted = false;
+            sceneHasChanged(sceneWasReseted);
             return 1;
         }
 
@@ -1001,7 +996,8 @@ namespace mars
             {
                 startStopTrigger();//if the simulation has been stopped for loading, now it continues
             }
-            sceneHasChanged(false);
+            constexpr bool sceneWasReseted = false;
+            sceneHasChanged(sceneWasReseted);
             return 1;
         }
 
@@ -1017,13 +1013,15 @@ namespace mars
             {
                 startStopTrigger(); // resuming the simulation
             }
-            sceneHasChanged(true);
+            constexpr bool sceneWasReseted = true;
+            sceneHasChanged(sceneWasReseted);
             return 1;
         }
 
         void Simulator::addLight(LightData light)
         {
-            // sceneHasChanged(false);
+            // constexpr bool sceneWasReseted = false;
+            // sceneHasChanged(sceneWasReseted);
             // if (control->graphics && control->controllers->isLoadingAllowed()) {
             //     unsigned long id = control->nodes->getID(light.node);
             //     if(id) {
@@ -1335,7 +1333,8 @@ namespace mars
                 }
             }
 
-            // sceneHasChanged(true);
+            // constexpr bool sceneWasReseted = true;
+            // sceneHasChanged(sceneWasReseted);
             for(auto &it: subWorlds)
             {
                 it.second->control->physics->freeTheWorld();

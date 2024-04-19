@@ -202,7 +202,8 @@ namespace mars
             }
             iMutex.unlock();
 
-            control->sim->sceneHasChanged(false);
+            constexpr bool sceneWasReseted = false;
+            control->sim->sceneHasChanged(sceneWasReseted);
         }
 
 

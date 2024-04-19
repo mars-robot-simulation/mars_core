@@ -74,7 +74,8 @@ namespace mars
             iMutex.unlock();
             if(control)
             {
-                control->sim->sceneHasChanged(false);
+                constexpr bool sceneWasReseted = false;
+                control->sim->sceneHasChanged(sceneWasReseted);
             }
 
             configmaps::ConfigMap &config = motorS->config;
@@ -227,7 +228,8 @@ namespace mars
 
             if(control)
             {
-                control->sim->sceneHasChanged(false);
+                constexpr bool sceneWasReseted = false;
+                control->sim->sceneHasChanged(sceneWasReseted);
             }
         }
 
