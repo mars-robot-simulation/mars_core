@@ -66,8 +66,13 @@ namespace mars
         std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
         envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
         envire::core::FrameId jointFrame = envire::core::FrameId{jointMap["name"].toString()};
-        const std::string jointType = jointMap["type"];
-        if (jointType != "Fixed")
+
+        auto tolower = [](std::string inout)
+        {
+          std::transform(inout.begin(), inout.end(), inout.begin(), [](unsigned char c) { return std::tolower(c);});
+          return inout;
+        };
+        if (tolower(jointMap["type"].toString()) != std::string{"fixed"})
         {
           jointFrame += "_joint";
         }
