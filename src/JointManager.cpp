@@ -222,20 +222,19 @@ namespace mars
 
     void JointManager::clearAllJoints(bool clear_all)
     {
-      throw std::logic_error("clearAllJoints not implemented yet");
-      // map<unsigned long, std::shared_ptr<SimJoint>>::iterator iter;
-      // MutexLocker locker(&iMutex);
+      // TODO: Reload functionality
       // if(clear_all) simJointsReload.clear();
 
-      // while(!simJoints.empty()) {
-      //   control->motors->removeJointFromMotors(simJoints.begin()->first);
-      //   simJoints.begin()->second.reset();
-      //   simJoints.erase(simJoints.begin());
-      // }
-      // constexpr bool sceneWasReseted = false;
-      // control->sim->sceneHasChanged(sceneWasReseted);
+      // TODO: This would be more efficient, if remove joint would not search in graph or clearAllJoints would directly work on the graph.
+      for (const unsigned long& jointId : ControlCenter::jointIDManager->getAllIDs())
+      {
+        removeJoint(jointId);
+      }
 
-      // next_joint_id = 1;
+      constexpr bool sceneWasReseted = false;
+      control->sim->sceneHasChanged(sceneWasReseted);
+
+      ControlCenter::jointIDManager->clear();
     }
 
     std::list<JointData>::iterator JointManager::getReloadJoint(unsigned long id)
