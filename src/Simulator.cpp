@@ -39,6 +39,7 @@
 #include <mars_ode_collision/objects/Object.hpp>
 
 #include <mars_interfaces/Logging.hpp>
+#include <mars_interfaces/MARSDefs.h>
 
 #include <mars_interfaces/sim/AbsolutePose.hpp>
 #include <envire_core/graph/EnvireGraph.hpp>
@@ -65,7 +66,6 @@
     #define DEFAULT_CONFIG_DIR "."
 #endif
 
-#define SIM_CENTER_FRAME_NAME "world"
 typedef envire::core::GraphTraits::vertex_descriptor VertexDesc;
 
 

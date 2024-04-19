@@ -10,10 +10,6 @@
 #include "JointManager.hpp"
 #include "SimJoint.hpp"
 
-#ifndef SIM_CENTER_FRAME_NAME
-// TODO: This should be done differently!
-#define SIM_CENTER_FRAME_NAME "world"
-#endif
 #ifndef JOINT_NAMESPACE
 // TODO: This should be done differently!
 #define JOINT_NAMESPACE "envire::base_types::joints::"
@@ -27,6 +23,8 @@
 #include <envire_core/graph/GraphTypes.hpp>
 
 #include <data_broker/DataBrokerInterface.h>
+
+#include <mars_interfaces/MARSDefs.h>
 #include <mars_interfaces/sim/JointInterface.h>
 #include <mars_interfaces/sim/MotorManagerInterface.h>
 #include <mars_interfaces/sim/SimulatorInterface.h>
