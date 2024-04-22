@@ -66,7 +66,6 @@ namespace mars
 
             auto joint = std::dynamic_pointer_cast<JointManager>(ControlCenter::joints)->getJointInterface(motorS->jointIndex);
             SimMotor* newMotor = new SimMotor(control, *motorS, joint);
-            //newMotor->attachJoint(control->joints->getSimJoint(motorS->jointIndex));
 
             newMotor->setSMotor(*motorS);
             iMutex.lock();

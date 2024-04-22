@@ -59,8 +59,7 @@ namespace mars
 
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
-      {
-        // TODO: This should be delegated to envire...
+      { // TODO: This block should be delegated to envire.
         configmaps::ConfigMap jointMap;
         jointS->toConfigMap(&jointMap);
         std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
@@ -426,11 +425,7 @@ namespace mars
       const MutexLocker locker{&iMutex};
       if (const auto joint = getJointInterface(id).lock())
       {
-        std::string jointName;
-        joint->getName(&jointName);
-        *groupName = std::string{"mars_sim"};
-        *dataName = constructDataBrokerName(id, jointName);
-        return true;
+        joint->getDataBrokerNames(groupName, dataName);
       }
       return false;
     }
@@ -518,17 +513,6 @@ namespace mars
       {
         joint->edit(key, value);
       }
-    }
-
-    // TODO: Discuss: Is the format still up to date and is this maybe handled somewhere else?
-    // TODO if it is still up to date: Refactor method to make more readable.
-    std::string JointManager::constructDataBrokerName(const unsigned long jointId, const std::string& jointName)
-    {
-      char format[] = "Joints/%05lu_%s";
-      int size = snprintf(0, 0, format, jointId, jointName.c_str());
-      char buffer[size+1];
-      sprintf(buffer, format, jointId, jointName.c_str());
-      return buffer;
     }
 
     const interfaces::JointData JointManager::constructJointData(const std::shared_ptr<interfaces::JointInterface> joint)
