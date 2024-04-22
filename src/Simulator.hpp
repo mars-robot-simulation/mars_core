@@ -28,8 +28,8 @@
 #include <mars_utils/Vector.h>
 
 // for graphical debugging
-#include <osg_lines/Lines.h>
-#include <osg_lines/LinesFactory.h>
+#include <osg_lines/Lines.hpp>
+#include <osg_lines/LinesFactory.hpp>
 
 #include <envire_core/items/Item.hpp>
 #include <envire_core/events/GraphEventDispatcher.hpp>
