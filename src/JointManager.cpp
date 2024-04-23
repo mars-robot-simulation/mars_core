@@ -425,7 +425,8 @@ namespace mars
       const MutexLocker locker{&iMutex};
       if (const auto joint = getJointInterface(id).lock())
       {
-        joint->getDataBrokerNames(groupName, dataName);
+        joint->getDataBrokerNames(*groupName, *dataName);
+        return true;
       }
       return false;
     }
