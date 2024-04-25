@@ -25,6 +25,7 @@
 
 #include <data_broker/DataBrokerInterface.h>
 
+#include <mars_interfaces/utils.h>
 #include <mars_interfaces/MARSDefs.h>
 #include <mars_interfaces/sim/JointInterface.h>
 #include <mars_interfaces/sim/MotorManagerInterface.h>
@@ -58,26 +59,46 @@ namespace mars
      */
     JointManager::JointManager(ControlCenter *c) : control(c) {}
 
+    // TODO: This needs testing
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
       configmaps::ConfigMap jointMap;
       jointS->toConfigMap(&jointMap);
-      std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
+      std::string className{std::string{JOINT_NAMESPACE} + interfaces::getJointTypeString(jointS->type)};
+      std::cout << className << std::endl;
       envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
-      envire::core::FrameId jointFrame = envire::core::FrameId{jointMap["name"].toString()};
 
-      auto tolower = [](std::string inout)
+      const envire::core::FrameId parentFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex1);
+      const envire::core::FrameId childFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex2);
+
+      if (!ControlCenter::envireGraph->containsFrame(parentFrame))
       {
-        std::transform(inout.begin(), inout.end(), inout.begin(), [](unsigned char c) { return std::tolower(c);});
-        return inout;
-      };
-      if (tolower(jointMap["type"].toString()) != std::string{"fixed"})
-      {
-        jointFrame += "_joint";
+        throw std::logic_error((std::string{"JointManager::addJoint: Tried adding joint linked to non-existant link "} + std::string{parentFrame}).c_str());
       }
-      // TODO: Create frame, if it is missing
-      // TODO: Check if frame already has Joint Item
-      ControlCenter::envireGraph->addItemToFrame(jointFrame, item);
+      if (!ControlCenter::envireGraph->containsFrame(childFrame))
+      {
+        throw std::logic_error((std::string{"JointManager::addJoint: Tried adding joint linked to non-existant link "} + std::string{childFrame}).c_str());
+      }
+
+      const envire::core::FrameId jointFrameName = constructFrameIdFromJointData(*jointS);
+      if (!isFixedJoint(*jointS))
+      {
+        // Insert new frame for non-fixed joints
+        if (ControlCenter::envireGraph->containsFrame(jointFrameName))
+        {
+          throw std::logic_error((std::string{"JointManager::addJoint: There is already a joint frame with the name "} + std::string{jointFrameName}).c_str());
+        }
+
+        const auto parentToChildTransform = ControlCenter::envireGraph->getTransform(parentFrame, childFrame);
+        ControlCenter::envireGraph->removeTransform(parentFrame, childFrame);
+        ControlCenter::envireGraph->addFrame(jointFrameName);
+        ControlCenter::envireGraph->addTransform(parentFrame, jointFrameName, parentToChildTransform);
+        envire::core::Transform identityTransform;
+        identityTransform.setIdentity();
+        ControlCenter::envireGraph->addTransform(jointFrameName, childFrame, identityTransform);
+      }
+
+      ControlCenter::envireGraph->addItemToFrame(jointFrameName, item);
 
       constexpr bool sceneWasReseted = false;
       control->sim->sceneHasChanged(sceneWasReseted);
@@ -150,6 +171,7 @@ namespace mars
 
       // TODO: Remove envire joint item.
       //  - How to find?
+      //  - also remove frame?
 
       constexpr bool sceneWasReseted = false;
       control->sim->sceneHasChanged(sceneWasReseted);
@@ -552,6 +574,16 @@ namespace mars
       const unsigned long childNodeId = ControlCenter::linkIDManager->getID(childNodeName);
 
       return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
+    }
+
+    envire::core::FrameId JointManager::constructFrameIdFromJointData(const interfaces::JointData& jointData)
+    {
+      return envire::core::FrameId{isFixedJoint(jointData) ? jointData.name : jointData.name + "_joint"};
+    }
+
+    bool JointManager::isFixedJoint(const interfaces::JointData& jointData)
+    {
+      return jointData.type != JointType::JOINT_TYPE_FIXED;
     }
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const

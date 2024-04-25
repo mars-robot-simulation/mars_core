@@ -75,6 +75,8 @@ namespace mars
     private:
       static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
       static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
+      static envire::core::FrameId constructFrameIdFromJointData(const interfaces::JointData& jointData);
+      static bool isFixedJoint(const interfaces::JointData& jointData);
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
       mutable utils::Mutex iMutex;
