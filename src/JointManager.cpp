@@ -62,10 +62,8 @@ namespace mars
     // TODO: This needs testing
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
-      configmaps::ConfigMap jointMap;
-      jointS->toConfigMap(&jointMap);
-      std::string className{std::string{JOINT_NAMESPACE} + interfaces::getJointTypeString(jointS->type)};
-      std::cout << className << std::endl;
+      configmaps::ConfigMap jointMap = constructEnvireJointConfigMap(*jointS);
+      std::string className{std::string{JOINT_NAMESPACE} + jointMap["type"].toString()};
       envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
 
       const envire::core::FrameId parentFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex1);
@@ -560,6 +558,33 @@ namespace mars
         joint->edit(key, value);
       }
     }
+  
+    configmaps::ConfigMap JointManager::constructEnvireJointConfigMap(const interfaces::JointData& jointData)
+    {
+      configmaps::ConfigMap result;
+      result["name"] == jointData.name;
+      switch (jointData.type)
+      {
+        case JointType::JOINT_TYPE_FIXED:
+          result["type"] = "Fixed";
+          break;
+        case JointType::JOINT_TYPE_HINGE2:
+        case JointType::JOINT_TYPE_HINGE:
+          result["axis"] = utils::vectorToConfigItem(jointData.axis1);
+          result["type"] = "Revolute";
+          result["minPosition"] = jointData.lowStopAxis1;
+          result["maxPosition"] = jointData.highStopAxis1;
+          result["maxEffort"] = 0.0; // TODO!
+          result["maxSpeed"] = 0.0; // TODO!
+          break;
+        case JointType::JOINT_TYPE_SLIDER:
+        default:
+          throw std::logic_error((std::string{"JointManager::constructEnvireJointConfigMap: Not implemented for joint type "} + interfaces::getJointTypeString(jointData.type)).c_str());
+          break;
+      }
+
+      return result;
+    }
 
     const interfaces::JointData JointManager::constructJointData(const std::shared_ptr<interfaces::JointInterface> joint)
     {
@@ -583,7 +608,7 @@ namespace mars
 
     bool JointManager::isFixedJoint(const interfaces::JointData& jointData)
     {
-      return jointData.type != JointType::JOINT_TYPE_FIXED;
+      return jointData.type == JointType::JOINT_TYPE_FIXED;
     }
 
     envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId) const
