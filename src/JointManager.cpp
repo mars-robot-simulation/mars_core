@@ -9,6 +9,7 @@
 
 #include "JointManager.hpp"
 #include "SimJoint.hpp"
+#include "Simulator.hpp"
 
 #ifndef JOINT_NAMESPACE
 // TODO: This should be done differently!
@@ -433,10 +434,31 @@ namespace mars
 
     void JointManager::setOfflineValue(unsigned long id, sReal value)
     {
+      // TODO: If value too large, warn to avoid potential precision issues.
+
       const MutexLocker locker{&iMutex};
       if (const auto joint = getJointInterface(id).lock())
       {
-        joint->setOfflinePosition(value);
+        const auto jointType = joint->getType();
+        if (jointType == JointType::JOINT_TYPE_HINGE)
+        {
+          const double& absoluteRotationRad = value;
+          const double currentRotationRad = static_cast<double>(joint->getPosition()); // in (-pi, pi)
+          const double relativeRotationRad = absoluteRotationRad - currentRotationRad;
+
+          // TODO: Determining the name from the joint name should be handled at a central location
+          envire::core::FrameId jointFrameName;
+          joint->getName(&jointFrameName);
+          jointFrameName += "_joint";
+          const auto jointFrameVertex = ControlCenter::envireGraph->getVertex(jointFrameName);
+
+          Simulator* const simulator = dynamic_cast<Simulator*>(control->sim);
+          simulator->rotateHingeJoint(jointFrameVertex, relativeRotationRad, ControlCenter::envireGraph, ControlCenter::graphTreeView);
+         }
+         else
+         {
+           throw std::logic_error((std::string{"JointManager::setOfflineValue can't handle JointType "} + std::to_string(static_cast<int>(jointType))).c_str());
+         }
       }
     }
 
