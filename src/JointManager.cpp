@@ -60,24 +60,24 @@ namespace mars
 
     unsigned long JointManager::addJoint(JointData *jointS, bool reload)
     {
-      { // TODO: This block should be delegated to envire.
-        configmaps::ConfigMap jointMap;
-        jointS->toConfigMap(&jointMap);
-        std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
-        envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
-        envire::core::FrameId jointFrame = envire::core::FrameId{jointMap["name"].toString()};
+      configmaps::ConfigMap jointMap;
+      jointS->toConfigMap(&jointMap);
+      std::string className(JOINT_NAMESPACE + jointMap["type"].toString());
+      envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
+      envire::core::FrameId jointFrame = envire::core::FrameId{jointMap["name"].toString()};
 
-        auto tolower = [](std::string inout)
-        {
-          std::transform(inout.begin(), inout.end(), inout.begin(), [](unsigned char c) { return std::tolower(c);});
-          return inout;
-        };
-        if (tolower(jointMap["type"].toString()) != std::string{"fixed"})
-        {
-          jointFrame += "_joint";
-        }
-        ControlCenter::envireGraph->addItemToFrame(jointFrame, item);
+      auto tolower = [](std::string inout)
+      {
+        std::transform(inout.begin(), inout.end(), inout.begin(), [](unsigned char c) { return std::tolower(c);});
+        return inout;
+      };
+      if (tolower(jointMap["type"].toString()) != std::string{"fixed"})
+      {
+        jointFrame += "_joint";
       }
+      // TODO: Create frame, if it is missing
+      // TODO: Check if frame already has Joint Item
+      ControlCenter::envireGraph->addItemToFrame(jointFrame, item);
 
       constexpr bool sceneWasReseted = false;
       control->sim->sceneHasChanged(sceneWasReseted);
@@ -148,7 +148,8 @@ namespace mars
       ControlCenter::jointIDManager->removeEntry(index);
       ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
-      // TODO: Remove envire joint item?
+      // TODO: Remove envire joint item.
+      //  - How to find?
 
       constexpr bool sceneWasReseted = false;
       control->sim->sceneHasChanged(sceneWasReseted);
