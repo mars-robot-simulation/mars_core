@@ -1198,7 +1198,7 @@ namespace mars
                 object->getRotation(&absolutTransform.orientation);
 
                 // calculate the relative pose of the frame
-                tf.setTransform(rootToFrame.inverse() * absolutTransform);
+                tf.setTransform(rootToOrigin.inverse() * absolutTransform);
                 tf.time = base::Time::now();
                 envireGraph->updateTransform(origin, target, tf);
             }
