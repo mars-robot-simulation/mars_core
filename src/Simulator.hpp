@@ -246,21 +246,31 @@ namespace mars
             void saveGraph(const std::string &fileName) override;
 
             static void updateChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
-                                             const base::TransformWithCovariance& frameToRoot,
+                                             const base::TransformWithCovariance& rootToFrame,
+                                             std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                             std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void updateChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
                                              std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                              std::shared_ptr<envire::core::TreeView> &graphTreeView);
             static void updatePositions( const envire::core::GraphTraits::vertex_descriptor origin,
                                          const envire::core::GraphTraits::vertex_descriptor target,
-                                         const base::TransformWithCovariance& originToRoot,
+                                         const base::TransformWithCovariance& rootToOrigin,
                                          std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                          std::shared_ptr<envire::core::TreeView> &graphTreeView);
             static void applyChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
-                                            const base::TransformWithCovariance& frameToRoot,
+                                            const base::TransformWithCovariance& rootToFrame,
+                                            std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                            std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void applyChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
                                             std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                             std::shared_ptr<envire::core::TreeView> &graphTreeView);
             static void applyPositions( const envire::core::GraphTraits::vertex_descriptor origin,
                                         const envire::core::GraphTraits::vertex_descriptor target,
-                                        const base::TransformWithCovariance& originToRoot,
+                                        const base::TransformWithCovariance& rootToOrigin,
+                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                        std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void rotateHingeJoint(const envire::core::GraphTraits::vertex_descriptor origin,
+                                        double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
             static void rotateRevolute( const envire::core::GraphTraits::vertex_descriptor origin,

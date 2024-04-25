@@ -42,6 +42,7 @@
 #include <mars_interfaces/MARSDefs.h>
 
 #include <mars_interfaces/sim/AbsolutePose.hpp>
+#include <mars_interfaces/sim/JointInterface.h>
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/TreeView.hpp>
 
@@ -1148,7 +1149,7 @@ namespace mars
 
         // TODO: replace typdef VertexDesc
         void Simulator::updateChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
-                                             const base::TransformWithCovariance& frameToRoot,
+                                             const base::TransformWithCovariance& rootToFrame,
                                              std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                              std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
@@ -1157,15 +1158,24 @@ namespace mars
                 const std::unordered_set<envire::core::GraphTraits::vertex_descriptor>& children = graphTreeView->tree[vertex].children;
                 for(const envire::core::GraphTraits::vertex_descriptor child : children)
                 {
-                    Simulator::updatePositions(vertex, child, frameToRoot, envireGraph, graphTreeView);
+                    Simulator::updatePositions(vertex, child, rootToFrame, envireGraph, graphTreeView);
                 }
             }
+        }
+
+        void Simulator::updateChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
+                                             std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                             std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
+            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)};
+            Simulator::updateChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
         // TODO: replace typdef, remove if containsItem condition
         void Simulator::updatePositions(const envire::core::GraphTraits::vertex_descriptor origin,
                                         const envire::core::GraphTraits::vertex_descriptor target,
-                                        const base::TransformWithCovariance& originToRoot,
+                                        const base::TransformWithCovariance& rootToOrigin,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
@@ -1188,7 +1198,7 @@ namespace mars
                 object->getRotation(&absolutTransform.orientation);
 
                 // calculate the relative pose of the frame
-                tf.setTransform(originToRoot * absolutTransform);
+                tf.setTransform(rootToFrame.inverse() * absolutTransform);
                 tf.time = base::Time::now();
                 envireGraph->updateTransform(origin, target, tf);
             }
@@ -1198,7 +1208,7 @@ namespace mars
             if (envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(target))
             {
                 // calculate the absolute pose of the frame
-                tf = originToRoot.inverse()*tf.transform;
+                tf = rootToOrigin * tf.transform;
 
                 // CAUTION: we assume that there is only one AbsolutePose in the frame
                 // so we get the first item
@@ -1208,15 +1218,11 @@ namespace mars
                 it->getData().rotation = tf.transform.orientation;
             }
 
-
-
-            const envire::core::Transform invTf = envireGraph->getTransform(target, origin);
-            Simulator::updateChildPositions(target, invTf.transform * originToRoot,
-                                            envireGraph, graphTreeView);
+            Simulator::updateChildPositions(target, tf.transform, envireGraph, graphTreeView);
         }
 
         void Simulator::applyChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
-                                            const base::TransformWithCovariance& frameToRoot,
+                                            const base::TransformWithCovariance& rootToFrame,
                                             std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                             std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
@@ -1225,56 +1231,94 @@ namespace mars
                 const std::unordered_set<envire::core::GraphTraits::vertex_descriptor>& children = graphTreeView->tree[vertex].children;
                 for(const envire::core::GraphTraits::vertex_descriptor child : children)
                 {
-                    Simulator::applyPositions(vertex, child, frameToRoot, envireGraph, graphTreeView);
+                    Simulator::applyPositions(vertex, child, rootToFrame, envireGraph, graphTreeView);
                 }
             }
+        }
+
+        void Simulator::applyChildPositions(const envire::core::GraphTraits::vertex_descriptor vertex,
+                                            std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                            std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
+            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)};
+            Simulator::applyChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
         // TODO: replace typdef, remove if containsItem condition
         void Simulator::applyPositions(const envire::core::GraphTraits::vertex_descriptor origin,
                                        const envire::core::GraphTraits::vertex_descriptor target,
-                                       const base::TransformWithCovariance& originToRoot,
+                                       const base::TransformWithCovariance& rootToOrigin,
                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                        std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            envire::core::Transform tf = envireGraph->getTransform(origin, target);
-            const envire::core::Transform invTf = tf.inverse();
-            std::shared_ptr<DynamicObject> object = nullptr;
-            // absolute transform
-            tf = originToRoot.inverse()*tf.transform;
+            envire::core::Transform localTransform = envireGraph->getTransform(origin, target);
+            envire::core::Transform globalTransform = envire::core::Transform{rootToOrigin} * localTransform;
 
             if (envireGraph->containsItems<envire::core::Item<DynamicObjectItem>>(target))
             {
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                envire::core::EnvireGraph::ItemIterator<envire::core::Item<DynamicObjectItem>> it = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target);
-                object = it->getData().dynamicObject;
-                DynamicObjectItem *objectItem = &(it->getData());
-
-                object->setPosition(tf.transform.translation);
-                object->setRotation(tf.transform.orientation);
-
+                std::shared_ptr<interfaces::DynamicObject> object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target)->getData().dynamicObject;
+                object->setPosition(globalTransform.transform.translation);
+                object->setRotation(globalTransform.transform.orientation);
             }
 
-            // set the absolute pose values
-            // after all transformation of parent frames were updated
             if (envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(target))
             {
-                // calculate the absolute pose of the frame
-
                 // CAUTION: we assume that there is only one AbsolutePose in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple AbsolutePose for some reason
-                envire::core::EnvireGraph::ItemIterator<envire::core::Item<interfaces::AbsolutePose>> it = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target);
-                it->getData().position = tf.transform.translation;
-                it->getData().rotation = tf.transform.orientation;
+                interfaces::AbsolutePose& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target)->getData();
+                absolutePose.position = globalTransform.transform.translation;
+                absolutePose.rotation = globalTransform.transform.orientation;
             }
 
+            Simulator::applyChildPositions(target, globalTransform.transform, envireGraph, graphTreeView);
+        }
 
+        void Simulator::rotateHingeJoint(const envire::core::GraphTraits::vertex_descriptor origin,
+                                        double angle,
+                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                        std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            if (!envireGraph->containsItems<envire::core::Item<interfaces::JointInterfaceItem>>(origin))
+            {
+                // TODO: Log error / throw?
+                return;
+            }
+            std::shared_ptr<interfaces::JointInterface> joint = envireGraph->getItem<envire::core::Item<interfaces::JointInterfaceItem>>(origin)->getData().jointInterface;
 
-            Simulator::applyChildPositions(target, invTf.transform * originToRoot,
-                                           envireGraph, graphTreeView);
+            if (joint->getType() != JointType::JOINT_TYPE_HINGE)
+            {
+                // TODO: Log error / throw?
+                return;
+            }
+
+            if (!envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(origin))
+            {
+                throw std::logic_error("Simulator::rotateJoint called on illposed graph - frame misses AbsolutePose!");
+            }
+            interfaces::AbsolutePose& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+            // TODO: Ensure joint anchor == aps.position
+
+            utils::Vector axis;
+            joint->getAxis(&axis); // <- axis is in global coordinate frame
+            axis = absolutePose.rotation.inverse() * axis; // <- axis is now in local coordinate frame
+            Quaternion q = utils::angleAxisToQuaternion(angle, axis);
+
+            // Update transform to all children to account for rotation
+            for(const envire::core::GraphTraits::vertex_descriptor& child : graphTreeView->tree[origin].children)
+            {
+                envire::core::Transform tf = envireGraph->getTransform(origin, child);
+                tf.transform.translation = q * tf.transform.translation;
+                tf.transform.orientation = q * tf.transform.orientation;
+                envireGraph->updateTransform(origin, child, tf);
+            }
+
+            // Propagate change of childrens transforms
+            applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)}, envireGraph, graphTreeView);
         }
 
         // todo: currently we add the angle to the actual rotation
@@ -1308,10 +1352,9 @@ namespace mars
                     tf.transform.orientation = q*tf.transform.orientation;
                     envireGraph->updateTransform(origin, child, tf);
                 }
-
             }
-
         }
+
 
         void Simulator::newWorld(bool clear_all)
         {
