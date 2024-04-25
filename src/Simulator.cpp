@@ -167,7 +167,7 @@ namespace mars
             control->sensors = new SensorManager(control);
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
-            ControlCenter::nodeIDManager = std::unique_ptr<IDManager>(new IDManager{});
+            ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
 
             // todo: add worldphysicsLoaderInterface to mars_interfaces
 

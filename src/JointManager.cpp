@@ -199,7 +199,7 @@ namespace mars
 
     void JointManager::reattacheJoints(unsigned long node_id)
     {
-      const envire::core::FrameId frameId = ControlCenter::nodeIDManager->getName(node_id);
+      const envire::core::FrameId frameId = ControlCenter::linkIDManager->getName(node_id);
       auto jointReattachor = [frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
       {
         const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
@@ -375,7 +375,7 @@ namespace mars
     std::vector<unsigned long> JointManager::getIDsByNodeID(unsigned long node_id)
     {
       std::vector<unsigned long> jointIds;
-      const envire::core::FrameId frameId = ControlCenter::nodeIDManager->getName(node_id);
+      const envire::core::FrameId frameId = ControlCenter::linkIDManager->getName(node_id);
       auto jointIdCollector = [&jointIds, frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
       {
         const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
@@ -409,8 +409,8 @@ namespace mars
 
     unsigned long JointManager::getIDByNodeIDs(unsigned long id1, unsigned long id2)
     {
-      const envire::core::FrameId frameId1 = ControlCenter::nodeIDManager->getName(id1);
-      const envire::core::FrameId frameId2 = ControlCenter::nodeIDManager->getName(id2);
+      const envire::core::FrameId frameId1 = ControlCenter::linkIDManager->getName(id1);
+      const envire::core::FrameId frameId2 = ControlCenter::linkIDManager->getName(id2);
       
       const MutexLocker locker{&iMutex};
       if (const auto joint = getJointInterface(frameId1, frameId2).lock())
@@ -548,8 +548,8 @@ namespace mars
       auto configMap = joint->getConfigMap();
       const std::string parentNodeName = configMap["parent_link_name"];
       const std::string childNodeName = configMap["child_link_name"];
-      const unsigned long parentNodeId = ControlCenter::nodeIDManager->getID(parentNodeName);
-      const unsigned long childNodeId = ControlCenter::nodeIDManager->getID(childNodeName);
+      const unsigned long parentNodeId = ControlCenter::linkIDManager->getID(parentNodeName);
+      const unsigned long childNodeId = ControlCenter::linkIDManager->getID(childNodeName);
 
       return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
     }
