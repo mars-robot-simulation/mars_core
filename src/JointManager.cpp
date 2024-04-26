@@ -496,14 +496,15 @@ namespace mars
         const auto jointType = joint->getType();
         if (jointType == JointType::JOINT_TYPE_HINGE)
         {
+          constexpr bool b_isFixedJoint = false;
           const double& absoluteRotationRad = value;
           const double currentRotationRad = static_cast<double>(joint->getPosition()); // in (-pi, pi)
           const double relativeRotationRad = absoluteRotationRad - currentRotationRad;
 
           // TODO: Determining the name from the joint name should be handled at a central location
-          envire::core::FrameId jointFrameName;
-          joint->getName(&jointFrameName);
-          jointFrameName += "_joint";
+          std::string jointName;
+          joint->getName(&jointName);
+          envire::core::FrameId jointFrameName = constructFrameIdFromJointName(jointName, b_isFixedJoint);
           const auto jointFrameVertex = ControlCenter::envireGraph->getVertex(jointFrameName);
 
           Simulator* const simulator = dynamic_cast<Simulator*>(control->sim);
