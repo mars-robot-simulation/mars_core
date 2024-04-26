@@ -71,23 +71,24 @@ namespace mars
                         const std::string &value);
 
       // TODO: Discuss: Expose shared pointer counter for jointInterface? This may break internal working if user stores shared pointers to JointInterface.
-      std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
+      static std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId);
     private:
       static configmaps::ConfigMap constructEnvireJointConfigMap(const interfaces::JointData& jointData);
       static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
       static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
       static envire::core::FrameId constructFrameIdFromJointData(const interfaces::JointData& jointData);
       static bool isFixedJoint(const interfaces::JointData& jointData);
+      static bool isFixedJoint(const unsigned int jointId);
+
+      static envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId);
+      static envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName);
+      static std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName);
+      static std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1);
+      static std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
+
       std::list<interfaces::JointData> simJointsReload;
       interfaces::ControlCenter *control;
       mutable utils::Mutex iMutex;
-
-
-      envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId) const;
-      envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName) const;
-      std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName) const;
-      std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const;
-      std::list<std::weak_ptr<interfaces::JointInterface>> getJoints() const;
 
       std::list<interfaces::JointData>::iterator getReloadJoint(unsigned long id);
     };
