@@ -562,7 +562,7 @@ namespace mars
     configmaps::ConfigMap JointManager::constructEnvireJointConfigMap(const interfaces::JointData& jointData)
     {
       configmaps::ConfigMap result;
-      result["name"] == jointData.name;
+      result["name"] = jointData.name;
       switch (jointData.type)
       {
         case JointType::JOINT_TYPE_FIXED:
@@ -575,7 +575,7 @@ namespace mars
           result["minPosition"] = jointData.lowStopAxis1;
           result["maxPosition"] = jointData.highStopAxis1;
           result["maxEffort"] = 0.0; // TODO!
-          result["maxSpeed"] = 0.0; // TODO!
+          result["maxVelocity"] = 0.0; // TODO!
           break;
         case JointType::JOINT_TYPE_SLIDER:
         default:
