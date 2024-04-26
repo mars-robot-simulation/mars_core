@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include <envire_base_types/registration/TypeCreatorFactory.hpp>
+#include <envire_base_types/joints/Fixed.hpp>
 #include <envire_core/items/Item.hpp>
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/GraphTypes.hpp>
@@ -164,25 +165,38 @@ namespace mars
     void JointManager::removeJoint(unsigned long index)
     {
       const MutexLocker locker{&iMutex};
-      const bool b_isFixedJoint = isFixedJoint(index);
-      if (b_isFixedJoint)
+      if (const auto jointInterfaceItemPtr = getItemBasePtr(index))
       {
-        const auto jointInterfaceItemPtr = getItemBasePtr(index);
-        ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
-        // TODO: Also remove envire base item
-      }
-      else if (const auto joint = getJointInterface(index).lock())
-      {
-        configmaps::ConfigMap configMap = joint->getConfigMap();
-        const envire::core::FrameId parentFrameId = configMap["parent_link_name"].toString();
-        const envire::core::FrameId childFrameId = configMap["child_link_name"].toString();
+        configmaps::ConfigMap configMap = boost::dynamic_pointer_cast<envire::core::Item<JointInterfaceItem>>(jointInterfaceItemPtr)->getData().jointInterface->getConfigMap();
+        const bool b_isFixedJoint = configMap["type"].toString() == "fixed";
         const envire::core::FrameId jointFrameId = constructFrameIdFromJointName(configMap["name"].toString(), b_isFixedJoint);
-        const auto parentToJoint = ControlCenter::envireGraph->getTransform(parentFrameId, jointFrameId);
-        const auto jointToChild = ControlCenter::envireGraph->getTransform(jointFrameId, childFrameId);
+        if (b_isFixedJoint)
+        {
+          // Remove jointinterfaceitem from graph
+          ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
-        ControlCenter::envireGraph->disconnectFrame(jointFrameId);
-        ControlCenter::envireGraph->removeFrame(jointFrameId);
-        ControlCenter::envireGraph->addTransform(parentFrameId, childFrameId, parentToJoint * jointToChild);
+          // Also remove corresponding envire fixed joint item
+          const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<envire::base_types::joints::Fixed>>(jointFrameId);
+          for (auto iter = range.first; iter != range.second; ++iter)
+          {
+            if (iter->getData().name == configMap["name"].toString())
+            {
+              ControlCenter::envireGraph->removeItemFromFrame(jointFrameId, iter);
+            }
+          }
+        }
+        else
+        {
+          // Remove joint frame and reconnect graph
+          const envire::core::FrameId parentFrameId = configMap["parent_link_name"].toString();
+          const envire::core::FrameId childFrameId = configMap["child_link_name"].toString();
+          const auto parentToJoint = ControlCenter::envireGraph->getTransform(parentFrameId, jointFrameId);
+          const auto jointToChild = ControlCenter::envireGraph->getTransform(jointFrameId, childFrameId);
+
+          ControlCenter::envireGraph->disconnectFrame(jointFrameId);
+          ControlCenter::envireGraph->removeFrame(jointFrameId);
+          ControlCenter::envireGraph->addTransform(parentFrameId, childFrameId, parentToJoint * jointToChild);
+        }
       }
       else
       {
