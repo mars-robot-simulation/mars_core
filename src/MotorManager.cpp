@@ -217,10 +217,7 @@ namespace mars
             map<unsigned long, SimMotor*>::iterator iter = simMotors.find(index);
             if (iter != simMotors.end())
             {
-                tmpMotor = iter->second;
                 simMotors.erase(iter);
-                if (tmpMotor)
-                    delete tmpMotor;
             }
             mimicmotors.erase(index);
             iMutex.unlock();
