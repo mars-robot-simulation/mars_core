@@ -164,7 +164,8 @@ namespace mars
     void JointManager::removeJoint(unsigned long index)
     {
       const MutexLocker locker{&iMutex};
-      if (isFixedJoint(index))
+      const bool b_isFixedJoint = isFixedJoint(index);
+      if (b_isFixedJoint)
       {
         const auto jointInterfaceItemPtr = getItemBasePtr(index);
         ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
@@ -175,7 +176,7 @@ namespace mars
         configmaps::ConfigMap configMap = joint->getConfigMap();
         const envire::core::FrameId parentFrameId = configMap["parent_link_name"].toString();
         const envire::core::FrameId childFrameId = configMap["child_link_name"].toString();
-        const envire::core::FrameId jointFrameId = configMap["frame"].toString();
+        const envire::core::FrameId jointFrameId = constructFrameIdFromJointName(configMap["name"].toString(), b_isFixedJoint);
         const auto parentToJoint = ControlCenter::envireGraph->getTransform(parentFrameId, jointFrameId);
         const auto jointToChild = ControlCenter::envireGraph->getTransform(jointFrameId, childFrameId);
 
@@ -619,9 +620,14 @@ namespace mars
       return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
     }
 
+    envire::core::FrameId JointManager::constructFrameIdFromJointName(const std::string& jointName, bool isFixedJoint)
+    {
+      return envire::core::FrameId{isFixedJoint ? jointName : jointName + "_joint"};
+    }
+
     envire::core::FrameId JointManager::constructFrameIdFromJointData(const interfaces::JointData& jointData)
     {
-      return envire::core::FrameId{isFixedJoint(jointData) ? jointData.name : jointData.name + "_joint"};
+      return constructFrameIdFromJointName(jointData.name, isFixedJoint(jointData));
     }
 
     bool JointManager::isFixedJoint(const interfaces::JointData& jointData)
@@ -691,7 +697,7 @@ namespace mars
 
     std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName)
     {
-      std::shared_ptr<interfaces::JointInterface> foundJoint;
+      std::shared_ptr<interfaces::JointInterface> foundJoint{nullptr};
       auto jointInterfaceSearchFunctor = [&foundJoint, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
       {
         // a joint with the given name is already found

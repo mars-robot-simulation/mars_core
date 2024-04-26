@@ -72,17 +72,18 @@ namespace mars
 
       // TODO: Discuss: Expose shared pointer counter for jointInterface? This may break internal working if user stores shared pointers to JointInterface.
       static std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId);
+      static std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName);
     private:
       static configmaps::ConfigMap constructEnvireJointConfigMap(const interfaces::JointData& jointData);
       static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
       static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
+      static envire::core::FrameId constructFrameIdFromJointName(const std::string& jointName, bool isFixedJoint);
       static envire::core::FrameId constructFrameIdFromJointData(const interfaces::JointData& jointData);
       static bool isFixedJoint(const interfaces::JointData& jointData);
       static bool isFixedJoint(const unsigned int jointId);
 
       static envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId);
       static envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName);
-      static std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName);
       static std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1);
       static std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
 
