@@ -262,8 +262,7 @@ namespace mars
                 if(axis == 1)
                 {
                     setJointControlParameter = &JointInterface::setVelocity;
-                }
-                else
+                } else
                 {
                     setJointControlParameter = &JointInterface::setVelocity2;
                 }
@@ -277,8 +276,7 @@ namespace mars
                 if(axis == 1)
                 {
                     setJointControlParameter = &JointInterface::setVelocity;
-                }
-                else
+                } else
                 {
                     setJointControlParameter = &JointInterface::setVelocity2;
                 }
@@ -316,8 +314,7 @@ namespace mars
                 if(axis==1)
                 {
                     setJointControlParameter = &JointInterface::setVelocity;
-                }
-                else
+                } else
                 {
                     setJointControlParameter = &JointInterface::setVelocity2;
                 }
@@ -377,14 +374,12 @@ namespace mars
                     if(sMotor.axis == 1)
                     {
                         validJoint->setForceLimit(fabs(controlValue));
-                    }
-                    else
+                    } else
                     {
                         validJoint->setForceLimit2(fabs(controlValue));
                     }
                 }
-            }
-            else
+            } else
             {
                 effort = controlValue;
             }
@@ -460,8 +455,7 @@ namespace mars
                     if(axis == 1)
                     {
                         validJoint->setForceLimit(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
-                    }
-                    else
+                    } else
                     {
                         validJoint->setForceLimit2(sMotor.maxEffort*error*(double)sMotor.config["spring"]);
                     }
@@ -597,7 +591,7 @@ namespace mars
 
         void SimMotor::refreshPosition()
         {
-            if (auto validJoint = joint.lock())
+            if(auto validJoint = joint.lock())
             {
                 if(sMotor.axis == 1)
                     position1 = validJoint->getPosition();
@@ -608,7 +602,7 @@ namespace mars
 
         void SimMotor::refreshPositions()
         {
-            if (auto validJoint = joint.lock())
+            if(auto validJoint = joint.lock())
             {
                 position1 = validJoint->getPosition();
                 position2 = validJoint->getPosition2();
@@ -893,8 +887,7 @@ namespace mars
                sMotor.type == MOTOR_TYPE_EFFORT)
             {
                 effortMotor = true;
-            }
-            else if(sMotor.type == MOTOR_TYPE_DIRECT_EFFORT)
+            } else if(sMotor.type == MOTOR_TYPE_DIRECT_EFFORT)
             {
                 effortMotor = true;
                 ConfigMap map = sMotor.config;
@@ -912,8 +905,7 @@ namespace mars
                     if(sMotor.axis == 1)
                     {
                         validJoint->setForceLimit(sMotor.maxEffort);
-                    }
-                    else
+                    } else
                     {
                         validJoint->setForceLimit2(sMotor.maxEffort);
                     }
@@ -1142,38 +1134,30 @@ namespace mars
                 if(mars::utils::matchPattern("*/p", configPath))
                 {
                     setP(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/i", configPath))
+                } else if(mars::utils::matchPattern("*/i", configPath))
                 {
                     setI(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/d", configPath))
+                } else if(mars::utils::matchPattern("*/d", configPath))
                 {
                     setI(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/maxSpeed", configPath))
+                } else if(mars::utils::matchPattern("*/maxSpeed", configPath))
                 {
                     setMaxSpeed(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/maxEffort", configPath))
+                } else if(mars::utils::matchPattern("*/maxEffort", configPath))
                 {
                     setMaxEffort(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/minValue", configPath))
+                } else if(mars::utils::matchPattern("*/minValue", configPath))
                 {
                     setMinValue(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/maxValue", configPath))
+                } else if(mars::utils::matchPattern("*/maxValue", configPath))
                 {
                     setMaxValue(atof(value.c_str()));
-                }
-                else if(mars::utils::matchPattern("*/type", configPath))
+                } else if(mars::utils::matchPattern("*/type", configPath))
                 {
                     if(value == "DC" || value == "2") 
                     {
                         setType(MOTOR_TYPE_VELOCITY);
-                    }
-                    else 
+                    } else 
                     {
                         setType(MOTOR_TYPE_POSITION);
                     }

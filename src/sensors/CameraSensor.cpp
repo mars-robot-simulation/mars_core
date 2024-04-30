@@ -335,8 +335,7 @@ namespace mars
             {
                 free(buffer);
                 return;
-            }
-            else if(size != size2)
+            } else if(size != size2)
             {
                 free(buffer);
                 free(buffer2);
@@ -560,7 +559,7 @@ namespace mars
                         cfg->hud_pos = CameraConfigStruct::globalHudPos++;
                     }
                 }
-            }else
+            } else
             {
                 cfg->show_cam = false;
             }
@@ -568,7 +567,7 @@ namespace mars
             if((it = config->find("enabled")) != config->end())
             {
                 cfg->enabled =  it->second;
-            }else
+            } else
             {
                 cfg->enabled = true;
             }
@@ -604,8 +603,7 @@ namespace mars
                     euler.y() = it->second["pitch"];
                     euler.z() = it->second["yaw"];
                     cfg->ori_offset = eulerToQuaternion(euler);
-                }
-                else
+                } else
                 {
                     cfg->ori_offset.x() = it->second["x"];
                     cfg->ori_offset.y() = it->second["y"];

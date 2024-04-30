@@ -136,7 +136,7 @@ namespace mars
             map<unsigned long, BaseSensor*>::const_iterator iter;
             sensorList->clear();
             iMutex.lock();
-            for (iter = simSensors.begin(); iter != simSensors.end(); iter++)
+            for(iter = simSensors.begin(); iter != simSensors.end(); iter++)
             {
                 iter->second->getCoreExchange(&obj);
                 sensorList->push_back(obj);
@@ -193,11 +193,11 @@ namespace mars
             BaseSensor* tmpSensor = NULL;
             iMutex.lock();
             map<unsigned long, BaseSensor*>::iterator iter = simSensors.find(index);
-            if (iter != simSensors.end())
+            if(iter != simSensors.end())
             {
                 tmpSensor = iter->second;
                 simSensors.erase(iter);
-                if (tmpSensor)
+                if(tmpSensor)
                     delete tmpSensor;
             }
             iMutex.unlock();
@@ -219,7 +219,7 @@ namespace mars
             MutexLocker locker(&iMutex);
             map<unsigned long, BaseSensor*>::const_iterator iter = simSensors.find(index);
 
-            if (iter != simSensors.end())
+            if(iter != simSensors.end())
                 return iter->second;
             else
                 return NULL;
@@ -238,7 +238,7 @@ namespace mars
             map<unsigned long, BaseSensor*>::const_iterator iter;
 
             iter = simSensors.find(id);
-            if (iter != simSensors.end())
+            if(iter != simSensors.end())
                 return iter->second->getSensorData(data);
 
             LOG_DEBUG("Cannot Find Sensor wirh id: %lu\n",id);
