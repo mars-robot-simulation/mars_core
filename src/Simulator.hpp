@@ -398,5 +398,5 @@ namespace mars
 
         };
 
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

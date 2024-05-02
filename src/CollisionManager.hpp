@@ -28,5 +28,5 @@ namespace mars
             std::vector<interfaces::ContactData> contactVector;
             std::vector<interfaces::CollisionInterfaceItem> collisionItems;
         };
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

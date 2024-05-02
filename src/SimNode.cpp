@@ -18,7 +18,7 @@
 
 namespace mars
 {
-    namespace sim
+    namespace core
     {
         using std::isinf;
         using std::isnan;
@@ -1030,5 +1030,5 @@ namespace mars
             fRotation.w() = value;
         }
 
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

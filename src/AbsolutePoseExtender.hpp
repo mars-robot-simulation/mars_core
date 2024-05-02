@@ -25,5 +25,5 @@ namespace mars
         private:
             std::shared_ptr<envire::core::EnvireGraph> envireGraph;
         };
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

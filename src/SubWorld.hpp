@@ -24,5 +24,5 @@ namespace mars
         protected:
             void run() override;
         };
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

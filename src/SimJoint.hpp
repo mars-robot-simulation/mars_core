@@ -13,7 +13,7 @@ namespace mars
         class ControlCenter;
     }
 
-    namespace sim
+    namespace core
     {
 
         class SimNode;
@@ -197,5 +197,5 @@ namespace mars
             data_broker::DataPackageMapping dbPackageMapping;
         };
 
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

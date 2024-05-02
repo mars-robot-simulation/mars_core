@@ -28,5 +28,5 @@ namespace mars
             envireGraph->addItemToFrame(e.frame, absolutePoseItemPtr);
 
         };
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

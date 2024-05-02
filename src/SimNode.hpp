@@ -17,7 +17,7 @@ namespace mars
         class ControlCenter;
     }
 
-    namespace sim
+    namespace core
     {
 
 #define BACK_VEL 25
@@ -209,5 +209,5 @@ namespace mars
 
         };
 
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars

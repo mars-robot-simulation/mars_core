@@ -12,7 +12,7 @@
 
 namespace mars
 {
-    namespace sim
+    namespace core
     {
 
         using namespace std;
@@ -753,5 +753,5 @@ namespace mars
         }
 
 
-    } // end of namespace sim
+    } // end of namespace core
 } // end of namespace mars
