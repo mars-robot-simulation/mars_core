@@ -33,8 +33,8 @@ namespace mars
             virtual const interfaces::JointData getFullJoint(unsigned long index);
             virtual void removeJoint(unsigned long index);
             virtual void removeJointByIDs(unsigned long id1, unsigned long id2);
-            virtual std::shared_ptr<mars::sim::SimJoint> getSimJoint(unsigned long id);
-            virtual std::vector<std::shared_ptr<mars::sim::SimJoint>> getSimJoints(void);
+            virtual std::shared_ptr<mars::core::SimJoint> getSimJoint(unsigned long id);
+            virtual std::vector<std::shared_ptr<mars::core::SimJoint>> getSimJoints(void);
             virtual void reattacheJoints(unsigned long node_id);
             virtual void reloadJoints(void);
             virtual void updateJoints(interfaces::sReal calc_ms);

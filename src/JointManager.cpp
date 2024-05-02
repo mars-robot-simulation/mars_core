@@ -215,11 +215,11 @@ namespace mars
             }
         }
 
-        std::shared_ptr<mars::sim::SimJoint> JointManager::getSimJoint(unsigned long id)
+        std::shared_ptr<mars::core::SimJoint> JointManager::getSimJoint(unsigned long id)
         {
             if(const auto joint = getJointInterface(id).lock())
             {
-                const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+                const auto simJoint = std::make_shared<core::SimJoint>(control, constructJointData(joint));
                 // TODO: 
                 // simJoint->setAttachedNodes(node1, node2);
                 simJoint->setPhysicalJoint(joint);
@@ -228,16 +228,16 @@ namespace mars
             return nullptr;
         }
 
-        std::vector<std::shared_ptr<mars::sim::SimJoint>> JointManager::getSimJoints(void)
+        std::vector<std::shared_ptr<mars::core::SimJoint>> JointManager::getSimJoints(void)
         {
             const MutexLocker locker{&iMutex};
-            vector<std::shared_ptr<mars::sim::SimJoint>> simJoints;
+            vector<std::shared_ptr<mars::core::SimJoint>> simJoints;
             simJoints.reserve(ControlCenter::jointIDManager->size());
             for(const auto potentialJoint : getJoints())
             {
                 if(const auto joint = potentialJoint.lock())
                 {
-                    const auto simJoint = std::make_shared<sim::SimJoint>(control, constructJointData(joint));
+                    const auto simJoint = std::make_shared<core::SimJoint>(control, constructJointData(joint));
                     // TODO: 
                     // simJoint->setAttachedNodes(node1, node2);
                     simJoint->setPhysicalJoint(joint);
