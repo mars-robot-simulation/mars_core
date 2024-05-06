@@ -261,8 +261,13 @@ namespace mars
                 }
             }
 
-            while(((Thread*)this)->isRunning())
-                utils::msleep(1);
+            {
+                const Thread *const simThread{dynamic_cast<Thread*>(this)};
+                while(simThread->isRunning())
+                {
+                    utils::msleep(1);
+                }
+            }
             fprintf(stderr, "Delete mars_sim\n");
 
             if(control->cfg)
@@ -566,9 +571,8 @@ namespace mars
 
         void Simulator::step(bool setState)
         {
-            std::vector<pluginStruct>::iterator p_iter;
-            long time;
-            Status oldState;
+            Status oldState = Status::UNKNOWN;
+            long time = 0;
             struct timeval tv;
             tv.tv_sec = 0;
             tv.tv_usec = 10L;
@@ -628,7 +632,7 @@ namespace mars
                 }
             }
 
-            avg_step_time += getTimeDiff(time);
+            avg_step_time += static_cast<double>(getTimeDiff(time));
 
             // control->joints->updateJoints(calc_ms);
             control->motors->updateMotors(calc_ms);
@@ -644,7 +648,7 @@ namespace mars
                 ControlCenter::theDataBroker->stepTimer("mars_sim/simTimer", calc_ms);
             }
 
-            avg_log_time += getTimeDiff(time);
+            avg_log_time += static_cast<double>(getTimeDiff(time));
             if(++count > avg_count_steps)
             {
                 avg_log_time /= count;
@@ -776,7 +780,7 @@ namespace mars
             long timeDiff = getTimeDiff(myTime);
             myTime += timeDiff;
             static double avgTime = 0;
-            avgTime += getTimeDiff(myTime2);
+            avgTime += static_cast<double>(getTimeDiff(myTime2));
             myTime2 = utils::getTime();
 
             simRealTime += timeDiff;
@@ -1054,7 +1058,6 @@ namespace mars
 
         void Simulator::finishedDraw(void)
         {
-            long time;
             processRequests();
 
             if (reloadSim)
@@ -1209,7 +1212,6 @@ namespace mars
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
                 envire::core::EnvireGraph::ItemIterator<envire::core::Item<DynamicObjectItem>> it = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target);
                 object = it->getData().dynamicObject;
-                DynamicObjectItem *objectItem = &(it->getData());
 
                 // TODO: check if targetFrame is dynamic?
                 base::TransformWithCovariance absolutTransform;
@@ -1438,10 +1440,6 @@ namespace mars
         {
             int c;
             int option_index = 0;
-            int psflag = 0;
-            int pgflag = 0;
-            int psvflag = 0;
-            int pdflag = 0;
 
             static struct option long_options[] = {
                 {"help",no_argument,0,'h'},
@@ -1997,6 +1995,7 @@ namespace mars
             {
                 for(auto &it: subWorlds)
                 {
+                    CPP_UNUSED(it);
                     //it.second->control->physics->draw_contact_points = _property.bValue;
                     if(cfgDrawContact.bValue != _property.bValue)
                     {
@@ -2193,7 +2192,7 @@ namespace mars
 
         unsigned long Simulator::getTime()
         {
-            unsigned long returnTime;
+            unsigned long returnTime = 0;
             getTimeMutex.lock();
             if(cfgUseNow.bValue)
             {

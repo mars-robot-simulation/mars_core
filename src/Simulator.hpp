@@ -102,7 +102,7 @@ namespace mars
 
             const std::string getLibName() const override
             {
-                return std::string("mars_core");
+                return std::string{"mars_core"};
             }
 
             void newLibLoaded(const std::string &libName) override;
@@ -366,9 +366,6 @@ namespace mars
             std::list<std::string> arg_v_scene_name;
             bool b_SceneChanged;
             bool haveNewPlugin;
-
-            // temp map for visualization via old mars_graphics
-            std::map<std::string, interfaces::JointInterface*> jointMap;
 
             // for graphical debuggin
             std::unique_ptr<osg_lines::Lines> contactLines;
