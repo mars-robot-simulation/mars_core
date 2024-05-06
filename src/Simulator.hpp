@@ -108,6 +108,10 @@ namespace mars
             void newLibLoaded(const std::string &libName) override;
             CREATE_MODULE_INFO();
             void checkOptionalDependency(const std::string &libName);
+            void setupDataBroker();
+            void setupCFGManager();
+            void setupMarsGraphics();
+            void setupLogConsole();
 
 
             // --- SimulatorInterface ---
@@ -300,7 +304,7 @@ namespace mars
             bool kill_sim;
             ode_physics::WorldPhysicsLoader* physicsLoader; // plugin reference
             ode_collision::CollisionSpaceLoader* collisionSpaceLoader; // plugin reference
-            std::map<std::string, SubWorld*> subWorlds;
+            std::map<std::string, std::unique_ptr<SubWorld>> subWorlds;
             std::unique_ptr<CollisionManager> collisionManager;
             std::shared_ptr<interfaces::ControlCenter> control; ///< Pointer to instance of ControlCenter (created in Simulator::Simulator(lib_manager::LibManager *theManager))
             std::vector<LoadOptions> filesToLoad;

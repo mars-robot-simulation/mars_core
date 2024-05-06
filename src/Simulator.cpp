@@ -31,7 +31,7 @@
 #include <data_broker/DataBrokerInterface.h>
 #include <lib_manager/LibInterface.hpp>
 
-// todo: extend interfaces to not require the ode_physics library on compile time
+// TODO: extend interfaces to not require the ode_physics library on compile time
 #include <mars_ode_physics/WorldPhysicsLoader.hpp>
 
 #include <mars_ode_collision/CollisionSpaceLoader.hpp>
@@ -169,7 +169,7 @@ namespace mars
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
             ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
 
-            // todo: add worldphysicsLoaderInterface to mars_interfaces
+            // TODO: add worldphysicsLoaderInterface to mars_interfaces
 
             physicsLoader = libManager->getLibraryAs<ode_physics::WorldPhysicsLoader>("mars_ode_physics", true);
             if(physicsLoader)
@@ -265,8 +265,6 @@ namespace mars
                 utils::msleep(1);
             fprintf(stderr, "Delete mars_sim\n");
 
-            //if (control->controllers) delete control->controllers;
-
             if(control->cfg)
             {
                 string saveFile = configPath.sValue;
@@ -285,8 +283,6 @@ namespace mars
                 saveFile.append("/mars_Simulator.yaml");
                 control->cfg->writeConfig(saveFile.c_str(), "Simulator");
             }
-
-            // todo: delete subworlds
 
             // TODO: do we need to delete control?
             libManager->releaseLibrary("mars_ode_physics");
@@ -309,74 +305,98 @@ namespace mars
         {
             if(libName == "data_broker")
             {
-                ControlCenter::theDataBroker = libManager->getLibraryAs<data_broker::DataBrokerInterface>("data_broker");
-                if(ControlCenter::theDataBroker)
-                {
-                    // control->dataBroker is deprecated
-                    // TODO: we keep control->dataBroker for backwards compatibility
-                    control->dataBroker = ControlCenter::theDataBroker;
+                setupDataBroker();
+            }
+            else if(libName == "cfg_manager")
+            {
+                setupCFGManager();
+            }
+            else if(libName == "mars_graphics" and !control->graphics)
+            {
+                setupMarsGraphics();
+            }
+            else if(libName == "log_console")
+            {
+                setupLogConsole();
+            }
+        }
 
-                    // create streams
-                    getTimeMutex.lock();
-                    dbSimTimeId = ControlCenter::theDataBroker->pushData("mars_sim", "simTime",
-                                                                dbSimTimePackage,
-                                                                NULL,
+        void Simulator::setupDataBroker()
+        {
+            ControlCenter::theDataBroker = libManager->getLibraryAs<data_broker::DataBrokerInterface>("data_broker");
+            if(ControlCenter::theDataBroker)
+            {
+                // control->dataBroker is deprecated
+                // TODO: we keep control->dataBroker for backwards compatibility
+                control->dataBroker = ControlCenter::theDataBroker;
+
+                // create streams
+                getTimeMutex.lock();
+                dbSimTimeId = ControlCenter::theDataBroker->pushData("mars_sim", "simTime",
+                                                            dbSimTimePackage,
+                                                            nullptr,
+                                                            data_broker::DATA_PACKAGE_READ_FLAG);
+                dbSimDebugId = ControlCenter::theDataBroker->pushData("mars_sim", "debugTime",
+                                                                dbSimDebugPackage,
+                                                                nullptr,
                                                                 data_broker::DATA_PACKAGE_READ_FLAG);
-                    dbSimDebugId = ControlCenter::theDataBroker->pushData("mars_sim", "debugTime",
-                                                                 dbSimDebugPackage,
-                                                                 NULL,
-                                                                 data_broker::DATA_PACKAGE_READ_FLAG);
-                    getTimeMutex.unlock();
-                    ControlCenter::theDataBroker->createTimer("mars_sim/simTimer");
-                    ControlCenter::theDataBroker->createTrigger("mars_sim/prePhysicsUpdate");
-                    ControlCenter::theDataBroker->createTrigger("mars_sim/postPhysicsUpdate");
-                    ControlCenter::theDataBroker->createTrigger("mars_sim/finishedDrawTrigger");
+                getTimeMutex.unlock();
+                ControlCenter::theDataBroker->createTimer("mars_sim/simTimer");
+                ControlCenter::theDataBroker->createTrigger("mars_sim/prePhysicsUpdate");
+                ControlCenter::theDataBroker->createTrigger("mars_sim/postPhysicsUpdate");
+                ControlCenter::theDataBroker->createTrigger("mars_sim/finishedDrawTrigger");
 
-                    // setup output
-                    ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "fatal",
-                                                            data_broker::DB_MESSAGE_TYPE_FATAL);
-                    ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "error",
-                                                            data_broker::DB_MESSAGE_TYPE_ERROR);
-                    ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "warning",
-                                                            data_broker::DB_MESSAGE_TYPE_WARNING);
-                    ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "info",
-                                                            data_broker::DB_MESSAGE_TYPE_INFO);
-                    ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "debug",
-                                                            data_broker::DB_MESSAGE_TYPE_DEBUG);
-                    LOG_DEBUG("Simulator: no console loaded. output to stdout!");
-                } else
-                {
-                    fprintf(stderr, "ERROR: could not get DataBroker!\n");
-                }
-            } else if(libName == "cfg_manager")
+                // setup output
+                ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "fatal",
+                                                        data_broker::DB_MESSAGE_TYPE_FATAL);
+                ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "error",
+                                                        data_broker::DB_MESSAGE_TYPE_ERROR);
+                ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "warning",
+                                                        data_broker::DB_MESSAGE_TYPE_WARNING);
+                ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "info",
+                                                        data_broker::DB_MESSAGE_TYPE_INFO);
+                ControlCenter::theDataBroker->registerSyncReceiver(this, "_MESSAGES_", "debug",
+                                                        data_broker::DB_MESSAGE_TYPE_DEBUG);
+                LOG_DEBUG("Simulator: no console loaded. output to stdout!");
+            }
+            else
             {
-                control->cfg = libManager->getLibraryAs<cfg_manager::CFGManagerInterface>("cfg_manager");
-            } else if(libName == "mars_graphics" and !control->graphics)
+                fprintf(stderr, "ERROR: could not get DataBroker!\n");
+            }
+        }
+
+        void Simulator::setupCFGManager()
+        {
+            control->cfg = libManager->getLibraryAs<cfg_manager::CFGManagerInterface>("cfg_manager");
+        }
+
+        void Simulator::setupMarsGraphics()
+        {
+            control->graphics = libManager->getLibraryAs<interfaces::GraphicsManagerInterface>("mars_graphics", true);
+            if(control->graphics)
             {
-                control->graphics = libManager->getLibraryAs<interfaces::GraphicsManagerInterface>("mars_graphics", true);
-                if(control->graphics)
-                {
-                    LOG_INFO("loaded mars_graphics");
-                    control->loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
-                    control->loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
-                }
-                control->graphics->initializeOSG(NULL);
-            } else if(libName == "log_console")
+                LOG_INFO("loaded mars_graphics");
+                control->loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
+                control->loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
+            }
+            control->graphics->initializeOSG(nullptr);
+        }
+
+        void Simulator::setupLogConsole()
+        {
+            const LibInterface *const lib = libManager->getLibrary("log_console");
+            if(ControlCenter::theDataBroker)
             {
-                LibInterface *lib = libManager->getLibrary("log_console");
-                if(ControlCenter::theDataBroker)
+                if(lib)
                 {
-                    if(lib)
-                    {
-                        LOG_DEBUG("Simulator: console loaded. stop output to stdout!");
-                        ControlCenter::theDataBroker->unregisterSyncReceiver(this, "_MESSAGES_", "*");
-                    }
-                } else
-                {
-                    LOG_ERROR("Simulator: try to setup log_console, but there is not data broker.");
+                    LOG_DEBUG("Simulator: console loaded. stop output to stdout!");
+                    ControlCenter::theDataBroker->unregisterSyncReceiver(this, "_MESSAGES_", "*");
                 }
             }
-
+            else
+            {
+                LOG_ERROR("Simulator: try to setup log_console, but there is no data broker.");
+            }
         }
 
         void Simulator::runSimulation(bool startThread)
@@ -418,62 +438,66 @@ namespace mars
                 simRealTime = 0;
             }
 
-            if(startThread) this->start();
+            if(startThread)
+            {
+                this->start();
+            }
 
             collisionSpace->updateTransforms();
-
         }
 
         std::shared_ptr<SubControlCenter> Simulator::createSubWorld(const std::string &name)
         {
-            SubWorld * world = new SubWorld;
+            throw std::logic_error("Simulator::createSubWorld should be obsolete. If it is needed nontheless, check for common demoninator with itemAdded<World>.");
+            // SubWorld * world = new SubWorld;
 
-            // use the control with new physic
-            //world->control = new ControlCenter;
-            //*(world->control) = *control;
-            world->control = std::make_shared<SubControlCenter>(interfaces::SubControlCenter());
-            world->control->setPrefix(name);
+            // // use the control with new physic
+            // //world->control = new ControlCenter;
+            // //*(world->control) = *control;
+            // world->control = std::make_shared<SubControlCenter>(interfaces::SubControlCenter());
+            // world->control->setPrefix(name);
 
-            world->control->physics = physicsLoader->createWorldInstance();
-            world->control->physics->initTheWorld();
-            // the physics step_size is in seconds
-            world->control->physics->step_size = calc_ms/1000.;
-            world->control->physics->fast_step = cfgFaststep.bValue;
-            world->control->physics->world_erp = cfgWorldErp.dValue;
-            world->control->physics->world_cfm = cfgWorldCfm.dValue;
-            world->control->physics->world_gravity = gravity;
+            // world->control->physics = physicsLoader->createWorldInstance();
+            // world->control->physics->initTheWorld();
+            // // the physics step_size is in seconds
+            // world->control->physics->step_size = calc_ms/1000.;
+            // world->control->physics->fast_step = cfgFaststep.bValue;
+            // world->control->physics->world_erp = cfgWorldErp.dValue;
+            // world->control->physics->world_cfm = cfgWorldCfm.dValue;
+            // world->control->physics->world_gravity = gravity;
 
-            // create seperate collision space
-            world->control->collision = collisionSpaceLoader->createCollisionSpace(control.get());
-            world->control->collision->initSpace();
+            // // create seperate collision space
+            // world->control->collision = collisionSpaceLoader->createCollisionSpace(control.get());
+            // world->control->collision->initSpace();
 
-            //world->control->physics->draw_contact_points = cfgDrawContact.bValue;
-            subWorlds[world->control->getPrefix()] = world;
-            world->start();
+            // //world->control->physics->draw_contact_points = cfgDrawContact.bValue;
+            // subWorlds[world->control->getPrefix()] = world;
+            // world->start();
 
-            // store the control center of the subworld in its own frame in the graph
-            using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
-            SubControlItem::Ptr worldItemPtr(new SubControlItem(world->control));
+            // // store the control center of the subworld in its own frame in the graph
+            // using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
+            // SubControlItem::Ptr worldItemPtr(new SubControlItem(world->control));
 
-            envire::core::FrameId frameId = world->control->getFrameId();
-            ControlCenter::envireGraph->addFrame(frameId);
-            ControlCenter::envireGraph->addItemToFrame(frameId, worldItemPtr);
-            // TODO: add Identity() with current time to the envire::core::Transform
-            envire::core::Transform iniPose;
-            iniPose.transform.orientation = base::Quaterniond::Identity();
-            iniPose.transform.translation << 0.0, 0.0, 0.0;
-            iniPose.time = base::Time::now();
-            ControlCenter::envireGraph->addTransform(SIM_CENTER_FRAME_NAME, frameId, iniPose);
+            // envire::core::FrameId frameId = world->control->getFrameId();
+            // ControlCenter::envireGraph->addFrame(frameId);
+            // ControlCenter::envireGraph->addItemToFrame(frameId, worldItemPtr);
+            // // TODO: add Identity() with current time to the envire::core::Transform
+            // envire::core::Transform iniPose;
+            // iniPose.transform.orientation = base::Quaterniond::Identity();
+            // iniPose.transform.translation << 0.0, 0.0, 0.0;
+            // iniPose.time = base::Time::now();
+            // ControlCenter::envireGraph->addTransform(SIM_CENTER_FRAME_NAME, frameId, iniPose);
 
-            // add collision item into graph
-            CollisionInterfaceItem collisionItem;
-            collisionItem.collisionInterface = world->control->collision;
-            collisionItem.pluginName = "mars_ode_collision";
-            collisionManager->addCollisionInterfaceItem(collisionItem);
-            envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr(new envire::core::Item<interfaces::CollisionInterfaceItem>(collisionItem));
-            ControlCenter::envireGraph->addItemToFrame(frameId, collisionItemPtr);
+            // // add collision item into graph
+            // CollisionInterfaceItem collisionItem;
+            // collisionItem.collisionInterface = world->control->collision;
+            // collisionItem.pluginName = "mars_ode_collision";
+            // collisionManager->addCollisionInterfaceItem(collisionItem);
+            // envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr(new envire::core::Item<interfaces::CollisionInterfaceItem>(collisionItem));
+            // ControlCenter::envireGraph->addItemToFrame(frameId, collisionItemPtr);
 
-            return world->control;
+            // return world->control;
+            return nullptr;
         }
 
         /**
@@ -616,8 +640,7 @@ namespace mars
             getTimeMutex.unlock();
             if(ControlCenter::theDataBroker)
             {
-                ControlCenter::theDataBroker->pushData(dbSimTimeId,
-                                              dbSimTimePackage);
+                ControlCenter::theDataBroker->pushData(dbSimTimeId, dbSimTimePackage);
                 ControlCenter::theDataBroker->stepTimer("mars_sim/simTimer", calc_ms);
             }
 
@@ -1097,7 +1120,7 @@ namespace mars
             for (unsigned int i=0; i<guiPlugins.size(); i++)
             {
                 guiPlugins[i].p_interface->update(0);
-                // todo: fix time debuging for gui plugins
+                // TODO: fix time debuging for gui plugins
                 /*
                   time = utils::getTime();
 
@@ -1177,7 +1200,7 @@ namespace mars
         {
             envire::core::Transform tf = envireGraph->getTransform(origin, target);
             std::shared_ptr<DynamicObject> object = nullptr;
-            // todo: instead of searching in the subworlds we should check for items of the frame that are of type dynamicobject
+            // TODO: instead of searching in the subworlds we should check for items of the frame that are of type dynamicobject
 
             if (envireGraph->containsItems<envire::core::Item<DynamicObjectItem>>(target))
             {
@@ -1188,7 +1211,7 @@ namespace mars
                 object = it->getData().dynamicObject;
                 DynamicObjectItem *objectItem = &(it->getData());
 
-                // todo: check if targetFrame is dynamic?
+                // TODO: check if targetFrame is dynamic?
                 base::TransformWithCovariance absolutTransform;
                 object->getPosition(&absolutTransform.translation);
                 object->getRotation(&absolutTransform.orientation);
@@ -1317,7 +1340,7 @@ namespace mars
             applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)}, envireGraph, graphTreeView);
         }
 
-        // todo: currently we add the angle to the actual rotation
+        // TODO: currently we add the angle to the actual rotation
         // we should have an option to set an absolute rotation
         void Simulator::rotateRevolute( const envire::core::GraphTraits::vertex_descriptor origin,
                                         double angle,
@@ -1829,7 +1852,7 @@ namespace mars
 
         int Simulator::checkCollisions(void)
         {
-            // todo: reimplement on collision space
+            // TODO: reimplement on collision space
             return 0; //physics->checkCollisions();
         }
 
@@ -2186,7 +2209,7 @@ namespace mars
 
         /*
 
-          todo:
+          TODO:
           Howto manage ode objects and sync them with envire representation:
           1. handle/manage map by ids (frameId, etc.)
           2. store ode objects in envire graph directly
@@ -2200,7 +2223,7 @@ namespace mars
          */
 
         // envire event callbacks
-        // todo: we might not add a physics frame for every envire frame (could call this function if inertial or joint is added)
+        // TODO: we might not add a physics frame for every envire frame (could call this function if inertial or joint is added)
         // void Simulator::frameAdded(const envire::core::FrameAddedEvent& e)
         // {
         // }
@@ -2224,7 +2247,7 @@ namespace mars
             {
                 const envire::core::GraphTraits::vertex_descriptor vertex = ControlCenter::envireGraph->vertex(frame);
                 envire::core::GraphTraits::vertex_descriptor parentVertex = ControlCenter::graphTreeView->tree[vertex].parent;
-                // todo: check if this check is correct
+                // TODO: check if this check is correct
                 if(parentVertex)
                 {
                     frame = ControlCenter::envireGraph->getFrameId(parentVertex);
@@ -2252,9 +2275,7 @@ namespace mars
 
             SubWorld * subWorld = new SubWorld;
             // use the control with new physic
-            //world->control = new ControlCenter;
-            //*(world->control) = *control;
-            subWorld->control = std::make_shared<SubControlCenter>(interfaces::SubControlCenter());
+            subWorld->control = std::make_shared<SubControlCenter>();
             subWorld->control->setPrefix(world.prefix);
             subWorld->control->setFrameId(e.frame);
 
@@ -2270,12 +2291,12 @@ namespace mars
             subWorld->control->collision->initSpace();
 
             //world->control->physics->draw_contact_points = cfgDrawContact.bValue;
-            subWorlds[subWorld->control->getPrefix()] = subWorld;
+            subWorlds[subWorld->control->getPrefix()] = std::unique_ptr<SubWorld>(subWorld);
             subWorld->start();
 
             // store the control center of the subworld in its own frame in the graph
             using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
-            SubControlItem::Ptr subWorldItemPtr(new SubControlItem(subWorld->control));
+            SubControlItem::Ptr subWorldItemPtr{new SubControlItem{subWorld->control}};
 
             ControlCenter::envireGraph->addItemToFrame(e.frame, subWorldItemPtr);
 
@@ -2284,7 +2305,7 @@ namespace mars
             collisionItem.collisionInterface = subWorld->control->collision;
             collisionItem.pluginName = "mars_ode_collision";
             collisionManager->addCollisionInterfaceItem(collisionItem);
-            envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr(new envire::core::Item<interfaces::CollisionInterfaceItem>(collisionItem));
+            envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
             ControlCenter::envireGraph->addItemToFrame(e.frame, collisionItemPtr);
         }
 
