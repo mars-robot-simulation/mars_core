@@ -60,10 +60,11 @@ namespace mars
          */
         JointManager::JointManager(ControlCenter *c) : control(c) {}
 
-        // TODO: This needs testing
         unsigned long JointManager::addJoint(JointData *jointS, bool reload)
         {
             configmaps::ConfigMap jointMap = constructEnvireJointConfigMap(*jointS);
+
+            // TODO: This should be handled at a central location
             std::string className{std::string{JOINT_NAMESPACE} + jointMap["type"].toString()};
             envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
 
@@ -296,7 +297,7 @@ namespace mars
             // TODO: Reload functionality
             // if(clear_all) simJointsReload.clear();
 
-            // TODO: This would be more efficient, if remove joint would not search in graph or clearAllJoints would directly work on the graph.
+            // TODO: Directly work on graph to avoid searching for each joint individually
             for(const unsigned long& jointId : ControlCenter::jointIDManager->getAllIDs())
             {
                 removeJoint(jointId);
@@ -497,7 +498,6 @@ namespace mars
                     const double currentRotationRad = static_cast<double>(joint->getPosition()); // in (-pi, pi)
                     const double relativeRotationRad = absoluteRotationRad - currentRotationRad;
 
-                    // TODO: Determining the name from the joint name should be handled at a central location
                     std::string jointName;
                     joint->getName(&jointName);
                     envire::core::FrameId jointFrameName = constructFrameIdFromJointName(jointName, b_isFixedJoint);
@@ -630,11 +630,13 @@ namespace mars
             return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
         }
 
+        // TODO: This should be handled at a central location
         envire::core::FrameId JointManager::constructFrameIdFromJointName(const std::string& jointName, bool isFixedJoint)
         {
             return envire::core::FrameId{isFixedJoint ? jointName : jointName + "_joint"};
         }
 
+        // TODO: This should be handled at a central location
         envire::core::FrameId JointManager::constructFrameIdFromJointData(const interfaces::JointData& jointData)
         {
             return constructFrameIdFromJointName(jointData.name, isFixedJoint(jointData));
