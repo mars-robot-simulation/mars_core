@@ -91,7 +91,7 @@ namespace mars
         Simulator::Simulator(lib_manager::LibManager *theManager) :
             lib_manager::LibInterface(theManager),
             exit_sim(false), allow_draw(true),
-            sync_graphics(false), physics_mutex_count(0), physics(0),
+            sync_graphics(false), physics_mutex_count(0),
             haveNewPlugin(false)
         {
 
@@ -140,10 +140,10 @@ namespace mars
             GraphItemEventDispatcher<envire::core::Item<::envire::base_types::World>>::subscribe(ControlCenter::envireGraph.get());
             //GraphEventDispatcher::subscribe(ControlCenter::envireGraph.get());
 
-            ape = new AbsolutePoseExtender(ControlCenter::envireGraph);
+            absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{ControlCenter::envireGraph}};
 
             // build the factories
-            control = new ControlCenter();
+            control = std::make_shared<ControlCenter>();
             control->loadCenter = new LoadCenter();
             control->sim = (SimulatorInterface*)this;
             control->cfg = 0;//defaultCFG;
@@ -162,9 +162,9 @@ namespace mars
             //checkOptionalDependency("envire_mls_tests");
 
 
-            ControlCenter::motors = std::make_shared<MotorManager>(control);
-            ControlCenter::joints = std::make_shared<JointManager>(control);
-            control->sensors = new SensorManager(control);
+            ControlCenter::motors = std::make_shared<MotorManager>(control.get());
+            ControlCenter::joints = std::make_shared<JointManager>(control.get());
+            control->sensors = new SensorManager(control.get());
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
             ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
@@ -181,14 +181,14 @@ namespace mars
             {
                 LOG_ERROR("no physics loaded");
             }
-            collisionManager = new CollisionManager();
+            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
             collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
 
             collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
             if(collisionSpaceLoader)
             {
                 LOG_DEBUG("collision space loaded");
-                collisionSpace = collisionSpaceLoader->createCollisionSpace(control);
+                collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
                 collisionSpace->initSpace();
                 ControlCenter::collision = collisionSpace;
 
@@ -197,15 +197,14 @@ namespace mars
                 item.collisionInterface = collisionSpace;
                 item.pluginName = "mars_ode_collision";
                 collisionManager->addCollisionInterfaceItem(item);
-                envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr itemPtr(new envire::core::Item<interfaces::CollisionInterfaceItem>(item));
+                envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr itemPtr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
                 ControlCenter::envireGraph->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
 
 
                 if(control->graphics)
                 {
                     control->graphics->addGraphicsUpdateInterface(this);
-                    osg_lines::LinesFactory *lf = new osg_lines::LinesFactory();
-                    contactLines = lf->createLines();
+                    contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
                     contactLines->setLineWidth(3.0);
                     contactLines->setColor({1.0, 0.0, 0.0, 0.5});
                     contactLines->drawStrip(false);
@@ -222,24 +221,22 @@ namespace mars
 
             if(control->cfg)
             {
-                configPath = control->cfg->getOrCreateProperty("Config", "config_path",
-                                                               config_dir);
+                configPath = control->cfg->getOrCreateProperty("Config", "config_path", config_dir);
 
                 //control->cfg->getOrCreateProperty("Preferences", "resources_path",
                 //                                  std::string(MARS_PREFERENCES_DEFAULT_RESOURCES_PATH));
 
-                std::string loadFile = configPath.sValue+"/mars_Simulator.yaml";
-                control->cfg->loadConfig(loadFile.c_str());
-                loadFile = configPath.sValue+"/mars_Physics.yaml";
-                control->cfg->loadConfig(loadFile.c_str());
+                const std::string simulatorFile{configPath.sValue + "/mars_Simulator.yaml"};
+                control->cfg->loadConfig(simulatorFile.c_str());
+                const std::string physicsFile{configPath.sValue + "/mars_Physics.yaml"};
+                control->cfg->loadConfig(physicsFile.c_str());
 
                 bool loadLastSave = false;
-                control->cfg->getPropertyValue("Config", "loadLastSave", "value",
-                                               &loadLastSave);
+                control->cfg->getPropertyValue("Config", "loadLastSave", "value", &loadLastSave);
                 if (loadLastSave)
                 {
-                    loadFile = configPath.sValue+"/mars_saveOnClose.yaml";
-                    control->cfg->loadConfig(loadFile.c_str());
+                    const std::string saveOnCloseFile{configPath.sValue + "/mars_saveOnClose.yaml"};
+                    control->cfg->loadConfig(saveOnCloseFile.c_str());
                 }
 
                 initCfgParams();
@@ -255,7 +252,6 @@ namespace mars
 
         Simulator::~Simulator()
         {
-            delete ape;
             for(auto &it: subWorlds)
             {
                 it.second->stopThread = true;
@@ -448,7 +444,7 @@ namespace mars
             world->control->physics->world_gravity = gravity;
 
             // create seperate collision space
-            world->control->collision = collisionSpaceLoader->createCollisionSpace(control);
+            world->control->collision = collisionSpaceLoader->createCollisionSpace(control.get());
             world->control->collision->initSpace();
 
             //world->control->physics->draw_contact_points = cfgDrawContact.bValue;
@@ -1053,17 +1049,17 @@ namespace mars
                 reloadSim = false;
                 //control->controllers->setLoadingAllowed(false);
 
-                if(!reloadGraphics)
-                {
-                    // loop over the graph and clear all physics plugins
-                    // loop over graph and recreate all physics plugins
-                }
-                else
+                if(reloadGraphics)
                 {
                     // clear whole graph
                     newWorld();
                     // reload graph
                     reloadWorld();
+                }
+                else
+                {
+                    // loop over the graph and clear all physics plugins
+                    // loop over graph and recreate all physics plugins
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();
@@ -1544,7 +1540,7 @@ namespace mars
 
         std::shared_ptr<PhysicsInterface> Simulator::getPhysics(void) const
         {
-            return physics;
+            throw std::logic_error("Simulator::getPhysics is obsolete - now each subworld has its own physics simulation.");
         }
 
         void Simulator::preGraphicsUpdate(void)
@@ -1764,7 +1760,7 @@ namespace mars
 
         ControlCenter* Simulator::getControlCenter(void) const
         {
-            return control;
+            return control.get();
         }
 
         void Simulator::addPlugin(const pluginStruct& plugin)
@@ -2217,7 +2213,7 @@ namespace mars
 
         std::string Simulator::getRootFrame()
         {
-            return std::string(SIM_CENTER_FRAME_NAME);
+            return std::string{SIM_CENTER_FRAME_NAME};
         }
 
         std::shared_ptr<interfaces::SubControlCenter> Simulator::getSubControl(envire::core::FrameId frame)
@@ -2270,7 +2266,7 @@ namespace mars
             subWorld->control->physics->world_erp = cfgWorldErp.dValue;
             subWorld->control->physics->world_cfm = cfgWorldCfm.dValue;
             subWorld->control->physics->world_gravity = gravity;
-            subWorld->control->collision = collisionSpaceLoader->createCollisionSpace(control);
+            subWorld->control->collision = collisionSpaceLoader->createCollisionSpace(control.get());
             subWorld->control->collision->initSpace();
 
             //world->control->physics->draw_contact_points = cfgDrawContact.bValue;

@@ -298,11 +298,11 @@ namespace mars
             short running;
             char was_running;
             bool kill_sim;
-            ode_physics::WorldPhysicsLoader *physicsLoader;
-            ode_collision::CollisionSpaceLoader *collisionSpaceLoader;
+            ode_physics::WorldPhysicsLoader* physicsLoader; // plugin reference
+            ode_collision::CollisionSpaceLoader* collisionSpaceLoader; // plugin reference
             std::map<std::string, SubWorld*> subWorlds;
-            CollisionManager *collisionManager;
-            interfaces::ControlCenter *control; ///< Pointer to instance of ControlCenter (created in Simulator::Simulator(lib_manager::LibManager *theManager))
+            std::unique_ptr<CollisionManager> collisionManager;
+            std::shared_ptr<interfaces::ControlCenter> control; ///< Pointer to instance of ControlCenter (created in Simulator::Simulator(lib_manager::LibManager *theManager))
             std::vector<LoadOptions> filesToLoad;
             bool sim_fault;
             bool exit_sim;
@@ -334,7 +334,6 @@ namespace mars
             long simStartTime, simRealTime;
 
             // physics
-            std::shared_ptr<interfaces::PhysicsInterface> physics;
             std::shared_ptr<interfaces::CollisionInterface> collisionSpace;
 
             double calc_ms;
@@ -345,7 +344,7 @@ namespace mars
             unsigned long dbSimTimeId, dbSimDebugId;
             unsigned long realStartTime;
 
-            AbsolutePoseExtender *ape;
+            std::unique_ptr<AbsolutePoseExtender> absolutePoseExtender;
 
             // plugins
             std::vector<interfaces::pluginStruct> allPlugins;
@@ -368,7 +367,7 @@ namespace mars
             std::map<std::string, interfaces::JointInterface*> jointMap;
 
             // for graphical debuggin
-            osg_lines::Lines *contactLines;
+            std::unique_ptr<osg_lines::Lines> contactLines;
             utils::Mutex contactLinesDataMutex;
             std::list<osg_lines::Vector> contactLinesData;
 
