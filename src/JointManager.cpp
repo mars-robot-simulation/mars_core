@@ -20,9 +20,6 @@
 
 #include <envire_base_types/registration/TypeCreatorFactory.hpp>
 #include <envire_base_types/joints/Fixed.hpp>
-#include <envire_core/items/Item.hpp>
-#include <envire_core/graph/EnvireGraph.hpp>
-#include <envire_core/graph/GraphTypes.hpp>
 
 #include <data_broker/DataBrokerInterface.h>
 
@@ -39,7 +36,6 @@
 
 // TODO: Clean up mutexes!
 //    * Graph should be locked globally when it is being worked on
-//    * IDManager analogously
 // TODO: Tests!
 
 namespace mars
@@ -294,11 +290,12 @@ namespace mars
 
         void JointManager::clearAllJoints(bool clear_all)
         {
-            // TODO: Do NOT use removeJoint here! Instead visit graph and remove all jointinterface items; 
-            // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
-            for(const unsigned long& jointId : ControlCenter::jointIDManager->getAllIDs())
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<interfaces::JointInterfaceItem>);
+
+            if (clear_all)
             {
-                removeJoint(jointId);
+                // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
             }
 
             constexpr bool sceneWasReseted = false;

@@ -13,10 +13,6 @@
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/MotorManagerInterface.h>
 #include <mars_utils/Mutex.h>
-
-#include <envire_core/items/Item.hpp>
-#include <envire_core/graph/EnvireGraph.hpp>
-#include <envire_core/graph/GraphTypes.hpp>
 namespace mars
 {
     namespace core
@@ -313,16 +309,5 @@ namespace mars
             interfaces::ControlCenter *control;
 
         }; // class MotorManager
-
-        template<typename T>
-        void itemRemover(envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
-        {
-            const auto& typeIndex = typeid(envire::core::Item<T>);
-            while (interfaces::ControlCenter::envireGraph->containsItems<envire::core::Item<T>>(node))
-            {
-                auto items = interfaces::ControlCenter::envireGraph->getItems(node, typeIndex);
-                interfaces::ControlCenter::envireGraph->removeItemFromFrame(*items.begin());
-            }
-        };
     } // end of namespace core
 } // end of namespace mars

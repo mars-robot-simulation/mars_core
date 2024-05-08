@@ -397,6 +397,5 @@ namespace mars
             void run() override; ///< The simulator main loop.
 
         };
-
     } // end of namespace core
 } // end of namespace mars
