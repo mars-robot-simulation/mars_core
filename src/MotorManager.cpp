@@ -50,77 +50,10 @@ namespace mars
          */
         unsigned long MotorManager::addMotor(MotorData *motorS, bool reload)
         {
-            iMutex.lock();
             motorS->index = ControlCenter::motorIDManager->addIfUnknown(motorS->name);
-            iMutex.unlock();
 
-            if(!reload)
-            {
-                iMutex.lock();
-                simMotorsReload.push_back(*motorS);
-                iMutex.unlock();
-            }
-
-            auto joint = std::dynamic_pointer_cast<JointManager>(ControlCenter::joints)->getJointInterface(motorS->jointIndex);
-            SimMotor* newMotor = new SimMotor(control, *motorS, joint);
-
-            newMotor->setSMotor(*motorS);
-            iMutex.lock();
-            simMotors[newMotor->getIndex()] = newMotor;
-            iMutex.unlock();
-            if(control)
-            {
-                constexpr bool sceneWasReseted = false;
-                control->sim->sceneHasChanged(sceneWasReseted);
-            }
-
-            auto& config = motorS->config;
-
-            // set motor mimics
-            if(config.find("mimic_motor") != config.end())
-            {
-                mimicmotors[motorS->index] = (std::string)config["mimic_motor"];
-                newMotor->setMimic(
-                    (sReal)config["mimic_multiplier"], (sReal)config["mimic_offset"]);
-            }
-
-            // set approximation functions
-            if(config.find("maxeffort_approximation") != config.end())
-            {
-                std::vector<sReal>* maxeffort_coefficients = new std::vector<sReal>;
-                ConfigVector::iterator vIt = config["maxeffort_coefficients"].begin();
-                for(; vIt != config["maxeffort_coefficients"].end(); ++vIt)
-                {
-                    maxeffort_coefficients->push_back((double)(*vIt));
-                    newMotor->setMaxEffortApproximation(
-                        utils::getApproximationFunctionFromString((std::string)config["maxeffort_approximation"]),
-                        maxeffort_coefficients);
-                }
-            }
-            if(config.find("maxspeed_approximation") != config.end())
-            {
-                std::vector<sReal>* maxspeed_coefficients = new std::vector<sReal>;
-                ConfigVector::iterator vIt = config["maxspeed_coefficients"].begin();
-                for(; vIt != config["maxspeed_coefficients"].end(); ++vIt)
-                {
-                    maxspeed_coefficients->push_back((double)(*vIt));
-                    newMotor->setMaxSpeedApproximation(
-                        utils::getApproximationFunctionFromString((std::string)config["maxspeed_approximation"]),
-                        maxspeed_coefficients);
-                }
-            }
-            if(config.find("current_approximation") != config.end())
-            {
-                std::vector<sReal>* current_coefficients = new std::vector<sReal>;
-                ConfigVector::iterator vIt = config["current_coefficients"].begin();
-                for(; vIt != config["current_coefficients"].end(); ++vIt)
-                {
-                    current_coefficients->push_back((double)(*vIt));
-                    newMotor->setCurrentApproximation(
-                        utils::getApproximationFunction2DFromString((std::string)config["current_approximation"]),
-                        current_coefficients);
-                }
-            }
+            // TODO: Create envire motor from MotorData
+            //  - SimMotor will be added from envire_mars_motors
 
             return motorS->index;
         }
@@ -571,6 +504,13 @@ namespace mars
             {
                 simMotors.at(id)->edit(key, value);
             }
+        }
+
+
+        void MotorManager::addSimMotor(std::shared_ptr<SimMotor> newMotor)
+        {
+            const auto& motorID = ControlCenter::motorIDManager->getID(newMotor->getName());
+            simMotors[motorID] = newMotor.get();
         }
 
     } // end of namespace core

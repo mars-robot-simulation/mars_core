@@ -299,6 +299,7 @@ namespace mars
             virtual void edit(interfaces::MotorId id, const std::string &key,
                               const std::string &value) override;
 
+            void addSimMotor(std::shared_ptr<SimMotor> newMotor);
         private:
             //! a container for all motors currently present in the simulation
             std::map<unsigned long, SimMotor*> simMotors;
