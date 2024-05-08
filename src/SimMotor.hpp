@@ -193,6 +193,7 @@ namespace mars
             // function approximation
             double * maxspeed_x;
             double * maxeffort_x;
+            // TODO: These should not be pointers.
             std::vector<interfaces::sReal>* maxeffort_coefficients;
             std::vector<interfaces::sReal>* maxspeed_coefficients;
             std::vector<interfaces::sReal>* current_coefficients;

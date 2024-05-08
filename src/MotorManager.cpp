@@ -33,11 +33,9 @@ namespace mars
          *
          * \param c The pointer to the ControlCenter of the simulation.
          */
-        MotorManager::MotorManager(ControlCenter *c)
-        {
-            control = c;
-            next_motor_id = 1;
-        }
+        MotorManager::MotorManager(ControlCenter *c) :
+            control{c}
+        {}
 
         /**
          * \brief Add a motor to the simulation.
@@ -53,8 +51,7 @@ namespace mars
         unsigned long MotorManager::addMotor(MotorData *motorS, bool reload)
         {
             iMutex.lock();
-            motorS->index = next_motor_id;
-            next_motor_id++;
+            motorS->index = ControlCenter::motorIDManager->addIfUnknown(motorS->name);
             iMutex.unlock();
 
             if(!reload)
@@ -77,7 +74,7 @@ namespace mars
                 control->sim->sceneHasChanged(sceneWasReseted);
             }
 
-            configmaps::ConfigMap &config = motorS->config;
+            auto& config = motorS->config;
 
             // set motor mimics
             if(config.find("mimic_motor") != config.end())
@@ -434,13 +431,14 @@ namespace mars
         void MotorManager::clearAllMotors(bool clear_all)
         {
             MutexLocker locker(&iMutex);
-            map<unsigned long, SimMotor*>::iterator iter;
-            for(iter = simMotors.begin(); iter != simMotors.end(); iter++)
-                delete iter->second;
+            // TODO: deleting the SimMotors will be done by the shared_ptr containing them in the envire graph
+            // map<unsigned long, SimMotor*>::iterator iter;
+            // for(iter = simMotors.begin(); iter != simMotors.end(); iter++)
+            //     delete iter->second;
             simMotors.clear();
             mimicmotors.clear();
             if(clear_all) simMotorsReload.clear();
-            next_motor_id = 1;
+            ControlCenter::motorIDManager->clear();
         }
 
 

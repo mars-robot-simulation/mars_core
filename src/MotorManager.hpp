@@ -31,7 +31,8 @@ namespace mars
          * is only guaranteed by calling it within the main thread (update
          * callback from \c gui_thread).
          */
-        class MotorManager : public interfaces::MotorManagerInterface {
+        class MotorManager : public interfaces::MotorManagerInterface 
+        {
         public:
 
             /**
@@ -45,6 +46,11 @@ namespace mars
              * \brief Destructor.
              */
             virtual ~MotorManager() override {}
+
+            MotorManager(const MotorManager&) = delete;
+            MotorManager operator=(const MotorManager&) = delete;
+            MotorManager(MotorManager&&) = delete;
+            MotorManager operator=(MotorManager&&) = delete;
 
             /**
              * \brief Add a motor to the simulation.
@@ -294,9 +300,6 @@ namespace mars
                               const std::string &value) override;
 
         private:
-            //! the id of the next motor that is added to the simulation
-            unsigned long next_motor_id;
-
             //! a container for all motors currently present in the simulation
             std::map<unsigned long, SimMotor*> simMotors;
 

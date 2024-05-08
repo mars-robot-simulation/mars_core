@@ -58,9 +58,9 @@ namespace mars
             maxEffortApproximation = &utils::pipe;
             maxSpeedApproximation = &utils::pipe;
             currentApproximation = &SpaceClimberCurrent;
-            maxeffort_coefficients = NULL;
-            maxspeed_coefficients = NULL;
-            current_coefficients = NULL;
+            maxeffort_coefficients = nullptr;
+            maxspeed_coefficients = nullptr;
+            current_coefficients = nullptr;
             maxspeed_x = &sMotor.maxSpeed;
             maxeffort_x = &sMotor.maxEffort;
             effortMotor = 0;
@@ -105,12 +105,12 @@ namespace mars
                 if(control && control->dataBroker)
                 {
                     dbPushId = control->dataBroker->pushData(groupName, dataName,
-                                                             dbPackage, NULL,
+                                                             dbPackage, nullptr,
                                                              data_broker::DATA_PACKAGE_READ_FLAG);
                     control->dataBroker->registerTimedProducer(this, groupName, dataName,
                                                                "mars_sim/simTimer", 0);
                     dbCmdId = control->dataBroker->pushData(groupName, "cmd/"+dataName,
-                                                            cmdPackage, NULL,
+                                                            cmdPackage, nullptr,
                                                             data_broker::DATA_PACKAGE_READ_WRITE_FLAG);
                     control->dataBroker->registerSyncReceiver(this, groupName, "cmd/"+dataName, 0);
                 }
@@ -301,7 +301,7 @@ namespace mars
                 } else
                 {
                     controlParameter = &effort;
-                    // todo: handle axis
+                    // TODO: handle axis
                     setJointControlParameter = &JointInterface::setTorque;
                 }
                 runController = &SimMotor::runEffortPipe;
@@ -435,7 +435,7 @@ namespace mars
                 integ_error = -sMotor.maxSpeed / sMotor.i;
             }
 
-            // set desired velocity. @todo add inertia
+            // set desired velocity. @TODO add inertia
             velocity = 0; // by setting a different value we could specify a minimum
             // P part of the motor
             velocity += error * sMotor.p;
@@ -875,7 +875,7 @@ namespace mars
 
         void SimMotor::setSMotor(const MotorData &sMotor)
         {
-            // todo: handle name change correctly
+            // TODO: handle name change correctly
             this->sMotor = sMotor;
             filterValue = 0.0;
             if(this->sMotor.config.hasKey("filterValue"))

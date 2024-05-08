@@ -168,6 +168,7 @@ namespace mars
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
             ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
+            ControlCenter::motorIDManager = std::unique_ptr<IDManager>(new IDManager{});
 
             // TODO: add worldphysicsLoaderInterface to mars_interfaces
 
