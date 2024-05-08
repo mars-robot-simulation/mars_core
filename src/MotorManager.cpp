@@ -12,6 +12,10 @@
 #include "JointManager.hpp"
 
 #include <stdexcept>
+#include <envire_core/graph/EnvireGraph.hpp>
+#include <envire_base_types/motors/DC.hpp>
+#include <envire_base_types/motors/PID.hpp>
+#include <envire_base_types/motors/DirectEffort.hpp>
 
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_utils/MutexLocker.h>
@@ -362,7 +366,14 @@ namespace mars
                 simMotors.clear();
             }
 
-            // TODO: Visit graph & remove SimMotor from each frame; if clear_all: Also remove envire motor item.
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<std::shared_ptr<SimMotor>>);
+            if (clear_all)
+            {
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::DC>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::PID>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::DirectEffort>);
+            }
 
             ControlCenter::motorIDManager->clear();
         }
@@ -377,16 +388,8 @@ namespace mars
         void MotorManager::reloadMotors(void)
         {
             throw std::logic_error("MotorManager::reloadMotors is not implemented yet.");
-            // std::list<MotorData>::iterator iter;
-            // simMotorsMutex.lock();
-            // for(iter=simMotorsReload.begin(); iter!=simMotorsReload.end(); iter++)
-            // {
-            //     simMotorsMutex.unlock();
-            //     //addMotor(&(*iter), true);
-            //     simMotorsMutex.lock();
-            // }
-            // simMotorsMutex.unlock();
-            // connectMimics();
+
+            // TODO: Visit graph & readd each envire motor item
         }
 
         /**

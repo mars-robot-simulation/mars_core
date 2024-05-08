@@ -1076,9 +1076,10 @@ namespace mars
                 reloadSim = false;
                 //control->controllers->setLoadingAllowed(false);
 
+
+
                 if(reloadGraphics)
                 {
-                    // clear whole graph
                     newWorld();
                     // reload graph
                     reloadWorld();
@@ -1086,7 +1087,12 @@ namespace mars
                 else
                 {
                     // loop over the graph and clear all physics plugins
+                    const bool clear_all = false;
+                    interfaces::ControlCenter::joints->clearAllJoints(clear_all);
+                    interfaces::ControlCenter::motors->clearAllMotors(clear_all);
                     // loop over graph and recreate all physics plugins
+                    interfaces::ControlCenter::joints->reloadJoints();
+                    interfaces::ControlCenter::motors->reloadMotors();
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();
@@ -1384,11 +1390,14 @@ namespace mars
             // reset simTime
             realStartTime = utils::getTime();
             dbSimTimePackage[0].set(0.);
+
+            // TODO: If hard reset, clearing the envireGraph should yield clearing motors, joints etc. obsolete; is "newWorld" a hard reset?
             // control->controllers->clearAllControllers();
             // control->sensors->clearAllSensors(clear_all);
-            // control->motors->clearAllMotors(clear_all);
-            // control->joints->clearAllJoints(clear_all);
+            control->motors->clearAllMotors(clear_all);
+            control->joints->clearAllJoints(clear_all);
             // control->nodes->clearAllNodes(clear_all, reloadGraphics);
+
             if(control->graphics)
             {
                 control->graphics->clearDrawItems();

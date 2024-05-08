@@ -294,10 +294,8 @@ namespace mars
 
         void JointManager::clearAllJoints(bool clear_all)
         {
-            // TODO: Reload functionality
-            // if(clear_all) simJointsReload.clear();
-
-            // TODO: Directly work on graph to avoid searching for each joint individually
+            // TODO: Do NOT use removeJoint here! Instead visit graph and remove all jointinterface items; 
+            // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
             for(const unsigned long& jointId : ControlCenter::jointIDManager->getAllIDs())
             {
                 removeJoint(jointId);
