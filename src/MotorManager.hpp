@@ -303,18 +303,12 @@ namespace mars
         private:
             //! a container for all motors currently present in the simulation
             std::map<unsigned long, SimMotor*> simMotors;
-
-            //! a containter for all motors that are reloaded after a reset of the simulation
-            std::list<interfaces::MotorData> simMotorsReload;
+            //! a mutex for the motor containter
+            mutable utils::Mutex simMotorsMutex;
 
             //! a pointer to the control center
             interfaces::ControlCenter *control;
 
-            //! a mutex for the motor containters
-            mutable utils::Mutex iMutex;
-
-            // map of mimicmotors
-            std::map<unsigned long, std::string> mimicmotors;
         }; // class MotorManager
 
     } // end of namespace core

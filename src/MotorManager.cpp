@@ -64,7 +64,7 @@ namespace mars
          */
         int MotorManager::getMotorCount() const
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             return simMotors.size();
         }
 
@@ -81,7 +81,7 @@ namespace mars
          */
         void MotorManager::editMotor(const MotorData &motorS)
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(motorS.index);
             if(iter != simMotors.end())
                 iter->second->setSMotor(motorS);
@@ -100,13 +100,13 @@ namespace mars
             core_objects_exchange obj;
             decltype(simMotors)::const_iterator iter;
             motorList->clear();
-            iMutex.lock();
+            simMotorsMutex.lock();
             for(iter = simMotors.begin(); iter != simMotors.end(); iter++)
             {
                 iter->second->getCoreExchange(&obj);
                 motorList->push_back(obj);
             }
-            iMutex.unlock();
+            simMotorsMutex.unlock();
         }
 
 
@@ -120,7 +120,7 @@ namespace mars
          */
         const MotorData MotorManager::getFullMotor(unsigned long index) const
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(index);
             if(iter != simMotors.end())
                 return iter->second->getSMotor();
@@ -139,13 +139,15 @@ namespace mars
          */
         void MotorManager::removeMotor(unsigned long index)
         {
-            iMutex.lock();
+            simMotorsMutex.lock();
             const auto& iter = simMotors.find(index);
             if(iter != simMotors.end())
             {
                 simMotors.erase(iter);
             }
-            iMutex.unlock();
+            simMotorsMutex.unlock();
+
+            ControlCenter::motorIDManager->removeEntry(index);
 
             if(control)
             {
@@ -169,7 +171,7 @@ namespace mars
          */
         SimMotor* MotorManager::getSimMotor(unsigned long id) const
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter == simMotors.end())
             {
@@ -196,7 +198,7 @@ namespace mars
         SimMotor* MotorManager::getSimMotorByName(const std::string &name) const
         {
             const auto& motorID = getID(name);
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(motorID);
             if (iter==simMotors.end())
             {
@@ -220,7 +222,7 @@ namespace mars
          */
         void MotorManager::setMotorValue(unsigned long id, sReal value)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->setControlValue(value);
@@ -229,7 +231,7 @@ namespace mars
 
         void MotorManager::setMotorValueDesiredVelocity(unsigned long id, sReal velocity)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->setVelocity(velocity);
@@ -250,7 +252,7 @@ namespace mars
          */
         void MotorManager::setMotorP(unsigned long id, sReal value)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->setP(value);
@@ -270,7 +272,7 @@ namespace mars
          */
         void MotorManager::setMotorI(unsigned long id, sReal value)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->setI(value);
@@ -290,7 +292,7 @@ namespace mars
          */
         void MotorManager::setMotorD(unsigned long id, sReal value)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->setD(value);
@@ -304,7 +306,7 @@ namespace mars
          */
         void MotorManager::deactivateMotor(unsigned long id)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
                 iter->second->deactivate();
@@ -320,7 +322,7 @@ namespace mars
          */
         unsigned long MotorManager::getID(const std::string& name) const
         {
-            ControlCenter::motorIDManager->getID(name);
+            return ControlCenter::motorIDManager->getID(name);
         }
 
 
@@ -337,7 +339,7 @@ namespace mars
          */
         void MotorManager::moveMotor(unsigned long index, double value)
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(index);
             if(iter != simMotors.end())
                 iter->second->setControlValue(value);
@@ -355,13 +357,13 @@ namespace mars
          */
         void MotorManager::clearAllMotors(bool clear_all)
         {
-            MutexLocker locker(&iMutex);
-            // TODO: deleting the SimMotors will be done by the shared_ptr containing them in the envire graph
-            // map<unsigned long, SimMotor*>::iterator iter;
-            // for(iter = simMotors.begin(); iter != simMotors.end(); iter++)
-            //     delete iter->second;
-            simMotors.clear();
-            if(clear_all) simMotorsReload.clear();
+            {
+                const MutexLocker locker{&simMotorsMutex};
+                simMotors.clear();
+            }
+
+            // TODO: Visit graph & remove SimMotor from each frame; if clear_all: Also remove envire motor item.
+
             ControlCenter::motorIDManager->clear();
         }
 
@@ -374,16 +376,17 @@ namespace mars
          */
         void MotorManager::reloadMotors(void)
         {
-            std::list<MotorData>::iterator iter;
-            iMutex.lock();
-            for(iter=simMotorsReload.begin(); iter!=simMotorsReload.end(); iter++)
-            {
-                iMutex.unlock();
-                //addMotor(&(*iter), true);
-                iMutex.lock();
-            }
-            iMutex.unlock();
-            connectMimics();
+            throw std::logic_error("MotorManager::reloadMotors is not implemented yet.");
+            // std::list<MotorData>::iterator iter;
+            // simMotorsMutex.lock();
+            // for(iter=simMotorsReload.begin(); iter!=simMotorsReload.end(); iter++)
+            // {
+            //     simMotorsMutex.unlock();
+            //     //addMotor(&(*iter), true);
+            //     simMotorsMutex.lock();
+            // }
+            // simMotorsMutex.unlock();
+            // connectMimics();
         }
 
         /**
@@ -397,7 +400,7 @@ namespace mars
         void MotorManager::updateMotors(double calc_ms)
         {
             decltype(simMotors)::iterator iter;
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             for(iter=simMotors.begin(); iter!=simMotors.end(); iter++)
                 iter->second->update(calc_ms);
         }
@@ -405,7 +408,7 @@ namespace mars
 
         sReal MotorManager::getActualPosition(unsigned long motorId) const
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(motorId);
             if(iter != simMotors.end())
@@ -415,7 +418,7 @@ namespace mars
 
         sReal MotorManager::getTorque(unsigned long motorId) const
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(motorId);
             if(iter != simMotors.end())
@@ -425,7 +428,7 @@ namespace mars
 
         void MotorManager::setMaxTorque(unsigned long id, sReal maxTorque)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(id);
             if(iter != simMotors.end())
@@ -434,7 +437,7 @@ namespace mars
 
         void MotorManager::setMaxSpeed(unsigned long id, sReal maxSpeed)
         {
-            MutexLocker locker(&iMutex);
+            const MutexLocker locker{&simMotorsMutex};
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(id);
             if(iter != simMotors.end())
@@ -461,7 +464,7 @@ namespace mars
                                               std::string *groupName,
                                               std::string *dataName) const
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(jointId);
             if(iter == simMotors.end())
             {
@@ -486,7 +489,7 @@ namespace mars
         void MotorManager::setOfflinePosition(interfaces::MotorId id,
                                               sReal pos)
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter == simMotors.end())
             {
@@ -499,7 +502,7 @@ namespace mars
         void MotorManager::edit(interfaces::MotorId id, const std::string &key,
                                 const std::string &value)
         {
-            const MutexLocker locker{&iMutex};
+            const MutexLocker locker{&simMotorsMutex};
             if(simMotors.count(id) == 0)
             {
                 return;
