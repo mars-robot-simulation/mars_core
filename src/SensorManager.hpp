@@ -19,7 +19,6 @@ namespace mars
 {
     namespace core
     {
-
         class SensorReloadHelper
         {
         public:
@@ -191,16 +190,15 @@ namespace mars
             virtual unsigned long createAndAddSensor(const std::string &type_name,interfaces::BaseConfig *config, bool reload=false) override;
 
         private:
+            // Setup
+            void addSensorTypes();
+            void addMarsParsers();
 
             //! the id of the next sensor added to the simulation
             unsigned long next_sensor_id;
 
             //! a containter for all sensors currently present in the simulation
             std::map<unsigned long, interfaces::BaseSensor*> simSensors;
-
-            //! a containter for all sensors that are loaded after a reset of the simulation
-            std::vector<SensorReloadHelper> simSensorsReload;
-
 
             //! a pointer to the control center
             interfaces::ControlCenter *control;

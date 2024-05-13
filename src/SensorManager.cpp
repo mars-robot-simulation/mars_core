@@ -55,10 +55,14 @@ namespace mars
          *
          * \param c The pointer to the ControlCenter of the simulation.
          */
-        SensorManager::SensorManager(ControlCenter *c)
+        SensorManager::SensorManager(ControlCenter *c) : control{c}
         {
-            control = c;
-            next_sensor_id = 1;
+            addSensorTypes();
+            addMarsParsers();
+        }
+
+        void SensorManager::addSensorTypes()
+        {
             addSensorType("RaySensor",&RaySensor::instanciate);
             // addSensorType("RotatingRaySensor",&RotatingRaySensor::instanciate);
             // addSensorType("MultiLevelLaserRangeFinder",&MultiLevelLaserRangeFinder::instanciate);
@@ -81,6 +85,12 @@ namespace mars
             // addSensorType("MotorCurrent",&MotorCurrentSensor::instanciate);
             // addSensorType("HapticField",&HapticFieldSensor::instanciate);
 
+            // missing sensors:
+            //   RayGridSensor
+        }
+
+        void SensorManager::addMarsParsers()
+        {
             addMarsParser("RaySensor",&RaySensor::parseConfig);
             // addMarsParser("RotatingRaySensor",&RotatingRaySensor::parseConfig);
             // addMarsParser("MultiLevelLaserRangeFinder",&MultiLevelLaserRangeFinder::parseConfig);
@@ -115,12 +125,7 @@ namespace mars
          */
         bool SensorManager::exists(unsigned long index) const
         {
-            map<unsigned long, BaseSensor*>::const_iterator iter = simSensors.find(index);
-            if(iter != simSensors.end())
-            {
-                return true;
-            }
-            return false;
+            return ControlCenter::sensorIDManager->isKnown(index);
         }
 
         /**
@@ -170,16 +175,12 @@ namespace mars
 
         unsigned long SensorManager::getSensorID(std::string name) const
         {
-            MutexLocker locker(&iMutex);
-            std::map<unsigned long, BaseSensor*>::const_iterator it;
-            for(it = simSensors.begin(); it != simSensors.end(); it++)
+            try
             {
-                if(it->second->name.compare(name) == 0)
-                {
-                    return it->first;
-                }
+                return ControlCenter::sensorIDManager->getID(name);
             }
-            printf("Cannot find Sensor with name: \"%s\"\n",name.c_str());
+            catch(...){}
+
             return 0;
         }
 
@@ -190,6 +191,7 @@ namespace mars
          */
         void SensorManager::removeSensor(unsigned long index)
         {
+            // TODO: Remove envire sensor item and base sensor item from graph.
             BaseSensor* tmpSensor = NULL;
             iMutex.lock();
             map<unsigned long, BaseSensor*>::iterator iter = simSensors.find(index);
@@ -201,6 +203,8 @@ namespace mars
                     delete tmpSensor;
             }
             iMutex.unlock();
+
+            ControlCenter::sensorIDManager->removeEntry(index);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -253,8 +257,7 @@ namespace mars
          */
         int SensorManager::getSensorCount() const
         {
-            MutexLocker locker(&iMutex);
-            return simSensors.size();
+            return ControlCenter::sensorIDManager->size();
         }
 
 
@@ -278,8 +281,8 @@ namespace mars
                 delete sensor;
             }
             simSensors.clear();
-            if(clear_all) simSensorsReload.clear();
-            next_sensor_id = 1;
+
+            ControlCenter::sensorIDManager->clear();
         }
 
 
@@ -291,21 +294,11 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
-
-            vector<SensorReloadHelper>::iterator iter;
-            iMutex.lock();
-            for(iter=simSensorsReload.begin(); iter!=simSensorsReload.end(); ++iter)
-            {
-                iMutex.unlock();
-
-                createAndAddSensor(iter->type, iter->config, true);
-                iMutex.lock();
-            }
-            iMutex.unlock();
+            throw std::logic_error("SensorManager::reloadSensors is not implemented yet.");
+            // TODO: Traverse Graph and readd envire items / issue ItemAddedEvent for all envire sensor items
         }
 
-        void SensorManager::addMarsParser(const std::string string,
-                                          BaseConfig* (*func)(ControlCenter*, ConfigMap*))
+        void SensorManager::addMarsParser(const std::string string, BaseConfig* (*func)(ControlCenter*, ConfigMap*))
         {
             marsParser.insert(std::pair<const std::string, BaseConfig* (*)(ControlCenter*, ConfigMap*)>(string,func));
         }
@@ -315,47 +308,35 @@ namespace mars
             availableSensors.insert(std::pair<const std::string,BaseSensor* (*)(ControlCenter*,BaseConfig*)>(name,func));
         }
 
-       unsigned long SensorManager::createAndAddSensor(const std::string &type_name,
-                                                      BaseConfig *config,
-                                                      bool reload)
+       unsigned long SensorManager::createAndAddSensor(const std::string &type_name, BaseConfig *config, bool reload)
        {
             assert(config);
-            std::map<const std::string,BaseSensor* (*)(ControlCenter*, BaseConfig*)>::iterator it = availableSensors.find(type_name);
+            auto it = availableSensors.find(type_name);
             if(it == availableSensors.end())
             {
-                std::cerr << "Could not load unknown Sensor with name: \"" << type_name.c_str()<< "\"" << std::endl;
+                std::cerr << "Could not load unknown Sensor with name: \"" << type_name << "\"" << std::endl;
                 return 0;
             }
 
-            int id = -1;
-            iMutex.lock();
-            id = next_sensor_id++;
-            iMutex.unlock();
-
             if(config->name.empty())
             {
-                std::stringstream str;
-                str << "SENSOR-" << id;
-                config->name = str.str();
+                throw std::logic_error("SensorManager::createAndAddSensor: Empty sensor name is not supported yet.");
+                // std::stringstream str;
+                // str << "SENSOR-" << id;
+                // config->name = str.str();
             }
-            config->id = id;
+            config->id = ControlCenter::sensorIDManager->addIfUnknown(config->name);
+
             BaseSensor *sensor = ((*it).second)(this->control,config);
             iMutex.lock();
-            simSensors[id] = sensor;
+            simSensors[sensor->getID()] = sensor;
             iMutex.unlock();
-
-            if(!reload)
-            {
-                simSensorsReload.push_back(SensorReloadHelper(type_name, config));
-            }
 
             return sensor->getID();
         }
 
-        unsigned long SensorManager::createAndAddSensor(ConfigMap *config,
-                                                      bool reload)
+        unsigned long SensorManager::createAndAddSensor(ConfigMap *config, bool reload)
         {
-
             std::string type = (*config)["type"][0].getString();
             std::map<const std::string,BaseConfig* (*)(ControlCenter*, ConfigMap*)>::iterator it = marsParser.find(type);
 

@@ -1394,7 +1394,7 @@ namespace mars
 
             // TODO: If hard reset, clearing the envireGraph should yield clearing motors, joints etc. obsolete; is "newWorld" a hard reset?
             // control->controllers->clearAllControllers();
-            // control->sensors->clearAllSensors(clear_all);
+            control->sensors->clearAllSensors(clear_all);
             control->motors->clearAllMotors(clear_all);
             control->joints->clearAllJoints(clear_all);
             // control->nodes->clearAllNodes(clear_all, reloadGraphics);
