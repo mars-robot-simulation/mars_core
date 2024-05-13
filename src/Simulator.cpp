@@ -1198,7 +1198,7 @@ namespace mars
                                              std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
             AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
-            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)};
+            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
             Simulator::updateChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
@@ -1243,8 +1243,8 @@ namespace mars
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple AbsolutePose for some reason
                 envire::core::EnvireGraph::ItemIterator<envire::core::Item<interfaces::AbsolutePose>> it = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target);
-                it->getData().position = tf.transform.translation;
-                it->getData().rotation = tf.transform.orientation;
+                it->getData().setPosition(tf.transform.translation);
+                it->getData().setRotation(tf.transform.orientation);
             }
 
             Simulator::updateChildPositions(target, tf.transform, envireGraph, graphTreeView);
@@ -1270,7 +1270,7 @@ namespace mars
                                             std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
             AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
-            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)};
+            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
             Simulator::applyChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
@@ -1300,8 +1300,8 @@ namespace mars
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple AbsolutePose for some reason
                 interfaces::AbsolutePose& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target)->getData();
-                absolutePose.position = globalTransform.transform.translation;
-                absolutePose.rotation = globalTransform.transform.orientation;
+                absolutePose.setPosition(globalTransform.transform.translation);
+                absolutePose.setRotation(globalTransform.transform.orientation);
             }
 
             Simulator::applyChildPositions(target, globalTransform.transform, envireGraph, graphTreeView);
@@ -1334,7 +1334,7 @@ namespace mars
 
             utils::Vector axis;
             joint->getAxis(&axis); // <- axis is in global coordinate frame
-            axis = absolutePose.rotation.inverse() * axis; // <- axis is now in local coordinate frame
+            axis = absolutePose.getRotation().inverse() * axis; // <- axis is now in local coordinate frame
             Quaternion q = utils::angleAxisToQuaternion(angle, axis);
 
             // Update transform to all children to account for rotation
@@ -1347,7 +1347,7 @@ namespace mars
             }
 
             // Propagate change of childrens transforms
-            applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.position), static_cast<base::Quaterniond>(absolutePose.rotation)}, envireGraph, graphTreeView);
+            applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
         }
 
         // TODO: currently we add the angle to the actual rotation

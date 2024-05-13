@@ -23,7 +23,7 @@ namespace mars
         void AbsolutePoseExtender::frameAdded(const envire::core::FrameAddedEvent& e)
         {
             interfaces::AbsolutePose absolutePose;
-            absolutePose.frameId = e.frame;
+            absolutePose.setFrameId(e.frame);
             envire::core::Item<interfaces::AbsolutePose>::Ptr absolutePoseItemPtr(new envire::core::Item<interfaces::AbsolutePose>(absolutePose));
             envireGraph->addItemToFrame(e.frame, absolutePoseItemPtr);
 
