@@ -164,7 +164,7 @@ namespace mars
 
             ControlCenter::motors = std::make_shared<MotorManager>(control.get());
             ControlCenter::joints = std::make_shared<JointManager>(control.get());
-            control->sensors = new SensorManager(control.get());
+            ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
             ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
