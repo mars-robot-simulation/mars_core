@@ -74,7 +74,6 @@ namespace mars
 {
     namespace core
     {
-
         using std::string;
         using namespace utils;
         using namespace interfaces;
@@ -89,10 +88,10 @@ namespace mars
         Simulator *Simulator::activeSimulator = 0;
 
         Simulator::Simulator(lib_manager::LibManager *theManager) :
-            lib_manager::LibInterface(theManager),
-            exit_sim(false), allow_draw(true),
-            sync_graphics(false), physics_mutex_count(0),
-            haveNewPlugin(false)
+            lib_manager::LibInterface{theManager},
+            exit_sim{false}, allow_draw{true},
+            sync_graphics{false}, physics_mutex_count{0},
+            haveNewPlugin{false}
         {
 
             config_dir = DEFAULT_CONFIG_DIR;
@@ -126,7 +125,7 @@ namespace mars
 
             Simulator::activeSimulator = this; // set this Simulator object to the active one
 
-            gravity = Vector(0.0, 0.0, -9.81); // set gravity to earth conditions
+            gravity = Vector{0.0, 0.0, -9.81}; // set gravity to earth conditions
 
 
             // create envire graph
@@ -199,7 +198,7 @@ namespace mars
                 item.collisionInterface = collisionSpace;
                 item.pluginName = "mars_ode_collision";
                 collisionManager->addCollisionInterfaceItem(item);
-                envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr itemPtr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
+                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
                 ControlCenter::envireGraph->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
 
 
@@ -228,16 +227,16 @@ namespace mars
                 //control->cfg->getOrCreateProperty("Preferences", "resources_path",
                 //                                  std::string(MARS_PREFERENCES_DEFAULT_RESOURCES_PATH));
 
-                const std::string simulatorFile{configPath.sValue + "/mars_Simulator.yaml"};
+                const auto simulatorFile = std::string{configPath.sValue + "/mars_Simulator.yaml"};
                 control->cfg->loadConfig(simulatorFile.c_str());
-                const std::string physicsFile{configPath.sValue + "/mars_Physics.yaml"};
+                const auto physicsFile = std::string{configPath.sValue + "/mars_Physics.yaml"};
                 control->cfg->loadConfig(physicsFile.c_str());
 
                 bool loadLastSave = false;
                 control->cfg->getPropertyValue("Config", "loadLastSave", "value", &loadLastSave);
                 if (loadLastSave)
                 {
-                    const std::string saveOnCloseFile{configPath.sValue + "/mars_saveOnClose.yaml"};
+                    const auto saveOnCloseFile = std::string{configPath.sValue + "/mars_saveOnClose.yaml"};
                     control->cfg->loadConfig(saveOnCloseFile.c_str());
                 }
 
@@ -391,7 +390,7 @@ namespace mars
 
         void Simulator::setupLogConsole()
         {
-            const LibInterface *const lib = libManager->getLibrary("log_console");
+            const auto* const lib = libManager->getLibrary("log_console");
             if(ControlCenter::theDataBroker)
             {
                 if(lib)
@@ -619,14 +618,14 @@ namespace mars
             }
             contactLinesDataMutex.unlock();
 
-            for(auto &it: subWorlds)
+            for(const auto &it: subWorlds)
             {
                 it.second->calcStep = true;
                 // while(it.second->calcStep == true) {
                 //     select(0, 0, 0, 0, &tv);
                 // }
             }
-            for(auto &it: subWorlds)
+            for(const auto &it: subWorlds)
             {
                 while(it.second->calcStep == true)
                 {
@@ -665,7 +664,7 @@ namespace mars
             // It is possible for plugins to call switchPluginUpdateMode during
             // the update call and get removed from the activePlugins list there.
             // We use erased_active to notify this loop about an erasure.
-            for(unsigned int i = 0; i < activePlugins.size();)
+            for(size_t i = 0; i < activePlugins.size();)
             {
                 erased_active = false;
                 time = utils::getTime();
@@ -705,7 +704,9 @@ namespace mars
                 {
                     sync_count = 0;
                     if(control->graphics)
+                    {
                         this->allowDraw();
+                    }
                     calc_time = 0;
                 }
             }
@@ -802,6 +803,7 @@ namespace mars
                 tsNeedsInit = false;
             }
 
+            // TODO: Eliminate magic numbers!
             //schedule minimum sleep time
             ts.tv_nsec += calc_ms * 1000000;
 
@@ -863,7 +865,7 @@ namespace mars
         {
 #ifdef __linux__
             std::stringstream str;
-            str << "/tmp/mars2/" << (int) getpid() << "/";
+            str << "/tmp/mars2/" << static_cast<int>(getpid()) << "/";
             return str.str();
 #else
             return configPath.sValue + std::string("/tmp/");
@@ -952,12 +954,13 @@ namespace mars
 
             try
             {
-                std::string suffix = utils::getFilenameSuffix(filename);
+                const auto& suffix = utils::getFilenameSuffix(filename);
                 LOG_DEBUG("[Simulator::loadScene] suffix: %s", suffix.c_str());
                 if( control->loadCenter->loadScene.find(suffix) !=
                     control->loadCenter->loadScene.end() )
                 {
-                    if (! control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str(), pos, rot))
+                    const bool loading_successful = control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str(), pos, rot);
+                    if (!loading_successful)
                     {
                         return 0; //failed
                     }
@@ -997,11 +1000,12 @@ namespace mars
 
             try
             {
-                std::string suffix = utils::getFilenameSuffix(filename);
+                const auto& suffix = utils::getFilenameSuffix(filename);
                 if( control->loadCenter->loadScene.find(suffix) !=
                     control->loadCenter->loadScene.end() )
                 {
-                    if (! control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str()))
+                    const bool loading_successful = control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str());
+                    if (!loading_successful)
                     {
                         return 0; //failed
                     }
@@ -1029,7 +1033,7 @@ namespace mars
 
         int Simulator::saveScene(const std::string &filename, bool wasrunning)
         {
-            std::string suffix = utils::getFilenameSuffix(filename);
+            const auto& suffix = utils::getFilenameSuffix(filename);
             if (control->loadCenter->loadScene[suffix]->saveFile(filename, getTmpPath())!=1)
             {
                 LOG_ERROR("Simulator: an error somewhere while saving scene");
@@ -1085,20 +1089,25 @@ namespace mars
                 }
                 else
                 {
-                    // loop over the graph and clear all physics plugins
-                    const bool clear_all = false;
+                    constexpr bool clear_all = false;
                     interfaces::ControlCenter::joints->clearAllJoints(clear_all);
                     interfaces::ControlCenter::motors->clearAllMotors(clear_all);
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
-                    // loop over graph and recreate all physics plugins
+                    // TODO: nodes
+
                     interfaces::ControlCenter::joints->reloadJoints();
                     interfaces::ControlCenter::motors->reloadMotors();
                     interfaces::ControlCenter::sensors->reloadSensors();
+                    // TODO: nodes
+
+                    // TODO: Reset transformation based on absolute poses
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();
-                for (unsigned int i=0; i<allPlugins.size(); i++)
+                for (size_t i = 0; i < allPlugins.size(); i++)
+                {
                     allPlugins[i].p_interface->reset();
+                }
                 //control->controllers->setLoadingAllowed(true);
                 if (was_running)
                 {
@@ -1113,7 +1122,7 @@ namespace mars
             if(haveNewPlugin)
             {
                 pluginLocker.lockForWrite();
-                for (unsigned int i=0; i<newPlugins.size(); i++)
+                for (size_t i = 0; i < newPlugins.size(); i++)
                 {
                     allPlugins.push_back(newPlugins[i]);
                     activePlugins.push_back(newPlugins[i]);
@@ -1128,7 +1137,7 @@ namespace mars
             }
 
             pluginLocker.lockForRead();
-            for (unsigned int i=0; i<guiPlugins.size(); i++)
+            for (size_t i = 0; i < guiPlugins.size(); i++)
             {
                 guiPlugins[i].p_interface->update(0);
                 // TODO: fix time debuging for gui plugins
@@ -1185,8 +1194,8 @@ namespace mars
         {
             if(graphTreeView->tree.find(vertex) != graphTreeView->tree.end())
             {
-                const std::unordered_set<envire::core::GraphTraits::vertex_descriptor>& children = graphTreeView->tree[vertex].children;
-                for(const envire::core::GraphTraits::vertex_descriptor child : children)
+                const auto& children = graphTreeView->tree[vertex].children;
+                for(const auto& child : children)
                 {
                     Simulator::updatePositions(vertex, child, rootToFrame, envireGraph, graphTreeView);
                 }
@@ -1257,8 +1266,8 @@ namespace mars
         {
             if(graphTreeView->tree.find(vertex) != graphTreeView->tree.end())
             {
-                const std::unordered_set<envire::core::GraphTraits::vertex_descriptor>& children = graphTreeView->tree[vertex].children;
-                for(const envire::core::GraphTraits::vertex_descriptor child : children)
+                const auto& children = graphTreeView->tree[vertex].children;
+                for(const auto& child : children)
                 {
                     Simulator::applyPositions(vertex, child, rootToFrame, envireGraph, graphTreeView);
                 }
@@ -1338,7 +1347,7 @@ namespace mars
             Quaternion q = utils::angleAxisToQuaternion(angle, axis);
 
             // Update transform to all children to account for rotation
-            for(const envire::core::GraphTraits::vertex_descriptor& child : graphTreeView->tree[origin].children)
+            for(const auto& child : graphTreeView->tree[origin].children)
             {
                 envire::core::Transform tf = envireGraph->getTransform(origin, child);
                 tf.transform.translation = q * tf.transform.translation;
@@ -1372,8 +1381,8 @@ namespace mars
                 Quaternion q = utils::angleAxisToQuaternion(angle, joint.axis);
 
                 // get children
-                const std::unordered_set<envire::core::GraphTraits::vertex_descriptor>& children = graphTreeView->tree[origin].children;
-                for(const envire::core::GraphTraits::vertex_descriptor child : children)
+                const auto& children = graphTreeView->tree[origin].children;
+                for(const auto& child : children)
                 {
                     // apply rotation
                     envire::core::Transform tf = envireGraph->getTransform(origin, child);
@@ -1468,12 +1477,12 @@ namespace mars
             if(control->cfg)
             {
                 std::vector<std::string> arguments;
-                for(int i=0; i<argc; ++i)
+                for(int i = 0; i < argc; ++i)
                 {
                     arguments.push_back(argv[i]);
                 }
                 char label[55];
-                for(size_t i=0; i<arguments.size(); ++i)
+                for(size_t i = 0; i < arguments.size(); ++i)
                 {
                     size_t f = arguments[i].find("=");
                     if(f != std::string::npos)
@@ -1500,7 +1509,7 @@ namespace mars
                 {
                     std::vector<std::string> tmp_v_s;
                     tmp_v_s = explodeString(';', optarg);
-                    for(unsigned int i=0; i<tmp_v_s.size(); ++i)
+                    for(size_t i = 0; i < tmp_v_s.size(); ++i)
                     {
                         if(pathExists(tmp_v_s[i]))
                         {
@@ -1637,14 +1646,13 @@ namespace mars
 
         void Simulator::switchPluginUpdateMode(int mode, PluginInterface *pl)
         {
-            std::vector<pluginStruct>::iterator p_iter;
             bool afound = false;
             bool gfound = false;
             bool bfound = false;
             data_broker::DataPackage tmpPackage;
 
             size_t i=0;
-            for(p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
+            for(auto p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
                 p_iter++, ++i)
             {
                 if((*p_iter).p_interface == pl)
@@ -1665,7 +1673,7 @@ namespace mars
                 tmpPackage.add(dbSimDebugPackage[0]);
                 tmpPackage.add(dbSimDebugPackage[1]);
                 tmpPackage.add(dbSimDebugPackage[2]);
-                for(size_t k=0; k<activePlugins.size(); ++k)
+                for(size_t k = 0; k < activePlugins.size(); ++k)
                 {
                     if(i==k)
                     {
@@ -1677,7 +1685,7 @@ namespace mars
                 dbSimDebugPackage = tmpPackage;
                 getTimeMutex.unlock();
             }
-            for(p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
+            for(auto p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
                 p_iter++)
             {
                 if((*p_iter).p_interface == pl)
@@ -1689,7 +1697,7 @@ namespace mars
                 }
             }
 
-            for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
+            for(auto p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
             {
                 if((*p_iter).p_interface == pl)
@@ -1721,8 +1729,6 @@ namespace mars
 
         void Simulator::handleError(PhysicsError error)
         {
-            std::vector<pluginStruct>::iterator p_iter;
-
             switch(error)
             {
             case PHYSICS_NO_ERROR:
@@ -1734,7 +1740,7 @@ namespace mars
                 break;
             }
 
-            for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
+            for(auto p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
             {
                 (*p_iter).p_interface->handleError();
@@ -1805,12 +1811,10 @@ namespace mars
 
         void Simulator::removePlugin(PluginInterface *pl)
         {
-            std::vector<pluginStruct>::iterator p_iter;
-
             pluginLocker.lockForWrite();
 
             size_t i=0;
-            for(p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
+            for(auto p_iter=activePlugins.begin(); p_iter!=activePlugins.end();
                 p_iter++, ++i)
             {
                 if((*p_iter).p_interface == pl)
@@ -1836,7 +1840,7 @@ namespace mars
                 }
             }
 
-            for(p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
+            for(auto p_iter=guiPlugins.begin(); p_iter!=guiPlugins.end();
                 p_iter++)
             {
                 if((*p_iter).p_interface == pl)
@@ -1846,7 +1850,7 @@ namespace mars
                 }
             }
 
-            for(p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
+            for(auto p_iter=allPlugins.begin(); p_iter!=allPlugins.end();
                 p_iter++)
             {
                 if((*p_iter).p_interface == pl)
@@ -1925,7 +1929,7 @@ namespace mars
                     msleep(10);
                 }
 
-                for(unsigned int i=0;i<filesToLoad.size();i++)
+                for(size_t i = 0; i < filesToLoad.size(); i++)
                 {
                     if (filesToLoad[i].zeroPose == true)
                     {
@@ -2004,7 +2008,7 @@ namespace mars
 
             if(_property.paramId == cfgDrawContact.paramId)
             {
-                for(auto &it: subWorlds)
+                for(const auto &it: subWorlds)
                 {
                     CPP_UNUSED(it);
                     //it.second->control->physics->draw_contact_points = _property.bValue;
