@@ -326,6 +326,7 @@ namespace mars
 
        unsigned long SensorManager::createAndAddSensor(const std::string &type_name, BaseConfig *config, bool reload)
        {
+            // TODO: This should be moved to envire_mars_sensors and instead add an envire sensor item to the envire graph.
             assert(config);
             const auto it = availableSensors.find(type_name);
             if(it == availableSensors.end())

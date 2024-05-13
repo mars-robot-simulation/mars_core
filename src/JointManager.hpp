@@ -91,9 +91,7 @@ namespace mars
             static std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1);
             static std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
 
-            std::list<interfaces::JointData> simJointsReload;
             interfaces::ControlCenter *control;
-            mutable utils::Mutex iMutex;
 
             std::list<interfaces::JointData>::iterator getReloadJoint(unsigned long id);
         };
