@@ -1077,8 +1077,6 @@ namespace mars
                 reloadSim = false;
                 //control->controllers->setLoadingAllowed(false);
 
-
-
                 if(reloadGraphics)
                 {
                     newWorld();
@@ -1091,9 +1089,11 @@ namespace mars
                     const bool clear_all = false;
                     interfaces::ControlCenter::joints->clearAllJoints(clear_all);
                     interfaces::ControlCenter::motors->clearAllMotors(clear_all);
+                    interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
                     // loop over graph and recreate all physics plugins
                     interfaces::ControlCenter::joints->reloadJoints();
                     interfaces::ControlCenter::motors->reloadMotors();
+                    interfaces::ControlCenter::sensors->reloadSensors();
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();

@@ -365,16 +365,21 @@ namespace mars
                 simMotors.clear();
             }
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<std::shared_ptr<SimMotor>>);
-
-            // TODO: Is this still needed?
-            if (clear_all)
+            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::DC>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::PID>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::DirectEffort>);
-            }
+                itemRemover<std::shared_ptr<SimMotor>>(node);
+
+                // TODO: Is this still needed?
+                if (clear_all)
+                {
+                    itemRemover<envire::base_types::motors::DC>(node);
+                    itemRemover<envire::base_types::motors::PID>(node);
+                    itemRemover<envire::base_types::motors::DirectEffort>(node);
+                }
+            };
+
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
 
             ControlCenter::motorIDManager->clear();
         }
@@ -388,10 +393,14 @@ namespace mars
          */
         void MotorManager::reloadMotors(void)
         {
+            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            {
+                itemReadder<envire::base_types::motors::DC>(node);
+                itemReadder<envire::base_types::motors::PID>(node);
+                itemReadder<envire::base_types::motors::DirectEffort>(node);
+            };
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::DC>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::PID>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::DirectEffort>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
         }
 
         /**

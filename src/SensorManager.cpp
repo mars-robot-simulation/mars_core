@@ -288,19 +288,23 @@ namespace mars
                 simSensors.clear();
             }
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<std::shared_ptr<BaseSensor>>);
-
-            // TODO: Is this still needed?
-            if (clear_all)
+            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::sensors::CameraSensor>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::sensors::RaySensor>);
-            }
+                itemRemover<std::shared_ptr<BaseSensor>>(node);
+
+                // TODO: Is this still needed?
+                if (clear_all)
+                {
+                    itemRemover<envire::base_types::sensors::CameraSensor>(node);
+                    itemRemover<envire::base_types::sensors::RaySensor>(node);
+                }
+            };
+
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
 
             ControlCenter::sensorIDManager->clear();
         }
-
 
         /**
          * \brief This function reloads all sensors from a temporary sensor pool.
@@ -310,9 +314,14 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
+            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            {
+                itemReadder<envire::base_types::sensors::CameraSensor>(node);
+                itemReadder<envire::base_types::sensors::RaySensor>(node);
+            };
+
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::sensors::CameraSensor>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::sensors::RaySensor>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
         }
 
         void SensorManager::addMarsParser(const std::string string, BaseConfig* (*func)(ControlCenter*, ConfigMap*))

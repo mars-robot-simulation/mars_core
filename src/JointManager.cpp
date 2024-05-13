@@ -275,11 +275,16 @@ namespace mars
 
         void JointManager::reloadJoints(void)
         {
+            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            {
+                itemReadder<envire::base_types::joints::Fixed>(node);
+                itemReadder<envire::base_types::joints::Continuous>(node);
+                itemReadder<envire::base_types::joints::Prismatic>(node);
+                itemReadder<envire::base_types::joints::Revolute>(node);
+            };
+
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Fixed>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Continuous>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Prismatic>);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Revolute>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
         }
 
         void JointManager::updateJoints(sReal calc_ms)
@@ -290,18 +295,22 @@ namespace mars
 
         void JointManager::clearAllJoints(bool clear_all)
         {
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<interfaces::JointInterfaceItem>);
-
-            // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
-            if (clear_all)
+            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                // TODO: For non-fixed joints remove frame!
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Fixed>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Continuous>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Prismatic>);
-                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Revolute>);
-            }
+                itemRemover<interfaces::JointInterfaceItem>(node);
+
+                // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
+                if (clear_all)
+                {
+                    // TODO: For non-fixed joints remove frame!
+                    itemRemover<envire::base_types::joints::Fixed>(node);
+                    itemRemover<envire::base_types::joints::Continuous>(node);
+                    itemRemover<envire::base_types::joints::Prismatic>(node);
+                    itemRemover<envire::base_types::joints::Revolute>(node);
+                }
+            };
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
