@@ -20,6 +20,9 @@
 
 #include <envire_base_types/registration/TypeCreatorFactory.hpp>
 #include <envire_base_types/joints/Fixed.hpp>
+#include <envire_base_types/joints/Revolute.hpp>
+#include <envire_base_types/joints/Continuous.hpp>
+#include <envire_base_types/joints/Prismatic.hpp>
 
 #include <data_broker/DataBrokerInterface.h>
 
@@ -293,9 +296,14 @@ namespace mars
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
             ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<interfaces::JointInterfaceItem>);
 
+            // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
             if (clear_all)
             {
-                // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
+                // TODO: For non-fixed joints remove frame!
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Fixed>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Continuous>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Prismatic>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::joints::Revolute>);
             }
 
             constexpr bool sceneWasReseted = false;

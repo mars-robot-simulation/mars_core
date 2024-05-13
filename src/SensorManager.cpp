@@ -37,6 +37,12 @@
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_utils/MutexLocker.h>
 
+#include <envire_base_types/sensors/CameraSensor.hpp>
+#include <envire_base_types/sensors/RaySensor.hpp>
+
+// TODO: itemRemover from JointManager.hpp needed. Remove include as soon as the function is moved to a central location.
+#include "JointManager.hpp"
+
 #include <cstdio>
 #include <stdexcept>
 
@@ -277,14 +283,20 @@ namespace mars
          */
         void SensorManager::clearAllSensors(bool clear_all)
         {
-            const MutexLocker locker{&simSensorsMutex};
-            for(auto iter = simSensors.begin(); iter != simSensors.end(); iter++)
             {
-                assert(iter->second);
-                BaseSensor *sensor = iter->second;
-                delete sensor;
+                const MutexLocker locker{&simSensorsMutex};
+                simSensors.clear();
             }
-            simSensors.clear();
+
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<std::shared_ptr<BaseSensor>>);
+
+            // TODO: Is this still needed?
+            if (clear_all)
+            {
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::sensors::CameraSensor>);
+                ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::sensors::RaySensor>);
+            }
 
             ControlCenter::sensorIDManager->clear();
         }

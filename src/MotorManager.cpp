@@ -35,8 +35,7 @@ namespace mars
          *
          * \param c The pointer to the ControlCenter of the simulation.
          */
-        MotorManager::MotorManager(ControlCenter *c) :
-            control{c}
+        MotorManager::MotorManager(ControlCenter *c) : control{c}
         {}
 
         /**
@@ -368,6 +367,8 @@ namespace mars
 
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
             ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<std::shared_ptr<SimMotor>>);
+
+            // TODO: Is this still needed?
             if (clear_all)
             {
                 ControlCenter::graphTreeView->visitBfs(rootVertex, itemRemover<envire::base_types::motors::DC>);
