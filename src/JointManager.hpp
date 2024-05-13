@@ -107,5 +107,31 @@ namespace mars
                 interfaces::ControlCenter::envireGraph->removeItemFromFrame(*items.begin());
             }
         };
+
+        // TODO: Move to central location
+        template<typename T>
+        void itemReadder(envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+        {
+            if (!interfaces::ControlCenter::envireGraph->containsItems<envire::core::Item<T>>(node))
+            {
+                return;
+            }
+
+            const auto typeIndex = std::type_index{typeid(envire::core::Item<T>)};
+            auto items = interfaces::ControlCenter::envireGraph->getItems(node, typeIndex);
+
+            // Remove all items
+            for(const auto item : items)
+            {
+                interfaces::ControlCenter::envireGraph->removeItemFromFrame(item);
+            }
+
+            // Readd all items
+            const auto frameId = interfaces::ControlCenter::envireGraph->getFrameId(node);
+            for (const auto item : items)
+            {
+                interfaces::ControlCenter::envireGraph->addItemToFrame(frameId, item);
+            }
+        }
     } // end of namespace core
 } // end of namespace mars

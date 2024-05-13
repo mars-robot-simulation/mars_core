@@ -388,9 +388,10 @@ namespace mars
          */
         void MotorManager::reloadMotors(void)
         {
-            throw std::logic_error("MotorManager::reloadMotors is not implemented yet.");
-
-            // TODO: Visit graph & readd each envire motor item
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::DC>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::PID>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::motors::DirectEffort>);
         }
 
         /**

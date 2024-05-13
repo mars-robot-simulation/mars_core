@@ -310,8 +310,9 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
-            throw std::logic_error("SensorManager::reloadSensors is not implemented yet.");
-            // TODO: Traverse Graph and readd envire items / issue ItemAddedEvent for all envire sensor items
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::sensors::CameraSensor>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::sensors::RaySensor>);
         }
 
         void SensorManager::addMarsParser(const std::string string, BaseConfig* (*func)(ControlCenter*, ConfigMap*))

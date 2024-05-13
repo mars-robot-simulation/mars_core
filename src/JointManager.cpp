@@ -275,7 +275,11 @@ namespace mars
 
         void JointManager::reloadJoints(void)
         {
-            throw std::logic_error("reloadJoints not implemented yet");
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Fixed>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Continuous>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Prismatic>);
+            ControlCenter::graphTreeView->visitBfs(rootVertex, itemReadder<envire::base_types::joints::Revolute>);
         }
 
         void JointManager::updateJoints(sReal calc_ms)
