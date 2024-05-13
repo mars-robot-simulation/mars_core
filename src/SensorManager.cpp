@@ -138,15 +138,14 @@ namespace mars
         void SensorManager::getListSensors(vector<core_objects_exchange> *sensorList) const
         {
             core_objects_exchange obj;
-            map<unsigned long, BaseSensor*>::const_iterator iter;
             sensorList->clear();
-            iMutex.lock();
-            for(iter = simSensors.begin(); iter != simSensors.end(); iter++)
+            simSensorsMutex.lock();
+            for(auto iter = simSensors.begin(); iter != simSensors.end(); iter++)
             {
                 iter->second->getCoreExchange(&obj);
                 sensorList->push_back(obj);
             }
-            iMutex.unlock();
+            simSensorsMutex.unlock();
         }
 
         /**
@@ -159,16 +158,15 @@ namespace mars
          */
         const BaseSensor* SensorManager::getFullSensor(unsigned long index) const
         {
-            MutexLocker locker(&iMutex);
-            map<unsigned long, BaseSensor*>::const_iterator iter;
-
-            iter = simSensors.find(index);
+            const MutexLocker locker{&simSensorsMutex};
+            const auto iter = simSensors.find(index);
             if (iter != simSensors.end())
+            {
                 return iter->second;
+            }
             else
             {
-                char msg[128];
-                sprintf(msg, "could not find sensor with index: %lu", index);
+                const auto msg = std::string{"could not find sensor with index: "} + std::to_string(index);
                 throw std::runtime_error(msg);
             }
         }
@@ -192,17 +190,19 @@ namespace mars
         void SensorManager::removeSensor(unsigned long index)
         {
             // TODO: Remove envire sensor item and base sensor item from graph.
-            BaseSensor* tmpSensor = NULL;
-            iMutex.lock();
-            map<unsigned long, BaseSensor*>::iterator iter = simSensors.find(index);
+            BaseSensor* tmpSensor = nullptr;
+            simSensorsMutex.lock();
+            const auto iter = simSensors.find(index);
             if(iter != simSensors.end())
             {
                 tmpSensor = iter->second;
                 simSensors.erase(iter);
                 if(tmpSensor)
+                {
                     delete tmpSensor;
+                }
             }
-            iMutex.unlock();
+            simSensorsMutex.unlock();
 
             ControlCenter::sensorIDManager->removeEntry(index);
 
@@ -220,13 +220,17 @@ namespace mars
          */
         BaseSensor* SensorManager::getSimSensor(unsigned long index) const
         {
-            MutexLocker locker(&iMutex);
-            map<unsigned long, BaseSensor*>::const_iterator iter = simSensors.find(index);
+            const MutexLocker locker{&simSensorsMutex};
+            const auto iter = simSensors.find(index);
 
             if(iter != simSensors.end())
+            {
                 return iter->second;
+            }
             else
-                return NULL;
+            {
+                return nullptr;
+            }
         }
 
         /**
@@ -238,14 +242,15 @@ namespace mars
          */
         int SensorManager::getSensorData(unsigned long id, sReal **data) const
         {
-            MutexLocker locker(&iMutex);
-            map<unsigned long, BaseSensor*>::const_iterator iter;
+            const MutexLocker locker{&simSensorsMutex};
 
-            iter = simSensors.find(id);
+            const auto iter = simSensors.find(id);
             if(iter != simSensors.end())
+            {
                 return iter->second->getSensorData(data);
+            }
 
-            LOG_DEBUG("Cannot Find Sensor wirh id: %lu\n",id);
+            LOG_DEBUG((std::string{"Cannot Find Sensor with id: "} + std::to_string(id)).c_str());
             return 0;
         }
 
@@ -272,9 +277,8 @@ namespace mars
          */
         void SensorManager::clearAllSensors(bool clear_all)
         {
-            MutexLocker locker(&iMutex);
-            map<unsigned long, BaseSensor*>::iterator iter;
-            for(iter = simSensors.begin(); iter != simSensors.end(); iter++)
+            const MutexLocker locker{&simSensorsMutex};
+            for(auto iter = simSensors.begin(); iter != simSensors.end(); iter++)
             {
                 assert(iter->second);
                 BaseSensor *sensor = iter->second;
@@ -311,7 +315,7 @@ namespace mars
        unsigned long SensorManager::createAndAddSensor(const std::string &type_name, BaseConfig *config, bool reload)
        {
             assert(config);
-            auto it = availableSensors.find(type_name);
+            const auto it = availableSensors.find(type_name);
             if(it == availableSensors.end())
             {
                 std::cerr << "Could not load unknown Sensor with name: \"" << type_name << "\"" << std::endl;
@@ -328,18 +332,17 @@ namespace mars
             config->id = ControlCenter::sensorIDManager->addIfUnknown(config->name);
 
             BaseSensor *sensor = ((*it).second)(this->control,config);
-            iMutex.lock();
+            simSensorsMutex.lock();
             simSensors[sensor->getID()] = sensor;
-            iMutex.unlock();
+            simSensorsMutex.unlock();
 
             return sensor->getID();
         }
 
         unsigned long SensorManager::createAndAddSensor(ConfigMap *config, bool reload)
         {
-            std::string type = (*config)["type"][0].getString();
-            std::map<const std::string,BaseConfig* (*)(ControlCenter*, ConfigMap*)>::iterator it = marsParser.find(type);
-
+            const std::string type = (*config)["type"][0].getString();
+            const auto it = marsParser.find(type);
             if(it == marsParser.end())
             {
                 std::cerr << "Could not find MarsParser for sensor with name: \"" << type.c_str()<< "\"" << std::endl;

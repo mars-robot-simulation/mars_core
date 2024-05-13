@@ -194,17 +194,14 @@ namespace mars
             void addSensorTypes();
             void addMarsParsers();
 
-            //! the id of the next sensor added to the simulation
-            unsigned long next_sensor_id;
+            //! a pointer to the control center
+            interfaces::ControlCenter *control;
 
             //! a containter for all sensors currently present in the simulation
             std::map<unsigned long, interfaces::BaseSensor*> simSensors;
 
-            //! a pointer to the control center
-            interfaces::ControlCenter *control;
-
-            //! a mutex fot the sensor containters
-            mutable utils::Mutex iMutex;
+            //! a mutex fot the sensor containter
+            mutable utils::Mutex simSensorsMutex;
 
             //std::map<const std::string,BaseSensor* (*)(interfaces::ControlCenter*,const unsigned long int,const std::string,QDomElement*)> availibleSensors;
             //std::map<const std::string,BaseSensor* (*)(interfaces::ControlCenter*,const unsigned long int, const std::string, mars::ConfigMap*)> availableSensors2;
