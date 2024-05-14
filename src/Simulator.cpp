@@ -129,9 +129,9 @@ namespace mars
 
 
             // create envire graph
-            ControlCenter::envireGraph = std::shared_ptr<envire::core::EnvireGraph> (new envire::core::EnvireGraph());
+            ControlCenter::envireGraph = std::make_shared<envire::core::EnvireGraph>();
             ControlCenter::envireGraph->addFrame(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView = std::shared_ptr<envire::core::TreeView>(new envire::core::TreeView());
+            ControlCenter::graphTreeView = std::make_shared<envire::core::TreeView>();
             ControlCenter::envireGraph->getTree(SIM_CENTER_FRAME_NAME, true, ControlCenter::graphTreeView.get());
 
 
@@ -232,6 +232,7 @@ namespace mars
                 const auto physicsFile = std::string{configPath.sValue + "/mars_Physics.yaml"};
                 control->cfg->loadConfig(physicsFile.c_str());
 
+                // @loadLastSave: Used to receive value from config and hence not constexpr.
                 bool loadLastSave = false;
                 control->cfg->getPropertyValue("Config", "loadLastSave", "value", &loadLastSave);
                 if (loadLastSave)
@@ -263,7 +264,7 @@ namespace mars
             }
 
             {
-                const Thread *const simThread{dynamic_cast<Thread*>(this)};
+                const auto* const simThread{dynamic_cast<Thread*>(this)};
                 while(simThread->isRunning())
                 {
                     utils::msleep(1);
@@ -273,7 +274,7 @@ namespace mars
 
             if(control->cfg)
             {
-                string saveFile = configPath.sValue;
+                auto saveFile = configPath.sValue;
                 saveFile.append("/mars_Config.yaml");
                 control->cfg->writeConfig(saveFile.c_str(), "Config");
 
@@ -524,7 +525,9 @@ namespace mars
             {
                 stepping_mutex.lock();
                 if(simulationStatus == STOPPING)
+                {
                     simulationStatus = STOPPED;
+                }
 
                 if(!isSimRunning())
                 {
@@ -552,7 +555,8 @@ namespace mars
                 if(my_real_time)
                 {
                     myRealTime();
-                } else if(physics_mutex_count > 0)
+                }
+                else if(physics_mutex_count > 0)
                 {
                     myRealTime();
                     // if not in realtime this thread would lock the physicsThread right
@@ -572,7 +576,7 @@ namespace mars
 
         void Simulator::step(bool setState)
         {
-            Status oldState = Status::UNKNOWN;
+            auto oldState = Status::UNKNOWN;
             long time = 0;
             struct timeval tv;
             tv.tv_sec = 0;
@@ -603,8 +607,8 @@ namespace mars
             contactLinesData.clear();
             for(auto &contact: collisionManager->getContactVector())
             {
-                osg_lines::Vector p(contact.pos.x(), contact.pos.y(), contact.pos.z());
-                osg_lines::Vector n(contact.pos.x()+contact.normal.x(), contact.pos.y()+contact.normal.y(), contact.pos.z()+contact.normal.z());
+                const auto p = osg_lines::Vector{contact.pos.x(), contact.pos.y(), contact.pos.z()};
+                const auto n = osg_lines::Vector{contact.pos.x()+contact.normal.x(), contact.pos.y()+contact.normal.y(), contact.pos.z()+contact.normal.z()};
                 contactLinesData.push_back(p);
                 contactLinesData.push_back(n);
                 if(contact.body1)
@@ -768,11 +772,8 @@ namespace mars
             }
 
             stepping_mutex.unlock();
-            if(simulationStatus == STOPPED)
-                return false;
-            else
-                return true;
 
+            return simulationStatus != STOPPED;
         }
 
         //consider the case where the time step is smaller than 1 ms
@@ -1163,16 +1164,18 @@ namespace mars
             pluginLocker.unlock();
 
             if (ControlCenter::theDataBroker)
+            {
                 ControlCenter::theDataBroker->trigger("mars_sim/finishedDrawTrigger");
+            }
 
             // FIX: update Graph
             if(ControlCenter::graphTreeView->crossEdges.size() > 0)
             {
-                const VertexDesc source = ControlCenter::envireGraph->getSourceVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
-                const VertexDesc target = ControlCenter::envireGraph->getTargetVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
-                const envire::core::FrameId sourceId = ControlCenter::envireGraph->getFrameId(source);
-                const envire::core::FrameId targetId = ControlCenter::envireGraph->getFrameId(target);
-                const std::string msg = "Loop in tree detected: " + sourceId + " --> " + targetId +
+                const auto& source = ControlCenter::envireGraph->getSourceVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
+                const auto& target = ControlCenter::envireGraph->getTargetVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
+                const auto& sourceId = ControlCenter::envireGraph->getFrameId(source);
+                const auto& targetId = ControlCenter::envireGraph->getFrameId(target);
+                const auto msg = std::string{"Loop in tree detected: "} + sourceId + " --> " + targetId +
                     ". The physics plugin cannot handle loops in the graph";
                 throw std::runtime_error(msg);
             }
@@ -1206,8 +1209,8 @@ namespace mars
                                              std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                              std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
-            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
+            const auto& absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
+            const auto rootToFrame = base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
             Simulator::updateChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
@@ -1218,8 +1221,7 @@ namespace mars
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            envire::core::Transform tf = envireGraph->getTransform(origin, target);
-            std::shared_ptr<DynamicObject> object = nullptr;
+            auto tf = envireGraph->getTransform(origin, target);
             // TODO: instead of searching in the subworlds we should check for items of the frame that are of type dynamicobject
 
             if (envireGraph->containsItems<envire::core::Item<DynamicObjectItem>>(target))
@@ -1227,8 +1229,8 @@ namespace mars
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                envire::core::EnvireGraph::ItemIterator<envire::core::Item<DynamicObjectItem>> it = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target);
-                object = it->getData().dynamicObject;
+                const auto& it = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target);
+                const auto object = it->getData().dynamicObject;
 
                 // TODO: check if targetFrame is dynamic?
                 base::TransformWithCovariance absolutTransform;
@@ -1251,7 +1253,7 @@ namespace mars
                 // CAUTION: we assume that there is only one AbsolutePose in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple AbsolutePose for some reason
-                envire::core::EnvireGraph::ItemIterator<envire::core::Item<interfaces::AbsolutePose>> it = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target);
+                const auto& it = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target);
                 it->getData().setPosition(tf.transform.translation);
                 it->getData().setRotation(tf.transform.orientation);
             }
@@ -1278,8 +1280,8 @@ namespace mars
                                             std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                             std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            AbsolutePose absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
-            base::TransformWithCovariance rootToFrame{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
+            const auto& absolutePose = envireGraph->getItem<envire::core::Item<AbsolutePose>>(vertex, 0)->getData();
+            const auto rootToFrame = base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())};
             Simulator::applyChildPositions(vertex, rootToFrame, envireGraph, graphTreeView);
         }
 
@@ -1290,15 +1292,15 @@ namespace mars
                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                        std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            envire::core::Transform localTransform = envireGraph->getTransform(origin, target);
-            envire::core::Transform globalTransform = envire::core::Transform{rootToOrigin} * localTransform;
+            const auto& localTransform = envireGraph->getTransform(origin, target);
+            const auto globalTransform = envire::core::Transform{rootToOrigin} * localTransform;
 
             if (envireGraph->containsItems<envire::core::Item<DynamicObjectItem>>(target))
             {
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                std::shared_ptr<interfaces::DynamicObject> object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target)->getData().dynamicObject;
+                auto object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target)->getData().dynamicObject;
                 object->setPosition(globalTransform.transform.translation);
                 object->setRotation(globalTransform.transform.orientation);
             }
@@ -1308,7 +1310,7 @@ namespace mars
                 // CAUTION: we assume that there is only one AbsolutePose in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple AbsolutePose for some reason
-                interfaces::AbsolutePose& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target)->getData();
+                auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(target)->getData();
                 absolutePose.setPosition(globalTransform.transform.translation);
                 absolutePose.setRotation(globalTransform.transform.orientation);
             }
@@ -1344,12 +1346,12 @@ namespace mars
             utils::Vector axis;
             joint->getAxis(&axis); // <- axis is in global coordinate frame
             axis = absolutePose.getRotation().inverse() * axis; // <- axis is now in local coordinate frame
-            Quaternion q = utils::angleAxisToQuaternion(angle, axis);
+            const auto& q = utils::angleAxisToQuaternion(angle, axis);
 
             // Update transform to all children to account for rotation
             for(const auto& child : graphTreeView->tree[origin].children)
             {
-                envire::core::Transform tf = envireGraph->getTransform(origin, child);
+                auto tf = envireGraph->getTransform(origin, child);
                 tf.transform.translation = q * tf.transform.translation;
                 tf.transform.orientation = q * tf.transform.orientation;
                 envireGraph->updateTransform(origin, child, tf);
@@ -1372,20 +1374,20 @@ namespace mars
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                envire::core::EnvireGraph::ItemIterator<envire::core::Item<envire::base_types::joints::Revolute>> it = envireGraph->getItem<envire::core::Item<envire::base_types::joints::Revolute>>(origin);
-                envire::base_types::joints::Revolute &joint = it->getData();
+                const auto& it = envireGraph->getItem<envire::core::Item<envire::base_types::joints::Revolute>>(origin);
+                const auto& joint = it->getData();
                 // get the joint axis
                 //   - get the joint anchor (due to relative positioning and joints have their own frame
                 //     the anchor is always (0,0,0)
                 // the axis should be defined in the joint frame
-                Quaternion q = utils::angleAxisToQuaternion(angle, joint.axis);
+                const auto& q = utils::angleAxisToQuaternion(angle, joint.axis);
 
                 // get children
                 const auto& children = graphTreeView->tree[origin].children;
                 for(const auto& child : children)
                 {
                     // apply rotation
-                    envire::core::Transform tf = envireGraph->getTransform(origin, child);
+                    auto tf = envireGraph->getTransform(origin, child);
                     tf.transform.translation = q*tf.transform.translation;
                     tf.transform.orientation = q*tf.transform.orientation;
                     envireGraph->updateTransform(origin, child, tf);
@@ -2259,8 +2261,8 @@ namespace mars
             bool done = false;
             while(!done)
             {
-                const envire::core::GraphTraits::vertex_descriptor vertex = ControlCenter::envireGraph->vertex(frame);
-                envire::core::GraphTraits::vertex_descriptor parentVertex = ControlCenter::graphTreeView->tree[vertex].parent;
+                const auto& vertex = ControlCenter::envireGraph->vertex(frame);
+                const auto& parentVertex = ControlCenter::graphTreeView->tree[vertex].parent;
                 // TODO: check if this check is correct
                 if(parentVertex)
                 {
@@ -2268,7 +2270,7 @@ namespace mars
                     try
                     {
                         using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
-                        envire::core::EnvireGraph::ItemIterator<SubControlItem> it = ControlCenter::envireGraph->getItem<SubControlItem>(frame);
+                        const auto& it = ControlCenter::envireGraph->getItem<SubControlItem>(frame);
                         return it->getData();
                     }
                     catch (...)
@@ -2285,9 +2287,9 @@ namespace mars
 
         void Simulator::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::base_types::World>>& e)
         {
-            envire::base_types::World& world = e.item->getData();
+            const auto& world = e.item->getData();
 
-            SubWorld * subWorld = new SubWorld;
+            auto* subWorld = new SubWorld{};
             // use the control with new physic
             subWorld->control = std::make_shared<SubControlCenter>();
             subWorld->control->setPrefix(world.prefix);
@@ -2310,7 +2312,7 @@ namespace mars
 
             // store the control center of the subworld in its own frame in the graph
             using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
-            SubControlItem::Ptr subWorldItemPtr{new SubControlItem{subWorld->control}};
+            auto subWorldItemPtr = SubControlItem::Ptr{new SubControlItem{subWorld->control}};
 
             ControlCenter::envireGraph->addItemToFrame(e.frame, subWorldItemPtr);
 
@@ -2319,17 +2321,9 @@ namespace mars
             collisionItem.collisionInterface = subWorld->control->collision;
             collisionItem.pluginName = "mars_ode_collision";
             collisionManager->addCollisionInterfaceItem(collisionItem);
-            envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
+            auto collisionItemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
             ControlCenter::envireGraph->addItemToFrame(e.frame, collisionItemPtr);
         }
-
-        // add A
-        // void Simulator::frameAdded(const envire::core::FrameAddedEvent& e) {
-        //     interfaces::AbsolutePose absolutePose;
-        //     absolutePose.frameId = e.frame;
-        //     envire::core::Item<interfaces::AbsolutePose>::Ptr absolutePoseItemPtr(new envire::core::Item<interfaces::AbsolutePose>(absolutePose));
-        //     ControlCenter::envireGraph->addItemToFrame(e.frame, absolutePoseItemPtr);
-        // }
 
         void Simulator::saveGraph(const std::string &fileName)
         {
@@ -2342,7 +2336,7 @@ namespace mars
     {
         SimulatorInterface* SimulatorInterface::getInstance(lib_manager::LibManager *libManager)
         {
-            return new core::Simulator(libManager);
+            return new core::Simulator{libManager};
         }
     } // end of namespace interfaces
 

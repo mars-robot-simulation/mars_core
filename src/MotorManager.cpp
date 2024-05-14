@@ -416,7 +416,9 @@ namespace mars
             decltype(simMotors)::iterator iter;
             const MutexLocker locker{&simMotorsMutex};
             for(iter=simMotors.begin(); iter!=simMotors.end(); iter++)
+            {
                 iter->second->update(calc_ms);
+            }
         }
 
 
