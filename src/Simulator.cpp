@@ -2365,12 +2365,8 @@ namespace mars
                     if (ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(node))
                     {
                         auto dynamicObject = ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
-                        const auto zero = utils::Vector{.0, .0, .0};
-                        // TODO: It is currently REQUIRED to set rotation BEFORE position for dynamic objects, as setPosition uses the current rotation internally!
-                        dynamicObject->setRotation(currentAbsolutePose.getRotation());
-                        dynamicObject->setPosition(currentAbsolutePose.getPosition());
-                        dynamicObject->setLinearVelocity(zero);
-                        dynamicObject->setAngularVelocity(zero);
+                        constexpr bool reset_velocities = true;
+                        dynamicObject->setPose(currentAbsolutePose.getPosition(), currentAbsolutePose.getRotation(), reset_velocities);
                     }
                 }
             };
