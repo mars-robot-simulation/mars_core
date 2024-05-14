@@ -2340,6 +2340,11 @@ namespace mars
         {
             auto resetPoseFunctor = [](VertexDesc node, VertexDesc parent)
             {
+                // TODO: This has implicit assumptions which are not enforced nor documented!
+                //  * Root frame is assumed to not have an AbsolutePose.
+                //  * Root frame is located at (0,0,0) with (1,0,0,0) rotation
+                //  * Each other frame has exactly one Item of type AbsolutePose
+
                 using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
                 if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(node))
                 {
