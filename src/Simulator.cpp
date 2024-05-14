@@ -1096,12 +1096,12 @@ namespace mars
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
                     // TODO: nodes
 
+                    resetPoses();
+
                     interfaces::ControlCenter::joints->reloadJoints();
                     interfaces::ControlCenter::motors->reloadMotors();
                     interfaces::ControlCenter::sensors->reloadSensors();
                     // TODO: nodes
-
-                    // TODO: Reset transformation based on absolute poses
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();
@@ -1435,16 +1435,22 @@ namespace mars
             reloadGraphics = resetGraphics;
             stepping_mutex.lock();
             if(simulationStatus == RUNNING)
+            {
                 was_running = true;
+            }
             else
+            {
                 was_running = false;
+            }
 
             if(simulationStatus != STOPPED)
             {
                 simulationStatus = STOPPING;
             }
             if(control->graphics)
+            {
                 this->allowDraw();
+            }
 
             stepping_mutex.unlock();
         }
@@ -1453,9 +1459,9 @@ namespace mars
         void Simulator::reloadWorld(void)
         {
             // control->nodes->reloadNodes(reloadGraphics);
-            // control->joints->reloadJoints();
-            // control->motors->reloadMotors();
-            // control->sensors->reloadSensors();
+            control->joints->reloadJoints();
+            control->motors->reloadMotors();
+            control->sensors->reloadSensors();
         }
 
         void Simulator::readArguments(int argc, char **argv)
@@ -2328,6 +2334,93 @@ namespace mars
         void Simulator::saveGraph(const std::string &fileName)
         {
             envire::core::GraphDrawing::write(*(ControlCenter::envireGraph.get()), fileName);
+        }
+
+        void Simulator::resetPoses()
+        {
+            auto resetPoseFunctor = [](VertexDesc node, VertexDesc parent)
+            {
+                using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
+                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(node))
+                {
+                    // Calculate where node should be after potential change of parents position.
+                    const auto parentAbsolutePose = ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(parent) ? ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(parent)->getData() : AbsolutePose{};
+                    const auto& transformation = ControlCenter::envireGraph->getTransform(parent, node);
+                    const auto parentTransform = envire::core::Transform{parentAbsolutePose.getPosition(), parentAbsolutePose.getRotation()};
+                    const auto rootToNode = parentTransform * transformation;
+
+                    // Set where node should be after the reset of parent.
+                    auto& currentAbsolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(node)->getData();
+                    currentAbsolutePose.setPosition(rootToNode.transform.translation);
+                    currentAbsolutePose.setRotation(rootToNode.transform.orientation);
+
+                    // Reset the position of node to the initial pose.
+                    const auto transformationChange = envire::core::Transform{currentAbsolutePose.resetPose()};
+
+                    // Adapt the transformation from parent to node to reflect the reset pose of node.
+                    ControlCenter::envireGraph->setEdgeProperty(parent, node, transformation * transformationChange);
+
+                    // Also set the position of a potential dynamicobject for node.
+                    using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
+                    if (ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(node))
+                    {
+                        auto dynamicObject = ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
+                        const auto zero = utils::Vector{.0, .0, .0};
+                        // TODO: It is currently REQUIRED to set rotation BEFORE position for dynamic objects, as setPosition uses the current rotation internally!
+                        dynamicObject->setRotation(currentAbsolutePose.getRotation());
+                        dynamicObject->setPosition(currentAbsolutePose.getPosition());
+                        dynamicObject->setLinearVelocity(zero);
+                        dynamicObject->setAngularVelocity(zero);
+                    }
+                }
+            };
+            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+
+            physicsThreadLock();
+            ControlCenter::graphTreeView->visitDfs(rootVertex, resetPoseFunctor);
+            physicsThreadUnlock();
+
+#if 0 // Tests if reset was performed correctly.
+            auto absolutePoseCheckFunctor = [](VertexDesc node, VertexDesc parent)
+            {
+                using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
+                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(node))
+                {
+                    const auto& absolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(node)->getData();
+                    if (!absolutePose.isInInitialPose())
+                    {
+                        std::cout << "Incorrect pose for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                    }
+
+                    using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
+                    if (ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(node))
+                    {
+                        const auto& dynamicObject = ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
+                        utils::Vector position;
+                        dynamicObject->getPosition(&position);
+                        utils::Quaternion rotation;
+                        dynamicObject->getRotation(&rotation);
+
+                        constexpr double eps = 1e-6;
+                        const bool positionMatches = position.isApprox(utils::Vector{absolutePose.getPosition()}, eps);
+                        const bool rotationMatches = rotation.coeffs().isApprox(utils::Quaternion{absolutePose.getRotation()}.coeffs(), eps);
+                        if (!positionMatches)
+                        {
+                            std::cout << "Incorrect position for dynamic object for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                            std::cout << "dynamic object position: " << position << std::endl;
+                            std::cout << "absolute pose position: " << absolutePose.getPosition() << std::endl;
+                        }
+                        if (!rotationMatches)
+                        {
+                            std::cout << "Incorrect rotation for dynamic object for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                            std::cout << "dynamic object rotation: " << rotation.coeffs() << std::endl;
+                            std::cout << "absolute pose position: " << absolutePose.getRotation().coeffs() << std::endl;
+                        }
+                    }
+                }
+            };
+            ControlCenter::graphTreeView->visitDfs(rootVertex, absolutePoseCheckFunctor);
+#endif
         }
 
     } // end of namespace core

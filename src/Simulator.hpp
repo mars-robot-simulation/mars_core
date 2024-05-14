@@ -396,6 +396,8 @@ namespace mars
             // simulation control
             void run() override; ///< The simulator main loop.
 
+        private:
+            void resetPoses();
         };
     } // end of namespace core
 } // end of namespace mars
