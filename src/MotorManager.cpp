@@ -13,9 +13,9 @@
 
 #include <stdexcept>
 #include <envire_core/graph/EnvireGraph.hpp>
-#include <envire_base_types/motors/DC.hpp>
-#include <envire_base_types/motors/PID.hpp>
-#include <envire_base_types/motors/DirectEffort.hpp>
+#include <envire_types/motors/DC.hpp>
+#include <envire_types/motors/PID.hpp>
+#include <envire_types/motors/DirectEffort.hpp>
 
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_utils/MutexLocker.h>
@@ -372,9 +372,9 @@ namespace mars
                 // TODO: Is this still needed?
                 if (clear_all)
                 {
-                    itemRemover<envire::base_types::motors::DC>(node);
-                    itemRemover<envire::base_types::motors::PID>(node);
-                    itemRemover<envire::base_types::motors::DirectEffort>(node);
+                    itemRemover<envire::types::motors::DC>(node);
+                    itemRemover<envire::types::motors::PID>(node);
+                    itemRemover<envire::types::motors::DirectEffort>(node);
                 }
             };
 
@@ -395,9 +395,9 @@ namespace mars
         {
             auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::base_types::motors::DC>(node);
-                itemReadder<envire::base_types::motors::PID>(node);
-                itemReadder<envire::base_types::motors::DirectEffort>(node);
+                itemReadder<envire::types::motors::DC>(node);
+                itemReadder<envire::types::motors::PID>(node);
+                itemReadder<envire::types::motors::DirectEffort>(node);
             };
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
             ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);

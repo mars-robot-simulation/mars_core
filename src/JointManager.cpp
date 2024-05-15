@@ -13,16 +13,16 @@
 
 #ifndef JOINT_NAMESPACE
 // TODO: This should be done differently!
-#define JOINT_NAMESPACE "envire::base_types::joints::"
+#define JOINT_NAMESPACE "envire::types::joints::"
 #endif
 
 #include <stdexcept>
 
-#include <envire_base_types/registration/TypeCreatorFactory.hpp>
-#include <envire_base_types/joints/Fixed.hpp>
-#include <envire_base_types/joints/Revolute.hpp>
-#include <envire_base_types/joints/Continuous.hpp>
-#include <envire_base_types/joints/Prismatic.hpp>
+#include <envire_types/registration/TypeCreatorFactory.hpp>
+#include <envire_types/joints/Fixed.hpp>
+#include <envire_types/joints/Revolute.hpp>
+#include <envire_types/joints/Continuous.hpp>
+#include <envire_types/joints/Prismatic.hpp>
 
 #include <data_broker/DataBrokerInterface.h>
 
@@ -65,7 +65,7 @@ namespace mars
 
             // TODO: This should be handled at a central location
             const auto className = std::string{JOINT_NAMESPACE} + jointMap["type"].toString();
-            envire::core::ItemBase::Ptr item = envire::base_types::TypeCreatorFactory::createItem(className, jointMap);
+            envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, jointMap);
 
             const envire::core::FrameId parentFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex1);
             const envire::core::FrameId childFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex2);
@@ -172,7 +172,7 @@ namespace mars
                     ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
 
                     // Also remove corresponding envire fixed joint item
-                    const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<envire::base_types::joints::Fixed>>(jointFrameId);
+                    const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<envire::types::joints::Fixed>>(jointFrameId);
                     for(auto iter = range.first; iter != range.second; ++iter)
                     {
                         if(iter->getData().name == configMap["name"].toString())
@@ -277,10 +277,10 @@ namespace mars
         {
             auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::base_types::joints::Fixed>(node);
-                itemReadder<envire::base_types::joints::Continuous>(node);
-                itemReadder<envire::base_types::joints::Prismatic>(node);
-                itemReadder<envire::base_types::joints::Revolute>(node);
+                itemReadder<envire::types::joints::Fixed>(node);
+                itemReadder<envire::types::joints::Continuous>(node);
+                itemReadder<envire::types::joints::Prismatic>(node);
+                itemReadder<envire::types::joints::Revolute>(node);
             };
 
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
@@ -303,10 +303,10 @@ namespace mars
                 if (clear_all)
                 {
                     // TODO: For non-fixed joints remove frame!
-                    itemRemover<envire::base_types::joints::Fixed>(node);
-                    itemRemover<envire::base_types::joints::Continuous>(node);
-                    itemRemover<envire::base_types::joints::Prismatic>(node);
-                    itemRemover<envire::base_types::joints::Revolute>(node);
+                    itemRemover<envire::types::joints::Fixed>(node);
+                    itemRemover<envire::types::joints::Continuous>(node);
+                    itemRemover<envire::types::joints::Prismatic>(node);
+                    itemRemover<envire::types::joints::Revolute>(node);
                 }
             };
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);

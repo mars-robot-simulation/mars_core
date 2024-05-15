@@ -47,7 +47,7 @@
 #include <envire_core/graph/TreeView.hpp>
 
 #include <envire_core/graph/GraphDrawing.hpp>
-#include <envire_base_types/joints/Revolute.hpp>
+#include <envire_types/joints/Revolute.hpp>
 
 // TODO: should be replace by MotorInterface later
 #include "SimMotor.hpp"
@@ -137,7 +137,7 @@ namespace mars
 
 
             // add subscribe to be notified if some items have been added into the graph
-            GraphItemEventDispatcher<envire::core::Item<::envire::base_types::World>>::subscribe(ControlCenter::envireGraph.get());
+            GraphItemEventDispatcher<envire::core::Item<::envire::types::World>>::subscribe(ControlCenter::envireGraph.get());
             //GraphEventDispatcher::subscribe(ControlCenter::envireGraph.get());
 
             absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{ControlCenter::envireGraph}};
@@ -1374,12 +1374,12 @@ namespace mars
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
             // first get the joint
-            if (envireGraph->containsItems<envire::core::Item<envire::base_types::joints::Revolute>>(origin))
+            if (envireGraph->containsItems<envire::core::Item<envire::types::joints::Revolute>>(origin))
             {
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                const auto& it = envireGraph->getItem<envire::core::Item<envire::base_types::joints::Revolute>>(origin);
+                const auto& it = envireGraph->getItem<envire::core::Item<envire::types::joints::Revolute>>(origin);
                 const auto& joint = it->getData();
                 // get the joint axis
                 //   - get the joint anchor (due to relative positioning and joints have their own frame
@@ -2300,7 +2300,7 @@ namespace mars
             return nullptr;
         }
 
-        void Simulator::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::base_types::World>>& e)
+        void Simulator::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::types::World>>& e)
         {
             const auto& world = e.item->getData();
 

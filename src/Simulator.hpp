@@ -38,7 +38,7 @@
 #include <envire_core/graph/GraphTypes.hpp>
 #include <base/TransformWithCovariance.hpp>
 
-#include <envire_base_types/World.hpp>
+#include <envire_types/World.hpp>
 
 #include <iostream>
 #include <memory>
@@ -75,7 +75,7 @@ namespace mars
                           public lib_manager::LibInterface,
                           public cfg_manager::CFGClient,
                           public data_broker::ReceiverInterface,
-                          public envire::core::GraphItemEventDispatcher<envire::core::Item<::envire::base_types::World>>
+                          public envire::core::GraphItemEventDispatcher<envire::core::Item<::envire::types::World>>
         {
 
         public:
@@ -237,7 +237,7 @@ namespace mars
 
 
             // envire callbacks
-            virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::base_types::World>>& e) override;
+            virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::types::World>>& e) override;
 
             // access graph
             // TODO: probably it is temporary and will be moved in the extra class

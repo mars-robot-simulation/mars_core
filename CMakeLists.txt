@@ -36,7 +36,7 @@ pkg_check_modules(PKGCONFIG REQUIRED
           configmaps
           osg_lines
           envire_core
-          envire_base_types
+          envire_types
           mars_ode_physics
           mars_ode_collision
 )

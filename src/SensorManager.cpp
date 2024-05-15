@@ -37,8 +37,8 @@
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_utils/MutexLocker.h>
 
-#include <envire_base_types/sensors/CameraSensor.hpp>
-#include <envire_base_types/sensors/RaySensor.hpp>
+#include <envire_types/sensors/CameraSensor.hpp>
+#include <envire_types/sensors/RaySensor.hpp>
 
 // TODO: itemRemover from JointManager.hpp needed. Remove include as soon as the function is moved to a central location.
 #include "JointManager.hpp"
@@ -295,8 +295,8 @@ namespace mars
                 // TODO: Is this still needed?
                 if (clear_all)
                 {
-                    itemRemover<envire::base_types::sensors::CameraSensor>(node);
-                    itemRemover<envire::base_types::sensors::RaySensor>(node);
+                    itemRemover<envire::types::sensors::CameraSensor>(node);
+                    itemRemover<envire::types::sensors::RaySensor>(node);
                 }
             };
 
@@ -316,8 +316,8 @@ namespace mars
         {
             auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::base_types::sensors::CameraSensor>(node);
-                itemReadder<envire::base_types::sensors::RaySensor>(node);
+                itemReadder<envire::types::sensors::CameraSensor>(node);
+                itemReadder<envire::types::sensors::RaySensor>(node);
             };
 
             const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
