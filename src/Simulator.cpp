@@ -57,6 +57,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cctype> // for tolower()
+#include <chrono>
 
 #ifdef __linux__
 #include <time.h>
@@ -804,14 +805,18 @@ namespace mars
                 tsNeedsInit = false;
             }
 
-            // TODO: Eliminate magic numbers!
             //schedule minimum sleep time
-            ts.tv_nsec += calc_ms * 1000000;
+            using ms_dur = std::chrono::duration<double, std::milli>;
+            const auto calc_ns_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(ms_dur{calc_ms});
+            const auto calc_ns = static_cast<long>(calc_ns_dur.count());
+            ts.tv_nsec += calc_ns;
 
-            //the nsec value may not exceed one second
-            while (ts.tv_nsec > 1000000000)
+            //the nsec value may not exceed max_ns_dur (one second)
+            constexpr auto max_ns_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds{1});
+            constexpr auto max_ns = static_cast<long>(max_ns_dur.count());
+            while (ts.tv_nsec > max_ns)
             {
-                ts.tv_nsec -= 1000000000;
+                ts.tv_nsec -= max_ns;
                 ts.tv_sec += 1;
             }
 
@@ -1975,13 +1980,17 @@ namespace mars
 
         void Simulator::cfgUpdateProperty(cfg_manager::cfgPropertyStruct _property)
         {
-
             if(_property.paramId == cfgCalcMs.paramId)
             {
                 calc_ms = _property.dValue;
+
+                using ms_dur = std::chrono::duration<double, std::milli>;
+                using s_dur = std::chrono::duration<double>;
+                const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
+                const auto calc_s = calc_s_dur.count();
                 for(auto &it: subWorlds)
                 {
-                    it.second->control->physics->step_size = calc_ms*0.001; // The physics step_size is defined in seconds.
+                    it.second->control->physics->step_size = static_cast<sReal>(calc_s); // The physics step_size is defined in seconds.
                     //if(control->joints) control->joints->changeStepSize();
                 }
                 return;
@@ -2303,8 +2312,14 @@ namespace mars
 
             subWorld->control->physics = physicsLoader->createWorldInstance();
             subWorld->control->physics->initTheWorld();
-            // the physics step_size is in seconds
-            subWorld->control->physics->step_size = calc_ms/1000.;
+            {
+                // the physics step_size is in seconds
+                using ms_dur = std::chrono::duration<double, std::milli>;
+                using s_dur = std::chrono::duration<double>;
+                const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
+                const auto calc_s = calc_s_dur.count();
+                subWorld->control->physics->step_size = calc_s;
+            }
             subWorld->control->physics->fast_step = cfgFaststep.bValue;
             subWorld->control->physics->world_erp = cfgWorldErp.dValue;
             subWorld->control->physics->world_cfm = cfgWorldCfm.dValue;
