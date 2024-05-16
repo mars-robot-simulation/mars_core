@@ -208,7 +208,8 @@ namespace mars
                     control->graphics->addGraphicsUpdateInterface(this);
                     contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
                     contactLines->setLineWidth(3.0);
-                    contactLines->setColor({1.0, 0.0, 0.0, 0.5});
+                    const auto color_transparent_red = osg_lines::Color{1.0, .0, .0, .5};
+                    contactLines->setColor(color_transparent_red);
                     contactLines->drawStrip(false);
                 }
             }
@@ -431,7 +432,7 @@ namespace mars
             fprintf(stderr, "INFO: set physics stack size to: %lu\n", getStackSize());
 #endif
 
-            while(arg_v_scene_name.size() > 0)
+            while(!arg_v_scene_name.empty())
             {
                 LOG_INFO("Simulator: scene to load: %s",
                          arg_v_scene_name.back().c_str());
@@ -597,11 +598,11 @@ namespace mars
             {
                 ControlCenter::theDataBroker->trigger("mars_sim/prePhysicsUpdate");
             }
+
             for(auto &it: subWorlds)
             {
                 it.second->control->physics->clearPreviousStep();
             }
-
             collisionManager->handleContacts();
 
             contactLinesDataMutex.lock();
@@ -794,10 +795,9 @@ namespace mars
             //and as absolute (minimum) wake-up time.
             static struct timespec ts;
             static bool tsNeedsInit = true;
-            int retval;
             if (tsNeedsInit)
             {
-                retval = clock_gettime(CLOCK_MONOTONIC, &ts);
+                const auto& retval = clock_gettime(CLOCK_MONOTONIC, &ts);
                 if (retval != 0)
                 {
                     throw std::runtime_error("clock_gettime(CLOCK_MONOTONIC, ...) failed");
@@ -812,25 +812,32 @@ namespace mars
             ts.tv_nsec += calc_ns;
 
             //the nsec value may not exceed max_ns_dur (one second)
-            constexpr auto max_ns_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds{1});
-            constexpr auto max_ns = static_cast<long>(max_ns_dur.count());
-            while (ts.tv_nsec > max_ns)
+            constexpr auto second_nsec_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds{1});
+            constexpr auto second_nsec = static_cast<long>(second_nsec_dur.count());
+
+            // TODO: Profile alternative
+            // if (ts.tv_nsec > second_nsec)
+            // {
+            //     ts.tv_sec += ts.tv_nsec / second_nsec; // integer division is intended!
+            //     ts.tv_nsec %= second_nsec;
+            // }
+            while (ts.tv_nsec > second_nsec)
             {
-                ts.tv_nsec -= max_ns;
+                ts.tv_nsec -= second_nsec;
                 ts.tv_sec += 1;
             }
 
             //sleep...
             if(my_real_time)
             {
-                retval = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, 0);
+                const auto& retval = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, 0);
                 if (retval != 0)
                 {
                     std::cerr << "WARNING: Your system is too slow!" << std::endl;
                 }
             }
             //remember time
-            retval = clock_gettime(CLOCK_MONOTONIC, &ts);
+            const auto& retval = clock_gettime(CLOCK_MONOTONIC, &ts);
             if (retval != 0)
             {
                 throw std::runtime_error("clock_gettime(CLOCK_MONOTONIC, ...) failed");
@@ -938,7 +945,8 @@ namespace mars
 
             while(blocking && !filesToLoad.empty())
             {
-                msleep(10);
+                constexpr auto loadSleepStepDuration_ms = std::chrono::milliseconds{10};
+                msleep(static_cast<unsigned long>(loadSleepStepDuration_ms.count()));
             }
             return 1;
 
@@ -1023,14 +1031,15 @@ namespace mars
                               filename.c_str(), suffix.c_str());
                     return 0; //failed
                 }
-            } catch(SceneParseException& e)
+            } 
+            catch(SceneParseException& e)
             {
                 LOG_ERROR("Could not parse scene: %s", e.what());
             }
 
             if (wasrunning)
             {
-                startStopTrigger();//if the simulation has been stopped for loading, now it continues
+                startStopTrigger(); //if the simulation has been stopped for loading, now it continues
             }
             constexpr bool sceneWasReseted = false;
             sceneHasChanged(sceneWasReseted);
@@ -1082,7 +1091,8 @@ namespace mars
                         StopSimulation();
                     }
 
-                    msleep(10);
+                    constexpr auto simStoppingSleepDuration_ms = std::chrono::milliseconds{10};
+                    msleep(simStoppingSleepDuration_ms.count());
                 }
                 reloadSim = false;
                 //control->controllers->setLoadingAllowed(false);

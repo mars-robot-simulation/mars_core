@@ -86,7 +86,7 @@ namespace mars
                 STOPPED = 0,
                 RUNNING = 1,
                 STOPPING = 2,
-                STEPPING=3
+                STEPPING = 3
             };
 
             Simulator(lib_manager::LibManager *theManager); ///< Constructor of the \c class Simulator.
