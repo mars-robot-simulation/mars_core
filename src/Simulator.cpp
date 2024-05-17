@@ -1105,18 +1105,18 @@ namespace mars
                 }
                 else
                 {
+                    // @clear_all: true would also clear envire-items, but these will be used for the later reload.
                     constexpr bool clear_all = false;
                     interfaces::ControlCenter::joints->clearAllJoints(clear_all);
                     interfaces::ControlCenter::motors->clearAllMotors(clear_all);
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
-                    // TODO: nodes
 
                     resetPoses();
+                    collisionManager->updateTransforms();
 
                     interfaces::ControlCenter::joints->reloadJoints();
                     interfaces::ControlCenter::motors->reloadMotors();
                     interfaces::ControlCenter::sensors->reloadSensors();
-                    // TODO: nodes
                 }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();

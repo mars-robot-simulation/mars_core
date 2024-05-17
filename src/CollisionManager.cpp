@@ -32,24 +32,21 @@ namespace mars
         {
             // TODO: find a good mechanism to flixible get contacts between different collision spaces
             contactVector.clear();
-            for(auto &it: collisionItems)
-            {
-                it.collisionInterface->updateTransforms();
-            }
+            updateTransforms();
 
             // for future:
             // - where to load spaces? from envire_graph?
             // - how to deal with sub-collision-spaces?
             // - first check bounding boxes // collect boxes of sub-spaces
-            std::map<std::pair<std::string, std::string>, std::shared_ptr<interfaces::CollisionHandler>>::iterator handlerIt;
+            decltype(collisionHandlers)::iterator handlerIt;
             for(size_t l=0; l<collisionItems.size(); ++l)
             {
                 for(size_t k=l+1; k<collisionItems.size(); ++k)
                 {
-                    std::shared_ptr<interfaces::CollisionInterface> ci1 = collisionItems[l].collisionInterface;
-                    std::shared_ptr<interfaces::CollisionInterface> ci2 = collisionItems[k].collisionInterface;
-                    std::string ci1PluginName = collisionItems[l].pluginName;
-                    std::string ci2PluginName = collisionItems[k].pluginName;
+                    const auto& ci1 = collisionItems[l].collisionInterface;
+                    const auto& ci2 = collisionItems[k].collisionInterface;
+                    const auto& ci1PluginName = collisionItems[l].pluginName;
+                    const auto& ci2PluginName = collisionItems[k].pluginName;
                     handlerIt = collisionHandlers.find(std::make_pair(ci1PluginName,
                                                                       ci2PluginName));
                     if(handlerIt != collisionHandlers.end())
@@ -68,6 +65,14 @@ namespace mars
                         continue;
                     }
                 }
+            }
+        }
+
+        void CollisionManager::updateTransforms()
+        {
+            for(auto &it: collisionItems)
+            {
+                it.collisionInterface->updateTransforms();
             }
         }
 

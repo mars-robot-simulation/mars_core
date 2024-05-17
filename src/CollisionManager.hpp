@@ -22,6 +22,7 @@ namespace mars
             void handleContacts();
             void addCollisionInterfaceItem(const interfaces::CollisionInterfaceItem &item);
             std::vector<interfaces::ContactData>& getContactVector();
+            void updateTransforms();
 
         private:
             std::map<std::pair<std::string, std::string>, std::shared_ptr<interfaces::CollisionHandler>> collisionHandlers;
