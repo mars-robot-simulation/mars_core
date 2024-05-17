@@ -144,6 +144,8 @@ namespace mars
                               const std::string &value);
 
         private:
+            static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
+
             interfaces::NodeId next_node_id;
             bool update_all_nodes;
             int visual_rep;
