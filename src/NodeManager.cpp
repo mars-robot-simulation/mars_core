@@ -44,14 +44,12 @@ namespace mars
           * post:
           *     - next_node_id should be initialized to one
           */
-        NodeManager::NodeManager(ControlCenter *c,
-                                  lib_manager::LibManager *theManager) :
-                                                      next_node_id(1),
-                                                      update_all_nodes(false),
-                                                      visual_rep(1),
-                                                      maxGroupID(0),
-                                                      control(c),
-                                                      libManager(theManager)
+        NodeManager::NodeManager(ControlCenter *c, lib_manager::LibManager *theManager) :
+            update_all_nodes{false},
+            visual_rep{1},
+            maxGroupID{0},
+            control{c},
+            libManager{theManager}
         {
             if(control->graphics)
             {
@@ -1059,232 +1057,6 @@ namespace mars
             // }
         }
 
-
-        void NodeManager::setNodeStructPositionFromRelative(NodeData *node) const
-        {
-            throw std::logic_error("NodeManager::setNodeStructPositionFromRelative not implemented yet");
-            // MutexLocker locker(&iMutex);
-            // NodeMap::const_iterator iter = simNodes.find(node->relative_id);
-            // if (iter != simNodes.end())
-            // {
-            //     NodeData tmpNode = iter->second->getSNode();
-            //     getAbsFromRel(tmpNode, node);
-            // }
-        }
-
-        void NodeManager::resetRelativeNodes(const SimNode &node,
-                                              NodeMap *nodes,
-                                              const Quaternion *rotate)
-        {
-            throw std::logic_error("NodeManager::resetRelativeNodes not implemented yet");
-            // NodeMap::iterator iter;
-            // NodeData tmpNode, tmpNode2;
-            // std::shared_ptr<SimNode>  nextNode;
-
-            // // TODO: doesn't this function need locking? no
-            // tmpNode = node.getSNode();
-            // for (iter = nodes->begin(); iter != nodes->end(); iter++)
-            // {
-            //     if (iter->second->getSNode().relative_id == node.getID())
-            //     {
-            //         nextNode = iter->second;
-            //         tmpNode2 = iter->second->getSNode();
-            //         if(rotate)
-            //         {
-            //             tmpNode2.rot = *rotate * tmpNode2.rot;
-            //         }
-            //         getAbsFromRel(tmpNode, &tmpNode2);
-            //         iter->second->setPosition(tmpNode2.pos, false);
-            //         iter->second->setRotation(tmpNode2.rot, 0);
-            //         nodes->erase(iter);
-            //         resetRelativeNodes(node, nodes, rotate);
-            //         resetRelativeNodes(*nextNode, nodes, rotate);
-            //         break;
-            //     }
-            // }
-        }
-
-        void NodeManager::resetRelativeJoints(const SimNode &node,
-                                              NodeMap *nodes,
-                                              std::vector<std::shared_ptr<SimJoint> > *joints,
-                                              const Quaternion *rotate)
-        {
-            throw std::logic_error("NodeManager::resetRelativeJoints not implemented yet");
-            // NodeMap::iterator iter;
-            // std::vector<std::shared_ptr<SimJoint> >::iterator jter;
-            // std::vector<std::shared_ptr<SimJoint> >::iterator jter2;
-            // std::shared_ptr<SimNode>  nextNode;
-
-            // iMutex.lock();
-            // for (iter = nodes->begin(); iter != nodes->end(); iter++)
-            // {
-            //     if (iter->second->getSNode().relative_id == node.getID())
-            //     {
-            //         nextNode = iter->second;
-            //         for (jter = joints->begin(); jter != joints->end();)
-            //         {
-            //             if ((*jter)->getSJoint().nodeIndex1 == iter->first ||
-            //                 (*jter)->getSJoint().nodeIndex2 == iter->first)
-            //             {
-            //                 if(rotate) 
-            //                 {
-            //                     (*jter)->rotateAxis(*rotate);
-            //                 }
-            //                 (*jter)->reattachJoint();
-            //                 jter2 = jter;
-            //                 if(jter != joints->begin()) 
-            //                 {
-            //                     jter--;
-            //                 }
-            //                 else 
-            //                 {
-            //                     jter = joints->begin();
-            //                 }
-            //                 joints->erase(jter2);
-            //             }
-            //             else jter++;
-            //         }
-
-            //         nodes->erase(iter);
-            //         iMutex.unlock();
-            //         resetRelativeJoints(node, nodes, joints, rotate);
-            //         resetRelativeJoints(*nextNode, nodes, joints, rotate);
-            //         iMutex.lock();
-            //         break;
-            //     }
-            // }
-            // iMutex.unlock();
-        }
-
-        // TODO: Refactor!
-        void NodeManager::recursiveHelper(NodeId id, const Params *params,
-                                          std::vector<std::shared_ptr<SimJoint> > *joints,
-                                          std::vector<int> *gids,
-                                          NodeMap *nodes,
-                                          void (*applyFunc)(std::shared_ptr<SimNode> , const Params *))
-        {
-            throw std::logic_error("NodeManager::recursiveHelper not implemented yet");
-            // std::vector<std::shared_ptr<SimJoint> >::iterator iter;
-            // std::vector<int>::iterator jter;
-            // NodeMap::iterator nter;
-            // NodeId id2;
-            // bool found = false;
-
-            // for(jter = gids->begin(); jter != gids->end(); jter++)
-            // {
-            //     for(nter = nodes->begin(); nter != nodes->end(); nter++)
-            //     {
-            //         if(nter->second->getGroupID() == (*jter))
-            //         {
-            //             id2 = nter->first;
-            //             if(!nter->second->isMovable())
-            //             {
-            //                 applyFunc(nter->second, params);
-            //             }
-            //             nodes->erase(nter);
-            //             recursiveHelper(id, params, joints, gids, nodes, applyFunc);
-            //             recursiveHelper(id2, params, joints, gids, nodes, applyFunc);
-            //             return;
-            //         }
-            //     }
-            // }
-
-            // for (iter = joints->begin(); iter != joints->end(); iter++)
-            // {
-            //     if ((*iter)->getAttachedNode() &&
-            //         (*iter)->getAttachedNode()->getID() == id)
-            //     {
-            //         for (jter = gids->begin(); jter != gids->end(); jter++)
-            //         {
-            //             if ((*iter)->getAttachedNode(2) &&
-            //                 (*jter) == (*iter)->getAttachedNode(2)->getGroupID())
-            //             {
-            //               found = true;
-            //               break;
-            //             }
-            //         }
-            //         if ((*iter)->getAttachedNode(2) &&
-            //             nodes->find((*iter)->getAttachedNode(2)->getID()) != nodes->end()) 
-            //         {
-            //             id2 = (*iter)->getAttachedNode(2)->getID();
-            //             if (!found)
-            //             {
-            //                 if ((*iter)->getAttachedNode(2)->getGroupID())
-            //                 {
-            //                     gids->push_back((*iter)->getAttachedNode(2)->getGroupID());
-            //                 }
-            //                 applyFunc((*iter)->getAttachedNode(2), params);
-            //             }
-            //             nodes->erase(nodes->find((*iter)->getAttachedNode(2)->getID()));
-            //             joints->erase(iter);
-            //             recursiveHelper(id, params, joints, gids, nodes, applyFunc);
-            //             recursiveHelper(id2, params, joints, gids, nodes, applyFunc);
-            //             return;
-            //         }
-            //         else
-            //         {
-            //             found = false;
-            //         }
-            //     }
-            //     else if ((*iter)->getAttachedNode(2) &&
-            //                   (*iter)->getAttachedNode(2)->getID() == id)
-            //     {
-            //         for (jter = gids->begin(); jter != gids->end(); jter++)
-            //         {
-            //             if ((*iter)->getAttachedNode() &&
-            //                 (*jter) == (*iter)->getAttachedNode()->getGroupID())
-            //             {
-            //               found = true;
-            //               break;
-            //             }
-            //         }
-            //         if(nodes->find((*iter)->getAttachedNode()->getID()) != nodes->end())
-            //         {
-            //             id2 = (*iter)->getAttachedNode()->getID();
-            //             if (!found)
-            //             {
-            //                 if ((*iter)->getAttachedNode()->getGroupID())
-            //                 {
-            //                     gids->push_back((*iter)->getAttachedNode()->getGroupID());
-            //                 }
-            //                 applyFunc((*iter)->getAttachedNode(), params);
-            //             }
-            //             nodes->erase(nodes->find((*iter)->getAttachedNode()->getID()));
-            //             joints->erase(iter);
-            //             recursiveHelper(id, params, joints, gids, nodes, applyFunc);
-            //             recursiveHelper(id2, params, joints, gids, nodes, applyFunc);
-            //             return;
-            //         }
-            //         else found = false;
-            //     }
-            // }
-        }
-
-        void NodeManager::applyMove(std::shared_ptr<SimNode> node, const Params *params)
-        {
-            throw std::logic_error("NodeManager::applyMove not implemented yet");
-            // const Vector offset = dynamic_cast<const MoveParams*>(params)->offset;
-            // node->setPositionOffset(offset);
-        }
-
-        void NodeManager::applyRotation(std::shared_ptr<SimNode> node, const Params *params)
-        {
-            throw std::logic_error("NodeManager::applyRotation not implemented yet");
-            // const RotationParams *p = dynamic_cast<const RotationParams*>(params);
-            // node->rotateAtPoint(p->rotation_point, p->rotation, true);
-        }
-
-        void NodeManager::moveNodeRecursive(NodeId id, const Vector &offset,
-                                            std::vector<std::shared_ptr<SimJoint> > *joints,
-                                            std::vector<int> *gids,
-                                            NodeMap *nodes)
-        {
-            throw std::logic_error("NodeManager::moveNodeRecursive not implemented yet");
-            // MoveParams params;
-            // params.offset = offset;
-            // recursiveHelper(id, &params, joints, gids, nodes, &applyMove);
-        }
-
         void NodeManager::rotateNode(NodeId id, Vector pivot, Quaternion q,
                                       unsigned long excludeJointId, bool includeConnected)
         {
@@ -1388,43 +1160,6 @@ namespace mars
             // nodesToUpdate[id] = iter->second;
         }
 
-        void NodeManager::rotateNodeRecursive(NodeId id,
-                                              const Vector &rotation_point,
-                                              const Quaternion &rotation,
-                                              std::vector<std::shared_ptr<SimJoint> > *joints,
-                                              std::vector<int> *gids,
-                                              NodeMap *nodes)
-        {
-            throw std::logic_error("NodeManager::rotateNodeRecursive not implemented yet");
-            // RotationParams params;
-            // params.rotation_point = rotation_point;
-            // params.rotation = rotation;
-            // recursiveHelper(id, &params, joints, gids, nodes, &applyRotation);
-        }
-
-        void NodeManager::clearRelativePosition(NodeId id, bool lock)
-        {
-            throw std::logic_error("NodeManager::clearRelativePosition not implemented yet");
-            // NodeMap::iterator iter;
-            // if(lock)
-            // {
-            //     iMutex.lock();
-            // }
-
-            // for(iter = simNodes.begin(); iter != simNodes.end(); iter++)
-            // {
-            //     if(iter->second->getSNode().relative_id == id)
-            //     {
-            //         iter->second->clearRelativePosition();
-            //     }
-            // }
-            // if(lock)
-            // {
-            //     iMutex.unlock();
-            // }
-        }
-
-
         /**
          *\brief Reloads all nodes in the simulation.
           */
@@ -1475,17 +1210,6 @@ namespace mars
             }
 
             return ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(vertex)->getData().get();
-        }
-
-        std::list<NodeData>::iterator NodeManager::getReloadNode(NodeId id)
-        {
-            throw std::logic_error("NodeManager::getReloadNode not implemented yet");
-            // std::list<NodeData>::iterator iter = simNodesReload.begin();
-            // for(;iter!=simNodesReload.end(); ++iter)
-            // {
-            //     if(iter->index == id) break;
-            // }
-            // return iter;
         }
 
         /**
@@ -2102,51 +1826,6 @@ namespace mars
             // if(iter != simNodes.end())
             // {
             //     iter->second->setMovable(isMovable);
-            // }
-        }
-
-        void NodeManager::moveRelativeNodes(const SimNode &node, NodeMap *nodes,
-                                            Vector v)
-        {
-            throw std::logic_error("NodeManager::moveRelativeNodes not implemented yet");
-            // NodeMap::iterator iter;
-            // std::shared_ptr<SimNode>  nextNode;
-
-            // // TODO: doesn't this function need locking? no
-            // for (iter = nodes->begin(); iter != nodes->end(); iter++)
-            // {
-            //     if (iter->second->getParentID() == node.getID())
-            //     {
-            //         nextNode = iter->second;
-            //         Vector newPos = nextNode->getPosition() + v;
-            //         nextNode->setPosition(newPos, false);
-            //         nodes->erase(iter);
-            //         moveRelativeNodes(node, nodes, v);
-            //         moveRelativeNodes(*nextNode, nodes, v);
-            //         break;
-            //     }
-            // }
-        }
-
-        void NodeManager::rotateRelativeNodes(const SimNode &node, NodeMap *nodes,
-                                              Vector pivot, Quaternion rot)
-        {
-            throw std::logic_error("NodeManager::rotateRelativeNodes not implemented yet");
-            // NodeMap::iterator iter;
-            // std::shared_ptr<SimNode>  nextNode;
-
-            // // TODO: doesn't this function need locking? no
-            // for (iter = nodes->begin(); iter != nodes->end(); iter++)
-            // {
-            //     if (iter->second->getParentID() == node.getID())
-            //     {
-            //         nextNode = iter->second;
-            //         nextNode->rotateAtPoint(pivot, rot, false);
-            //         nodes->erase(iter);
-            //         rotateRelativeNodes(node, nodes, pivot, rot);
-            //         rotateRelativeNodes(*nextNode, nodes, pivot, rot);
-            //         break;
-            //     }
             // }
         }
 

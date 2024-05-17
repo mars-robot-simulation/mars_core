@@ -131,8 +131,8 @@ namespace mars
 
             virtual bool getIsMovable(interfaces::NodeId id) const;
             virtual void setIsMovable(interfaces::NodeId id, bool isMovable);
-            virtual void lock() {iMutex.lock();}
-            virtual void unlock() {iMutex.unlock();}
+            virtual void lock() {}
+            virtual void unlock() {}
             virtual void rotateNode(interfaces::NodeId id, utils::Vector pivot,
                                     utils::Quaternion q,
                                     unsigned long excludeJointId, bool includeConnected = true);
@@ -146,81 +146,19 @@ namespace mars
         private:
             static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
 
-            interfaces::NodeId next_node_id;
             bool update_all_nodes;
             int visual_rep;
-            NodeMap simNodes;
-            NodeMap simNodesDyn;
-            NodeMap nodesToUpdate;
             NodeMap vizNodes;
-            std::list<interfaces::NodeData> simNodesReload;
             unsigned long maxGroupID;
             lib_manager::LibManager *libManager;
-            mutable utils::Mutex iMutex;
-
             interfaces::ControlCenter *control;
 
-            std::list<interfaces::NodeData>::iterator getReloadNode(interfaces::NodeId id);
-
-            // interfaces::NodeInterface* getNodeInterface(NodeId node_id);
-            struct Params; // see below.
-            // recursively walks through the gids and joints and
-            // applies the applyFunc with the given parameters.
-            void recursiveHelper(interfaces::NodeId id, const Params *params,
-                                std::vector<std::shared_ptr<SimJoint> > *joints,
-                                std::vector<int> *gids,
-                                NodeMap *nodes,
-                                void (*applyFunc)(std::shared_ptr<SimNode> node, const Params *params));
-            void moveNodeRecursive(interfaces::NodeId id, const utils::Vector &offset,
-                                  std::vector<std::shared_ptr<SimJoint> > *joints,
-                                  std::vector<int> *gids,
-                                  NodeMap *nodes);
-            void rotateNodeRecursive(interfaces::NodeId id,
-                                    const utils::Vector &rotation_point,
-                                    const utils::Quaternion &rotation,
-                                    std::vector<std::shared_ptr<SimJoint> > *joints,
-                                    std::vector<int> *gids,
-                                    NodeMap *nodes);
-            // these static methods are used by moveNodeRecursive and rotateNodeRecursive
-            // as applyFuncs for the recursiveHelper method
-            static void applyMove(std::shared_ptr<SimNode> node, const Params *params);
-            static void applyRotation(std::shared_ptr<SimNode> node, const Params *params);
-
-            void moveRelativeNodes(const SimNode &node, NodeMap *nodes, utils::Vector v);
-            void rotateRelativeNodes(const SimNode &node, NodeMap *nodes,
-                                    utils::Vector pivot, utils::Quaternion rot);
-
-            void resetRelativeNodes(const SimNode &node,
-                                    NodeMap *nodes,
-                                    const utils::Quaternion *rotate = 0);
-            void resetRelativeJoints(const SimNode &node,
-                                    NodeMap *nodes,
-                                    std::vector<std::shared_ptr<SimJoint> > *joints,
-                                    const utils::Quaternion *rotate = 0);
-            void setNodeStructPositionFromRelative(interfaces::NodeData *node) const;
-            void clearRelativePosition(interfaces::NodeId id, bool lock);
             void removeNode(interfaces::NodeId id, bool lock,
                             bool clearGraphics=true);
             void pushToUpdate(std::shared_ptr<SimNode>  node);
 
             void printNodeMasses(bool onlysum);
             void changeNode(std::shared_ptr<SimNode> editedNode, interfaces::NodeData *nodeS);
-
-            // for passing parameters to the recursiveHelper.
-            struct Params
-            {
-                // make virtual so we can use polymorphism
-                virtual ~Params() {}
-            };
-            struct MoveParams : Params
-            {
-                utils::Vector offset;
-            };
-            struct RotationParams : Params
-            {
-                utils::Vector rotation_point;
-                utils::Quaternion rotation;
-            };
         };
 
     } // end of namespace core
