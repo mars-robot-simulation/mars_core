@@ -18,6 +18,7 @@
 #include "MotorManager.hpp"
 #include "SensorManager.hpp"
 #include "JointManager.hpp"
+#include "NodeManager.hpp"
 
 //#include "PhysicsMapper.h"
 
@@ -165,11 +166,12 @@ namespace mars
             ControlCenter::motors = std::make_shared<MotorManager>(control.get());
             ControlCenter::joints = std::make_shared<JointManager>(control.get());
             ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
+            ControlCenter::nodes = std::make_shared<NodeManager>(control.get(), theManager);
 
-            ControlCenter::jointIDManager = std::unique_ptr<IDManager>(new IDManager{});
-            ControlCenter::linkIDManager = std::unique_ptr<IDManager>(new IDManager{});
-            ControlCenter::motorIDManager = std::unique_ptr<IDManager>(new IDManager{});
-            ControlCenter::sensorIDManager = std::unique_ptr<IDManager>(new IDManager{});
+            ControlCenter::jointIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            ControlCenter::linkIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            ControlCenter::motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            ControlCenter::sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
 
             // TODO: add worldphysicsLoaderInterface to mars_interfaces
 

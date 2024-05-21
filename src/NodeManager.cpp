@@ -13,7 +13,9 @@
 
 #include <mars_interfaces/sim/LoadCenter.h>
 #include <mars_interfaces/sim/SimulatorInterface.h>
+#include <mars_interfaces/sim/CollisionInterface.hpp>
 #include <mars_interfaces/sim/DynamicObject.hpp>
+#include <mars_ode_collision/objects/Object.hpp>
 #include <mars_interfaces/graphics/GraphicsManagerInterface.h>
 #include <mars_interfaces/terrainStruct.h>
 #include <mars_interfaces/Logging.hpp>
@@ -90,279 +92,22 @@ namespace mars
         NodeId NodeManager::addNode(NodeData *nodeS, bool reload,
                                     bool loadGraphics)
         {
+            if (!nodeS->noPhysical)
+            {
+                const bool success = addGlobalCollisionObject(*nodeS);
+
+                const bool add_draw_object = control->graphics
+                    && loadGraphics
+                    && (!nodeS->map.hasKey("noVisual") || !static_cast<bool>(nodeS->map["noVisual"]));
+                if (add_draw_object)
+                {
+                    const auto& drawId = control->graphics->addDrawObject(*nodeS, visual_rep & 1);
+                    // TODO: Store draw ID somewhere?
+                }
+            }
+
             // TODO: Implement
-            throw std::logic_error("NodeManager::addNode not implemented yet");
-            // iMutex.lock();
-            // nodeS->index = next_node_id;
-            // next_node_id++;
-            // iMutex.unlock();
-
-            // if (!reload)
-            // {
-            //     iMutex.lock();
-            //     NodeData reloadNode = *nodeS;
-            //     if((nodeS->physicMode == NODE_TYPE_TERRAIN) && nodeS->terrain )
-            //     {
-            //         if(!control->loadCenter)
-            //         {
-            //             LOG_ERROR("NodeManager:: loadCenter is missing, can not create Node");
-            //             iMutex.unlock();
-            //             return INVALID_ID;
-            //         }
-            //         if(!control->loadCenter->loadHeightmap)
-            //         {
-            //             GraphicsManagerInterface *g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //             if(!g)
-            //             {
-            //                 libManager->loadLibrary("mars_graphics", NULL, false, true);
-            //                 g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //             }
-            //             if(g)
-            //             {
-            //                 control->loadCenter->loadHeightmap = g->getLoadHeightmapInterface();
-            //             }
-            //             else 
-            //             {
-            //                 LOG_ERROR("NodeManager:: loadHeightmap is missing, can not create Node");
-            //                 iMutex.unlock();
-            //                 return INVALID_ID;
-            //             }
-            //         }
-            //         reloadNode.terrain = new(terrainStruct);
-            //         *(reloadNode.terrain) = *(nodeS->terrain);
-            //         control->loadCenter->loadHeightmap->readPixelData(reloadNode.terrain);
-            //         if(!reloadNode.terrain->pixelData)
-            //         {
-            //             LOG_ERROR("NodeManager::addNode: could not load image for terrain");
-            //             iMutex.unlock();
-            //             return INVALID_ID;
-            //         }
-            //     }
-            //     simNodesReload.push_back(reloadNode);
-
-            //     if (nodeS->c_params.friction_direction1)
-            //     {
-            //         Vector *tmp = new Vector();
-            //         *tmp = *(nodeS->c_params.friction_direction1);
-            //         if(simNodesReload.back().index == nodeS->index)
-            //         {
-            //             simNodesReload.back().c_params.friction_direction1 = tmp;
-            //         }
-            //     }
-            //     iMutex.unlock();
-            // }
-
-            // // to check some preconditions
-            // if (nodeS->groupID < 0)
-            // {
-            //     nodeS->groupID = 0;
-            // }
-            // else if (nodeS->groupID > maxGroupID)
-            // {
-            //     maxGroupID = nodeS->groupID;
-            // }
-
-            // // convert obj to ode mesh
-            // if((nodeS->physicMode == NODE_TYPE_MESH) && (nodeS->terrain == 0) )
-            // {
-            //     if(!control->loadCenter)
-            //     {
-            //         LOG_ERROR("NodeManager:: loadCenter is missing, can not create Node");
-            //         return INVALID_ID;
-            //     }
-            //     if(!control->loadCenter->loadMesh)
-            //     {
-            //         GraphicsManagerInterface *g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //         if(!g)
-            //         {
-            //             libManager->loadLibrary("mars_graphics", NULL, false, true);
-            //             g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //         }
-            //         if(g)
-            //         {
-            //             control->loadCenter->loadMesh = g->getLoadMeshInterface();
-            //         }
-            //         else
-            //         {
-            //             LOG_ERROR("NodeManager:: loadMesh is missing, can not create Node");
-            //         }
-            //     }
-            //     control->loadCenter->loadMesh->getPhysicsFromMesh(nodeS);
-            // }
-            // if((nodeS->physicMode == NODE_TYPE_TERRAIN) && nodeS->terrain )
-            // {
-            //     if(!nodeS->terrain->pixelData)
-            //     {
-            //         if(!control->loadCenter)
-            //         {
-            //             LOG_ERROR("NodeManager:: loadCenter is missing, can not create Node");
-            //             return INVALID_ID;
-            //         }
-            //         if(!control->loadCenter->loadHeightmap)
-            //         {
-            //             GraphicsManagerInterface *g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //             if(!g)
-            //             {
-            //                 libManager->loadLibrary("mars_graphics", NULL, false, true);
-            //                 g = libManager->getLibraryAs<GraphicsManagerInterface>("mars_graphics");
-            //             }
-            //             if(g)
-            //             {
-            //                 control->loadCenter->loadHeightmap = g->getLoadHeightmapInterface();
-            //             }
-            //             else
-            //             {
-            //                 LOG_ERROR("NodeManager:: loadHeightmap is missing, can not create Node");
-            //                 return INVALID_ID;
-            //             }
-            //         }
-            //         control->loadCenter->loadHeightmap->readPixelData(nodeS->terrain);
-            //         if(!nodeS->terrain->pixelData)
-            //         {
-            //             LOG_ERROR("NodeManager::addNode: could not load image for terrain");
-            //             return INVALID_ID;
-            //         }
-            //     }
-            // }
-
-            // // this should be done somewhere else
-            // // if we have a relative position, we have to calculate the absolute
-            // // position here
-
-            // NodeId parentDrawID = 0;
-            // NodeId vizLink = 0;
-            // if(nodeS->map.hasKey("vizLink"))
-            // {
-            //     vizLink = nodeS->map["vizLink"];
-            //     if(nodeS->map.hasKey("mapIndex"))
-            //     {
-            //         unsigned int mapIndex = nodeS->map["mapIndex"];
-            //         if(mapIndex && control->loadCenter)
-            //         {
-            //             vizLink = control->loadCenter->getMappedID(vizLink, MAP_TYPE_NODE,
-            //                                                         mapIndex);
-            //         }
-            //     }
-            // }
-
-            // // todo: the combination of vizLink and absolute position will be a problem
-            // if(!vizLink && nodeS->relative_id != 0)
-            // {
-            //     setNodeStructPositionFromRelative(nodeS);
-            //     //nodeS->relative_id = 0;
-            // }
-
-            // // create a node object
-            // std::shared_ptr<SimNode> newNode = make_shared<SimNode>(control, *nodeS);
-            // throw std::logic_error("not implemented yet");
-            // // // create the physical node data
-            // // if(! (nodeS->noPhysical)){
-            // //   // create an interface object to the physics
-            // //   std::shared_ptr<NodeInterface> newNodeInterface = PhysicsMapper::newNodePhysics(control->sim->getPhysics());
-            // //   if (!newNodeInterface->createNode(nodeS)) {
-            // //     // if no node was created in physics
-            // //     // delete the objects
-            // //     newNode.reset();
-            // //     newNodeInterface.reset();
-            // //     // and return false
-            // //     LOG_ERROR("NodeManager::addNode: No node was created in physics.");
-            // //     return INVALID_ID;
-            // //   }
-            // //   // put all data to the correct place
-            // //   //      newNode->setSNode(*nodeS);
-            // //   newNode->setInterface(newNodeInterface);
-            // //   iMutex.lock();
-            // //   simNodes[nodeS->index] = newNode;
-            // //   if (nodeS->movable)
-            // //     simNodesDyn[nodeS->index] = newNode;
-            // //   iMutex.unlock();
-            // //   control->sim->sceneHasChanged(false);
-            // //   NodeId id;
-            // //   if(control->graphics) {
-            // //     if(loadGraphics) {
-            // //       if(!nodeS->map.hasKey("noVisual") or (bool)nodeS->map["noVisual"] == false) {
-            // //         id = control->graphics->addDrawObject(*nodeS, visual_rep & 1);
-            // //         if(id) {
-            // //           newNode->setGraphicsID(id);
-            // //           if(!reload) {
-            // //             simNodesReload.back().graphicsID1 = id;
-            // //           }
-            // //         }
-            // //       }
-            // //     }
-            // //     else {
-            // //       newNode->setGraphicsID(nodeS->graphicsID1);
-            // //     }
-            // //     //        NEW_NODE_STRUCT(physicalRep);
-            // //     NodeData physicalRep;
-            // //     physicalRep = *nodeS;
-            // //     physicalRep.material = nodeS->material;
-            // //     physicalRep.material.exists = 1;
-            // //     physicalRep.material.transparency = 0.3;
-            // //     physicalRep.material.name += "_trans";
-            // //     physicalRep.visual_offset_pos = Vector(0.0, 0.0, 0.0);
-            // //     physicalRep.visual_offset_rot = Quaternion::Identity();
-            // //     physicalRep.visual_size = Vector(0.0, 0.0, 0.0);
-            // //     physicalRep.map["sharedDrawID"] = 0lu;
-            // //     physicalRep.map["visualType"] = NodeData::toString(nodeS->physicMode);
-            // //     if(nodeS->physicMode != NODE_TYPE_TERRAIN) {
-            // //       if(nodeS->physicMode != NODE_TYPE_MESH) {
-            // //         physicalRep.filename = "PRIMITIVE";
-            // //         //physicalRep.filename = nodeS->filename;
-            // //         if(nodeS->physicMode > 0 && nodeS->physicMode < NUMBER_OF_NODE_TYPES){
-            // //           physicalRep.origName = NodeData::toString(nodeS->physicMode);
-            // //         }
-            // //       }
-            // //       if(loadGraphics) {
-            // //         id = control->graphics->addDrawObject(physicalRep,
-            // //                                               visual_rep & 2);
-            // //         if(id) {
-            // //           newNode->setGraphicsID2(id);
-            // //           if(!reload) {
-            // //             simNodesReload.back().graphicsID2 = id;
-            // //           }
-            // //         }
-            // //       }
-            // //       else {
-            // //         newNode->setGraphicsID2(nodeS->graphicsID2);
-            // //       }
-            // //     }
-            // //     newNode->setVisualRep(visual_rep);
-            // //   }
-            // // } else {  //if nonPhysical
-            // //   if(vizLink) {
-            // //     iMutex.lock();
-            // //     vizNodes[nodeS->index] = newNode;
-            // //     parentDrawID = simNodes[vizLink]->getGraphicsID();
-            // //     iMutex.unlock();
-            // //   }
-            // //   else {
-            // //     iMutex.lock();
-            // //     simNodes[nodeS->index] = newNode;
-            // //     if (nodeS->movable) {
-            // //       simNodesDyn[nodeS->index] = newNode;
-            // //     }
-            // //     iMutex.unlock();
-            // //   }
-            // //   control->sim->sceneHasChanged(false);
-            // //   if(control->graphics) {
-            // //     if(loadGraphics) {
-            // //       NodeId id = control->graphics->addDrawObject(*nodeS);
-            // //       if(id) {
-            // //         newNode->setGraphicsID(id);
-            // //         if(parentDrawID) {
-            // //           control->graphics->makeChild(parentDrawID, id);
-            // //         }
-            // //         if(!reload) {
-            // //           simNodesReload.back().graphicsID1 = id;
-            // //         }
-            // //       }
-            // //     }
-            // //     else {
-            // //       newNode->setGraphicsID(nodeS->graphicsID1);
-            // //     }
-            // //   }
-            // // }
+            //throw std::logic_error("NodeManager::addNode not implemented yet");
             return nodeS->index;
         }
 
@@ -1280,6 +1025,7 @@ namespace mars
 
         void NodeManager::preGraphicsUpdate()
         {
+            return;
             throw std::logic_error("NodeManager::preGraphicsUpdate not implemented yet");
             // NodeMap::iterator iter;
             // if(!control->graphics)
@@ -2141,6 +1887,52 @@ namespace mars
             //     maxGroupID = nodeS->groupID;
             // }
             // nodesToUpdate[sNode.index] = editedNode;
+        }
+
+
+        interfaces::CollisionInterface* NodeManager::getGlobalCollisionInterface()
+        {
+            if (globalCollisionInterface_.expired())
+            {
+                globalCollisionInterface_.reset();
+                assert(ControlCenter::envireGraph->containsItems<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME));
+                globalCollisionInterface_ = ControlCenter::envireGraph->getItem<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME)->getData().collisionInterface;
+            }
+
+            if (auto collisionInterface = globalCollisionInterface_.lock())
+            {
+                return collisionInterface.get();
+            }
+
+            // TODO: Handle missing interface
+        }
+
+        bool NodeManager::addGlobalCollisionObject(interfaces::NodeData& nodeData)
+        {
+            auto* const globalCollisionInterface = getGlobalCollisionInterface();
+            assert(globalCollisionInterface);
+
+            configmaps::ConfigMap cfgMap;
+            nodeData.toConfigMap(&cfgMap);
+            cfgMap["type"] = cfgMap["physicmode"];
+
+            auto* const collisionObject = globalCollisionInterface->createObject(cfgMap);
+            if(!collisionObject)
+            {
+                LOG_ERROR("Error creating mars_yaml collision object!");
+                return false;
+            }
+            if(cfgMap["type"] == "plane")
+            {
+                fprintf(stderr, "set position of:\n %s\n", cfgMap.toYamlString().c_str());
+                collisionObject->setPosition(nodeData.pos);
+                collisionObject->setRotation(nodeData.rot);
+                // the position update is applied in updateTransform which is not
+                // called automatically for static objects
+                collisionObject->updateTransform();
+            }
+
+            return true;
         }
     } // end of namespace core
 } // end of namespace mars

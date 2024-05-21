@@ -17,6 +17,12 @@
 
 namespace mars
 {
+    namespace interfaces
+    {
+        class CollisionInterface;
+    }
+
+
     namespace core
     {
         class SimJoint;
@@ -145,6 +151,11 @@ namespace mars
 
         private:
             static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
+            interfaces::CollisionInterface* getGlobalCollisionInterface();
+
+            bool addGlobalCollisionObject(interfaces::NodeData& nodeData);
+
+            std::weak_ptr<interfaces::CollisionInterface> globalCollisionInterface_;
 
             bool update_all_nodes;
             int visual_rep;
