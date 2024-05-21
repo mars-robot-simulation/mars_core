@@ -14,6 +14,7 @@
 #include <mars_interfaces/sim/LoadCenter.h>
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_interfaces/sim/CollisionInterface.hpp>
+#include <mars_interfaces/sim/AbsolutePose.hpp>
 #include <mars_interfaces/sim/DynamicObject.hpp>
 #include <mars_ode_collision/objects/Object.hpp>
 #include <mars_interfaces/graphics/GraphicsManagerInterface.h>
@@ -395,17 +396,40 @@ namespace mars
          */
         void NodeManager::getListNodes(vector<core_objects_exchange>* nodeList) const
         {
-            // TODO: Implement
-            throw std::logic_error("NodeManager::getListNodes not implemented yet");
-            // core_objects_exchange obj;
-            // NodeMap::const_iterator iter;
-            // MutexLocker locker(&iMutex);
-            // nodeList->clear();
-            // for (iter = simNodes.begin(); iter != simNodes.end(); iter++)
-            // {
-            //     iter->second->getCoreExchange(&obj);
-            //     nodeList->push_back(obj);
-            // }
+            nodeList->clear();
+            for(const auto id : ControlCenter::linkIDManager->getAllIDs())
+            {
+                const auto& linkName = ControlCenter::linkIDManager->getName(id);
+                core_objects_exchange obj;
+
+                obj.index = id;
+
+                if(linkName.length() > 1000)
+                {
+                    // TODO: Is this needed?
+                    fprintf(stderr, "to long name: %d\n", (int)linkName.length());
+                    obj.name = "";
+                }
+                else
+                {
+                    obj.name = linkName;
+                }
+
+                using AbsolutePoseEnvireItem = envire::core::Item<interfaces::AbsolutePose>;
+                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(linkName))
+                {
+                    const auto& absolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(linkName)->getData();
+                    obj.pos = absolutePose.getPosition();
+                    obj.rot = absolutePose.getRotation();
+                }
+
+                // TODO: set these as well.
+                // obj->groupID = sNode.groupID;
+                // obj->visOffsetPos = sNode.visual_offset_pos;
+                // obj->visOffsetRot = sNode.visual_offset_rot;
+
+                nodeList->push_back(obj);
+            }
         }
 
         /** \brief
