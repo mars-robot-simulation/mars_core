@@ -359,9 +359,9 @@ namespace mars
                 // }
             }
 
-            // TODO: Is this needed?
             constexpr interfaces::sReal time_step_ms = 0;
             constexpr bool called_from_physics_thread = false;
+            // TODO: Is this needed?
             // updateDynamicNodes(time_step_ms, called_from_physics_thread);
         }
 
@@ -386,7 +386,8 @@ namespace mars
 
                 obj.index = id;
 
-                if(linkName.length() > 1000)
+                constexpr size_t max_link_name_length = 1000;
+                if(linkName.length() > max_link_name_length)
                 {
                     // TODO: Is this needed?
                     fprintf(stderr, "to long name: %d\n", (int)linkName.length());
