@@ -126,7 +126,9 @@ namespace mars
             const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(index);
             if(iter != simMotors.end())
+            {
                 return iter->second->getSMotor();
+            }
             else
             {
                 const auto errorMessage = std::string{"could not find motor with index: " + std::to_string(index)};
@@ -228,7 +230,9 @@ namespace mars
             const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
+            {
                 iter->second->setControlValue(value);
+            }
         }
 
 
@@ -237,7 +241,9 @@ namespace mars
             const MutexLocker locker{&simMotorsMutex};
             const auto& iter = simMotors.find(id);
             if(iter != simMotors.end())
+            {
                 iter->second->setVelocity(velocity);
+            }
         }
 
 
@@ -428,7 +434,9 @@ namespace mars
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(motorId);
             if(iter != simMotors.end())
+            {
                 return iter->second->getPosition();
+            }
             return 0.;
         }
 
@@ -438,7 +446,9 @@ namespace mars
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(motorId);
             if(iter != simMotors.end())
+            {
                 return iter->second->getEffort();
+            }
             return 0.;
         }
 
@@ -448,7 +458,9 @@ namespace mars
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(id);
             if(iter != simMotors.end())
+            {
                 iter->second->setMaxEffort(maxTorque);
+            }
         }
 
         void MotorManager::setMaxSpeed(unsigned long id, sReal maxSpeed)
@@ -457,7 +469,9 @@ namespace mars
             decltype(simMotors)::const_iterator iter;
             iter = simMotors.find(id);
             if(iter != simMotors.end())
+            {
                 iter->second->setMaxSpeed(maxSpeed);
+            }
         }
 
 
