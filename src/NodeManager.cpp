@@ -170,8 +170,8 @@ namespace mars
           */
         NodeId NodeManager::addPrimitive(NodeData *snode)
         {
-            throw std::logic_error("NodeManager::addPrimitive not implemented yet");
-            // control->sim->sceneHasChanged(false);
+            constexpr bool scene_was_reseted = false;
+            control->sim->sceneHasChanged(scene_was_reseted);
             return addNode(snode);
         }
 
@@ -207,180 +207,162 @@ namespace mars
          */
         void NodeManager::editNode(NodeData *nodeS, int changes)
         {
-            throw std::logic_error("NodeManager::editNode not implemented yet");
-            // NodeMap::iterator iter;
-            // std::vector<std::shared_ptr<SimJoint> >::iterator jter;
-            // std::vector<int> gids;
-            // NodeMap::iterator it;
-            // Vector offset;
-            // Vector rotation_point;
+            const auto& linkName = ControlCenter::linkIDManager->getName(nodeS->index);
+            if (changes & EDIT_NODE_POS)
+            {
+                if (changes & EDIT_NODE_MOVE_ALL)
+                {
+                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                    // TODO: Move all required by any robot env
 
-            // //cout << "NodeManager::editNode !!!" << endl;
-            // // first lock all core functions
-            // iMutex.lock();
+                    //         // first move the node an all nodes of the group
+                    //         offset = editedNode->setPosition(nodeS->pos, true);
+                    //         // then move recursive all nodes that are connected through
+                    //         // joints to the node
+                    //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
+                    //         if(editedNode->getGroupID())
+                    //           gids.push_back(editedNode->getGroupID());
+                    //         NodeMap nodes = simNodes;
+                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = joints;
+                    //         nodes.erase(nodes.find(editedNode->getID()));
+                    //         moveNodeRecursive(nodeS->index, offset, &joints, &gids, &nodes);
+                }
+                else
+                {
+                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                    // TODO: Move not all?!
+                    //         if(nodeS->relative_id)
+                    //         {
+                    //             iMutex.unlock();
+                    //             setNodeStructPositionFromRelative(nodeS);
+                    //             iMutex.lock();
+                    //         }
+                    //         Vector diff = nodeS->pos - editedNode->getPosition();
+                    //         editedNode->setPosition(nodeS->pos, false);
 
-            // iter = simNodes.find(nodeS->index);
-            // if(iter == simNodes.end())
-            // {
-            //     iMutex.unlock();
-            //     LOG_ERROR("NodeManager::editNode: node id not found!");
-            //     return;
-            // }
+                    //         // new implementation in jointManager?
+                    //         NodeMap nodes = simNodes;
+                    //         NodeMap nodesj = simNodes;
+                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
+                    //         nodes.erase(nodes.find(editedNode->getID()));
+                    //         moveRelativeNodes(*editedNode, &nodes, diff);
 
-            // std::shared_ptr<core::SimNode> editedNode = iter->second;
-            // NodeData sNode = editedNode->getSNode();
-            // if(changes & EDIT_NODE_POS)
-            // {
-            //     if(changes & EDIT_NODE_MOVE_ALL)
-            //     {
-            //         // first move the node an all nodes of the group
-            //         offset = editedNode->setPosition(nodeS->pos, true);
-            //         // then move recursive all nodes that are connected through
-            //         // joints to the node
-            //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
-            //         if(editedNode->getGroupID())
-            //           gids.push_back(editedNode->getGroupID());
-            //         NodeMap nodes = simNodes;
-            //         std::vector<std::shared_ptr<SimJoint> > jointsj = joints;
-            //         nodes.erase(nodes.find(editedNode->getID()));
-            //         moveNodeRecursive(nodeS->index, offset, &joints, &gids, &nodes);
-            //     }
-            //     else
-            //     {
-            //         if(nodeS->relative_id)
-            //         {
-            //             iMutex.unlock();
-            //             setNodeStructPositionFromRelative(nodeS);
-            //             iMutex.lock();
-            //         }
-            //         Vector diff = nodeS->pos - editedNode->getPosition();
-            //         editedNode->setPosition(nodeS->pos, false);
+                    //         if(sNode.groupID != 0)
+                    //         {
+                    //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
+                    //             {
+                    //                 if(it->second->getGroupID() == sNode.groupID)
+                    //                 {
+                    //                    control->joints->reattacheJoints(it->second->getID());
+                    //                 }
+                    //             }
+                    //         }
+                    //         else
+                    //         {
+                    //            control->joints->reattacheJoints(nodeS->index);
+                    //         }
+                    //         iMutex.unlock();
+                    //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
+                    //         iMutex.lock();
+                }
+                // TODO: What does this do?
+                // update_all_nodes = true;
+            }
 
-            //         // new implementation in jointManager?
-            //         NodeMap nodes = simNodes;
-            //         NodeMap nodesj = simNodes;
-            //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-            //         nodes.erase(nodes.find(editedNode->getID()));
-            //         moveRelativeNodes(*editedNode, &nodes, diff);
-
-            //         if(sNode.groupID != 0)
-            //         {
-            //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
-            //             {
-            //                 if(it->second->getGroupID() == sNode.groupID)
-            //                 {
-            //                    control->joints->reattacheJoints(it->second->getID());
-            //                 }
-            //             }
-            //         }
-            //         else
-            //         {
-            //            control->joints->reattacheJoints(nodeS->index);
-            //         }
-            //         iMutex.unlock();
-            //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
-            //         iMutex.lock();
-            //     }
-            //     update_all_nodes = true;
-            // }
-            // if(changes & EDIT_NODE_ROT)
-            // {
+            if(changes & EDIT_NODE_ROT)
+            {
             //     Quaternion q(Quaternion::Identity());
-            //     if(changes & EDIT_NODE_MOVE_ALL)
-            //     {
-            //         // first move the node an all nodes of the group
-            //         rotation_point = editedNode->getPosition();
-            //         // the first node have to be rotated normal, not at a point
-            //         // and should return the relative rotation it executes
-            //         q = editedNode->setRotation(nodeS->rot, true);
-            //         // then rotate recursive all nodes that are connected through
-            //         // joints to the node
-            //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
-            //         if(editedNode->getGroupID())
-            //           gids.push_back(editedNode->getGroupID());
-            //         NodeMap nodes = simNodes;
-            //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-            //         nodes.erase(nodes.find(editedNode->getID()));
-            //         rotateNodeRecursive(nodeS->index, rotation_point, q, &joints,
-            //                             &gids, &nodes);
-            //     }
-            //     else
-            //     {
-            //         if(nodeS->relative_id)
-            //         {
-            //             iMutex.unlock();
-            //             setNodeStructPositionFromRelative(nodeS);
-            //             iMutex.lock();
-            //             NodeData da = editedNode->getSNode();
-            //             da.rot = nodeS->rot;
-            //             editedNode->setRelativePosition(da);
-            //         }
-            //         rotation_point = editedNode->getPosition();
-            //         //if(nodeS->relative_id && !load_actual)
-            //         //setNodeStructPositionFromRelative(nodeS);
-            //         q = editedNode->setRotation(nodeS->rot, 0);
+                if(changes & EDIT_NODE_MOVE_ALL)
+                {
+                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                    // TODO: Rotate all required by any robot env
+                    //         // first move the node an all nodes of the group
+                    //         rotation_point = editedNode->getPosition();
+                    //         // the first node have to be rotated normal, not at a point
+                    //         // and should return the relative rotation it executes
+                    //         q = editedNode->setRotation(nodeS->rot, true);
+                    //         // then rotate recursive all nodes that are connected through
+                    //         // joints to the node
+                    //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
+                    //         if(editedNode->getGroupID())
+                    //           gids.push_back(editedNode->getGroupID());
+                    //         NodeMap nodes = simNodes;
+                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
+                    //         nodes.erase(nodes.find(editedNode->getID()));
+                    //         rotateNodeRecursive(nodeS->index, rotation_point, q, &joints,
+                    //                             &gids, &nodes);
+                }
+                else
+                {
+                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                    // TODO: Rotate not all?!
+                    //         if(nodeS->relative_id)
+                    //         {
+                    //             iMutex.unlock();
+                    //             setNodeStructPositionFromRelative(nodeS);
+                    //             iMutex.lock();
+                    //             NodeData da = editedNode->getSNode();
+                    //             da.rot = nodeS->rot;
+                    //             editedNode->setRelativePosition(da);
+                    //         }
+                    //         rotation_point = editedNode->getPosition();
+                    //         //if(nodeS->relative_id && !load_actual)
+                    //         //setNodeStructPositionFromRelative(nodeS);
+                    //         q = editedNode->setRotation(nodeS->rot, 0);
 
-            //         //(*iter)->rotateAtPoint(&rotation_point, &nodeS->rot, false);
+                    //         //(*iter)->rotateAtPoint(&rotation_point, &nodeS->rot, false);
 
-            //         NodeMap nodes = simNodes;
-            //         NodeMap nodesj = simNodes;
-            //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-            //         nodes.erase(nodes.find(editedNode->getID()));
-            //         rotateRelativeNodes(*editedNode, &nodes, rotation_point, q);
+                    //         NodeMap nodes = simNodes;
+                    //         NodeMap nodesj = simNodes;
+                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
+                    //         nodes.erase(nodes.find(editedNode->getID()));
+                    //         rotateRelativeNodes(*editedNode, &nodes, rotation_point, q);
 
-            //         if(sNode.groupID != 0)
-            //         {
-            //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
-            //             {
-            //                 if(it->second->getGroupID() == sNode.groupID)
-            //                 {
-            //                    control->joints->reattacheJoints(it->second->getID());
-            //                 }
-            //             }
-            //         }
-            //         else
-            //         {
-            //             control->joints->reattacheJoints(nodeS->index);
-            //         }
+                    //         if(sNode.groupID != 0)
+                    //         {
+                    //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
+                    //             {
+                    //                 if(it->second->getGroupID() == sNode.groupID)
+                    //                 {
+                    //                    control->joints->reattacheJoints(it->second->getID());
+                    //                 }
+                    //             }
+                    //         }
+                    //         else
+                    //         {
+                    //             control->joints->reattacheJoints(nodeS->index);
+                    //         }
 
-            //         iMutex.unlock(); // is this desired???
-            //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
-            //         iMutex.lock();
-            //     }
-            //     update_all_nodes = true;
-            // }
-            // if ((changes & EDIT_NODE_SIZE) || (changes & EDIT_NODE_TYPE) || (changes & EDIT_NODE_CONTACT) ||
-            //     (changes & EDIT_NODE_MASS) || (changes & EDIT_NODE_NAME) ||
-            //     (changes & EDIT_NODE_GROUP) || (changes & EDIT_NODE_PHYSICS))
-            // {
-            //     //cout << "EDIT_NODE_SIZE !!!" << endl;
-            //     changeNode(editedNode, nodeS);
-            //     /*
-            //       if (changes & EDIT_NODE_SIZE) {
-            //       NodeMap nodes = simNodes;
-            //       NodeMap nodesj = simNodes;
-            //       std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-            //       nodes.erase(nodes.find(editedNode->getID()));
-            //       resetRelativeNodes(*editedNode, &nodes);
-            //       iMutex.unlock(); // is this desired???
-            //       resetRelativeJoints(*editedNode, &nodesj, &jointsj);
-            //       iMutex.lock();
-            //       }
-            //     */
-            // }
-            // if ((changes & EDIT_NODE_MATERIAL))
-            // {
-            //     editedNode->setMaterial(nodeS->material);
-            //     if(control->graphics)
-            //     {
-            //         control->graphics->setDrawObjectMaterial(editedNode->getGraphicsID(),
-            //                                                   nodeS->material);
-            //     }
-            // }
+                    //         iMutex.unlock(); // is this desired???
+                    //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
+                    //         iMutex.lock();
+                }
+                // TODO: What does this do?
+                update_all_nodes = true;
+            }
+            if ((changes & EDIT_NODE_SIZE) || (changes & EDIT_NODE_TYPE) || (changes & EDIT_NODE_CONTACT) ||
+                (changes & EDIT_NODE_MASS) || (changes & EDIT_NODE_NAME) ||
+                (changes & EDIT_NODE_GROUP) || (changes & EDIT_NODE_PHYSICS))
+            {
+                throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                // TODO: What to do here?
+                // changeNode(editedNode, nodeS);
+            }
+            if ((changes & EDIT_NODE_MATERIAL))
+            {
+                throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
+                // TODO: Change material
+                // editedNode->setMaterial(nodeS->material);
+                // if(control->graphics)
+                // {
+                //     control->graphics->setDrawObjectMaterial(editedNode->getGraphicsID(), nodeS->material);
+                // }
+            }
 
-            // // vs: updateNodesFromPhysics();
-            // iMutex.unlock();
-            // updateDynamicNodes(0, false);
+            // TODO: Is this needed?
+            constexpr interfaces::sReal time_step_ms = 0;
+            constexpr bool called_from_physics_thread = false;
+            // updateDynamicNodes(time_step_ms, called_from_physics_thread);
         }
 
         void NodeManager::changeGroup(NodeId id, int group)
