@@ -502,9 +502,9 @@ namespace mars
             unsigned long attachedNodeID = (*config)["attached_node"];
             if(mapIndex)
             {
-                attachedNodeID = control->loadCenter->getMappedID(attachedNodeID,
-                                                                  interfaces::MAP_TYPE_NODE,
-                                                                  mapIndex);
+                attachedNodeID = ControlCenter::loadCenter->getMappedID(attachedNodeID,
+                                                                        interfaces::MAP_TYPE_NODE,
+                                                                        mapIndex);
             }
             cfg->attached_node = attachedNodeID;
 

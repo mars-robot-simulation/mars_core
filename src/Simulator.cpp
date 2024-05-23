@@ -145,7 +145,7 @@ namespace mars
 
             // build the factories
             control = std::make_shared<ControlCenter>();
-            control->loadCenter = new LoadCenter();
+	    ControlCenter::loadCenter = new LoadCenter();
             control->sim = (SimulatorInterface*)this;
             control->cfg = 0;//defaultCFG;
             dbSimTimePackage.add("simTime", 0.);
@@ -387,8 +387,8 @@ namespace mars
             if(control->graphics)
             {
                 LOG_INFO("loaded mars_graphics");
-                control->loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
-                control->loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
+		ControlCenter::loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
+                ControlCenter::loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
             }
             control->graphics->initializeOSG(nullptr);
         }
@@ -962,7 +962,7 @@ namespace mars
 
             LOG_DEBUG("[Simulator::loadScene_internal] Loading scene internal with given position\n");
 
-            if(control->loadCenter->loadScene.empty())
+            if(ControlCenter::loadCenter->loadScene.empty())
             {
                 LOG_ERROR("Simulator:: no module to load scene found");
                 return 0;
@@ -972,10 +972,10 @@ namespace mars
             {
                 const auto& suffix = utils::getFilenameSuffix(filename);
                 LOG_DEBUG("[Simulator::loadScene] suffix: %s", suffix.c_str());
-                if( control->loadCenter->loadScene.find(suffix) !=
-                    control->loadCenter->loadScene.end() )
+                if( ControlCenter::loadCenter->loadScene.find(suffix) !=
+                    ControlCenter::loadCenter->loadScene.end() )
                 {
-                    const bool loading_successful = control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str(), pos, rot);
+                    const bool loading_successful = ControlCenter::loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str(), pos, rot);
                     if (!loading_successful)
                     {
                         return 0; //failed
@@ -1008,7 +1008,7 @@ namespace mars
 
             LOG_DEBUG("Loading scene internal\n");
 
-            if(control->loadCenter->loadScene.empty())
+            if(ControlCenter::loadCenter->loadScene.empty())
             {
                 LOG_ERROR("Simulator:: no module to load scene found");
                 return 0;
@@ -1017,10 +1017,10 @@ namespace mars
             try
             {
                 const auto& suffix = utils::getFilenameSuffix(filename);
-                if( control->loadCenter->loadScene.find(suffix) !=
-                    control->loadCenter->loadScene.end() )
+                if( ControlCenter::loadCenter->loadScene.find(suffix) !=
+                    ControlCenter::loadCenter->loadScene.end() )
                 {
-                    const bool loading_successful = control->loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str());
+                    const bool loading_successful = ControlCenter::loadCenter->loadScene[suffix]->loadFile(filename.c_str(), getTmpPath().c_str(), robotname.c_str());
                     if (!loading_successful)
                     {
                         return 0; //failed
@@ -1051,7 +1051,7 @@ namespace mars
         int Simulator::saveScene(const std::string &filename, bool wasrunning)
         {
             const auto& suffix = utils::getFilenameSuffix(filename);
-            if (control->loadCenter->loadScene[suffix]->saveFile(filename, getTmpPath())!=1)
+            if (ControlCenter::loadCenter->loadScene[suffix]->saveFile(filename, getTmpPath())!=1)
             {
                 LOG_ERROR("Simulator: an error somewhere while saving scene");
                 return 0;
