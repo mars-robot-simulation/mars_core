@@ -207,64 +207,16 @@ namespace mars
          */
         void NodeManager::editNode(NodeData *nodeS, int changes)
         {
-            const auto& linkName = ControlCenter::linkIDManager->getName(nodeS->index);
+            const auto& nodeId = nodeS->index;
+            const auto& linkName = ControlCenter::linkIDManager->getName(nodeId);
             if (changes & EDIT_NODE_POS)
             {
-                if (changes & EDIT_NODE_MOVE_ALL)
-                {
-                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
-                    // TODO: Move all required by any robot env
-
-                    //         // first move the node an all nodes of the group
-                    //         offset = editedNode->setPosition(nodeS->pos, true);
-                    //         // then move recursive all nodes that are connected through
-                    //         // joints to the node
-                    //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
-                    //         if(editedNode->getGroupID())
-                    //           gids.push_back(editedNode->getGroupID());
-                    //         NodeMap nodes = simNodes;
-                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = joints;
-                    //         nodes.erase(nodes.find(editedNode->getID()));
-                    //         moveNodeRecursive(nodeS->index, offset, &joints, &gids, &nodes);
-                }
-                else
-                {
-                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
-                    // TODO: Move not all?!
-                    //         if(nodeS->relative_id)
-                    //         {
-                    //             iMutex.unlock();
-                    //             setNodeStructPositionFromRelative(nodeS);
-                    //             iMutex.lock();
-                    //         }
-                    //         Vector diff = nodeS->pos - editedNode->getPosition();
-                    //         editedNode->setPosition(nodeS->pos, false);
-
-                    //         // new implementation in jointManager?
-                    //         NodeMap nodes = simNodes;
-                    //         NodeMap nodesj = simNodes;
-                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-                    //         nodes.erase(nodes.find(editedNode->getID()));
-                    //         moveRelativeNodes(*editedNode, &nodes, diff);
-
-                    //         if(sNode.groupID != 0)
-                    //         {
-                    //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
-                    //             {
-                    //                 if(it->second->getGroupID() == sNode.groupID)
-                    //                 {
-                    //                    control->joints->reattacheJoints(it->second->getID());
-                    //                 }
-                    //             }
-                    //         }
-                    //         else
-                    //         {
-                    //            control->joints->reattacheJoints(nodeS->index);
-                    //         }
-                    //         iMutex.unlock();
-                    //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
-                    //         iMutex.lock();
-                }
+                const auto& absolutePose = getAbsolutePose(nodeId);
+                const auto& currentPosition = absolutePose.getPosition();
+                const auto& translation = nodeS->pos - currentPosition;
+                const bool move_all = changes & EDIT_NODE_MOVE_ALL;
+                moveDynamicObjects(nodeId, translation, move_all);
+                // TODO: More to do for move_all == false?
                 // TODO: What does this do?
                 // update_all_nodes = true;
             }
@@ -962,6 +914,77 @@ namespace mars
             }
 
             return ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(vertex)->getData().dynamicObject.get();
+        }
+
+
+        interfaces::AbsolutePose& NodeManager::getAbsolutePose(const interfaces::NodeId& node_id)
+        {
+            using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
+
+            const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
+            const auto& vertex = ControlCenter::envireGraph->getVertex(frameId);
+            if (!ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(vertex))
+            {
+                throw std::logic_error{(std::string{"There is no AbsolutePose for frame "} + frameId).c_str()};
+            }
+
+            return ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(vertex)->getData();
+        }
+
+        void NodeManager::moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all)
+        {
+            // Set up processing pool
+            std::vector<mars::interfaces::DynamicObject*> processingPool;
+            processingPool.push_back(getDynamicObject(node_id));
+
+            // set up set of already processed objects
+            std::set<const mars::interfaces::DynamicObject* const> processedObjects;
+
+            // Process linked dynamic objects
+            const auto zero = mars::utils::Vector{0.0, 0.0, 0.0};
+            mars::utils::Vector position;
+            while(!processingPool.empty())
+            {
+                // Get next object
+                auto& currentObject = processingPool.back();
+                processingPool.pop_back();
+
+                // Set new transformation
+                currentObject->getPosition(&position);
+                currentObject->setPosition(position + translation);
+
+                // Reset velocities
+                currentObject->setLinearVelocity(zero);
+                currentObject->setAngularVelocity(zero);
+
+                if (!move_all)
+                {
+                    return;
+                }
+
+                // Mark processed
+                processedObjects.insert(currentObject);
+
+                // Extend processing pool
+                for (const auto& linkedObject: currentObject->getLinkedFrames())
+                {
+                    auto* const linkedObjectRaw = linkedObject.get();
+                    if (processedObjects.find(linkedObjectRaw) != processedObjects.end())
+                    {
+                        // already processed
+                        continue;
+                    }
+
+                    const auto it = std::find(processingPool.begin(), processingPool.end(), linkedObjectRaw);
+                    if (it != processingPool.end())
+                    {
+                        // already planned for processing
+                        continue;
+                    }
+
+                    processingPool.push_back(linkedObjectRaw);
+                }
+            }
         }
 
         /**
