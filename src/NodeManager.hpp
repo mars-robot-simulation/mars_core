@@ -20,6 +20,8 @@ namespace mars
     namespace interfaces
     {
         class CollisionInterface;
+        class DynamicObject;
+        class AbsolutePose;
     }
 
 

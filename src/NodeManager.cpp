@@ -938,7 +938,7 @@ namespace mars
             processingPool.push_back(getDynamicObject(node_id));
 
             // set up set of already processed objects
-            std::set<const mars::interfaces::DynamicObject* const> processedObjects;
+            std::set<const mars::interfaces::DynamicObject*> processedObjects;
 
             // Process linked dynamic objects
             const auto zero = mars::utils::Vector{0.0, 0.0, 0.0};
