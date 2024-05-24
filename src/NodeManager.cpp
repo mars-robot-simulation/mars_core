@@ -952,7 +952,7 @@ namespace mars
 
         interfaces::DynamicObject* NodeManager::getDynamicObject(const NodeId& node_id)
         {
-            using DynamicObjectEnvireItem = envire::core::Item<std::shared_ptr<interfaces::DynamicObject>>;
+            using DynamicObjectEnvireItem = envire::core::Item<interfaces::DynamicObjectItem>;
 
             const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
             const auto& vertex = ControlCenter::envireGraph->getVertex(frameId);
@@ -961,7 +961,7 @@ namespace mars
                 return nullptr;
             }
 
-            return ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(vertex)->getData().get();
+            return ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(vertex)->getData().dynamicObject.get();
         }
 
         /**
