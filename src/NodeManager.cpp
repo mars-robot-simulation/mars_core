@@ -701,6 +701,10 @@ namespace mars
             {
                 dynamicObject->addForce(force, pos);
             }
+            else
+            {
+                LOG_WARN((std::string{"Can't apply force to node with id "} + std::to_string(id) + std::string{" as it does not contain a dynamic object."}).c_str());
+            }
         }
         /**
          *\brief Adds a Force to the node with the given id.
@@ -710,6 +714,10 @@ namespace mars
             if (auto* const dynamicObject = getDynamicObject(id))
             {
                 dynamicObject->addForce(force);
+            }
+            else
+            {
+                LOG_WARN((std::string{"Can't apply force to node with id "} + std::to_string(id) + std::string{" as it does not contain a dynamic object."}).c_str());
             }
         }
 
