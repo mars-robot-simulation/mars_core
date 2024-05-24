@@ -697,28 +697,20 @@ namespace mars
           */
         void NodeManager::applyForce(NodeId id, const Vector &force, const Vector &pos)
         {
-            // TODO: Implement
-            throw std::logic_error("NodeManager::applyForce not implemented yet");
-            // MutexLocker locker(&iMutex);
-            // NodeMap::iterator iter = simNodes.find(id);
-            // if (iter != simNodes.end())
-            // {
-            //     iter->second->applyForce(force, pos);
-            // }
+            if (auto* const dynamicObject = getDynamicObject(id))
+            {
+                dynamicObject->addForce(force, pos);
+            }
         }
         /**
          *\brief Adds a Force to the node with the given id.
           */
         void NodeManager::applyForce(NodeId id, const Vector &force)
         {
-            // TODO: Implement
-            throw std::logic_error("NodeManager::applyForce not implemented yet");
-            // MutexLocker locker(&iMutex);
-            // NodeMap::iterator iter = simNodes.find(id);
-            // if (iter != simNodes.end())
-            // {
-            //     iter->second->applyForce(force);
-            // }
+            if (auto* const dynamicObject = getDynamicObject(id))
+            {
+                dynamicObject->addForce(force);
+            }
         }
 
         /**
