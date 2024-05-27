@@ -1343,7 +1343,7 @@ namespace mars
             if (!envireGraph->containsItems<envire::core::Item<interfaces::JointInterfaceItem>>(origin))
             {
                 const auto& frameId = envireGraph->getFrameId(origin);
-                LOG_WARN(std::string{"Simulator::rotateHingeJoint: There is no joint in frame \"" + frameId + "\" to rotate around."}.c_str());
+                LOG_WARN((std::string{"Simulator::rotateHingeJoint: There is no joint in frame \""} + frameId + "\" to rotate around.").c_str());
                 return;
             }
             std::shared_ptr<interfaces::JointInterface> joint = envireGraph->getItem<envire::core::Item<interfaces::JointInterfaceItem>>(origin)->getData().jointInterface;
@@ -1351,17 +1351,17 @@ namespace mars
             if (joint->getType() != JointType::JOINT_TYPE_HINGE)
             {
                 const auto& frameId = envireGraph->getFrameId(origin);
-                LOG_WARN(std::string{"Simulator::rotateHingeJoint: The joint in frame \"" + frameId + "\" has the wrong type (" + std::to_string(joint->getType()) ")."}.c_str());
+                LOG_WARN((std::string{"Simulator::rotateHingeJoint: The joint in frame \""} + frameId + "\" has the wrong type (" + std::to_string(joint->getType()) + ").").c_str());
                 return;
             }
 
             if (!envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(origin))
             {
                 const auto& frameId = envireGraph->getFrameId(origin);
-                throw std::logic_error(std::string{"Simulator::rotateHingeJoint: Frame \"" + frameId + "\" misses AbsolutePose!"}.c_str());
+                throw std::logic_error{(std::string{"Simulator::rotateHingeJoint: Frame \""} + frameId + "\" misses AbsolutePose!").c_str()};
             }
 
-            interfaces::AbsolutePose& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+            const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
             // TODO: Ensure joint anchor == aps.position
 
             utils::Vector axis;
