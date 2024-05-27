@@ -15,6 +15,8 @@
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/NodeManagerInterface.h>
 
+#include <boost/optional.hpp>
+
 namespace mars
 {
     namespace interfaces
@@ -155,7 +157,8 @@ namespace mars
             static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
             static interfaces::AbsolutePose& getAbsolutePose(const interfaces::NodeId& node_id);
             static void moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all);
-            static void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation);
+            static void rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all);
+            static void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation);
 
             interfaces::CollisionInterface* getGlobalCollisionInterface();
 

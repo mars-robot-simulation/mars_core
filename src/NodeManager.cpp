@@ -207,96 +207,48 @@ namespace mars
          */
         void NodeManager::editNode(NodeData *nodeS, int changes)
         {
-            const auto& nodeId = nodeS->index;
-            const bool move_all = changes & EDIT_NODE_MOVE_ALL;
+            if (nodeS->groupID != 0)
+            {
+                throw std::logic_error{"NodeManager::editNode: Handling of groupID != 0 is not supported yet."};
+            }
+
+            const auto& node_id = nodeS->index;
             if (changes & EDIT_NODE_POS)
             {
-                const auto& absolutePose = getAbsolutePose(nodeId);
+                const auto& absolutePose = getAbsolutePose(node_id);
                 const auto& currentPosition = absolutePose.getPosition();
                 const auto& translation = nodeS->pos - currentPosition;
-                moveDynamicObjects(nodeId, translation, move_all);
+                const bool move_all = changes & EDIT_NODE_MOVE_ALL;
+                moveDynamicObjects(node_id, translation, move_all);
 
                 if (!move_all)
                 {
-                    updateTransformations(nodeId, translation);
-                    ControlCenter::joints->reattacheJoints(nodeId);
+                    updateTransformations(node_id, translation, utils::Quaternion::Identity());
+                    ControlCenter::joints->reattacheJoints(node_id);
                 }
 
-                // TODO: What does this do?
+                // TODO: What does this do? -> It's related to preGraphicsUpdate
                 // update_all_nodes = true;
             }
 
             if(changes & EDIT_NODE_ROT)
             {
-            //     Quaternion q(Quaternion::Identity());
-                if(changes & EDIT_NODE_MOVE_ALL)
+                const auto& absolutePose = getAbsolutePose(node_id);
+                const auto& currentRotation = absolutePose.getRotation();
+                const auto rotationChange = nodeS->rot * currentRotation.inverse();
+                const bool move_all = changes & EDIT_NODE_MOVE_ALL;
+                rotateDynamicObjects(node_id, rotationChange, move_all);
+
+                if (!move_all)
                 {
-                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
-                    // TODO: Rotate all required by any robot env
-                    //         // first move the node an all nodes of the group
-                    //         rotation_point = editedNode->getPosition();
-                    //         // the first node have to be rotated normal, not at a point
-                    //         // and should return the relative rotation it executes
-                    //         q = editedNode->setRotation(nodeS->rot, true);
-                    //         // then rotate recursive all nodes that are connected through
-                    //         // joints to the node
-                    //         std::vector<std::shared_ptr<SimJoint> > joints = control->joints->getSimJoints();
-                    //         if(editedNode->getGroupID())
-                    //           gids.push_back(editedNode->getGroupID());
-                    //         NodeMap nodes = simNodes;
-                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-                    //         nodes.erase(nodes.find(editedNode->getID()));
-                    //         rotateNodeRecursive(nodeS->index, rotation_point, q, &joints,
-                    //                             &gids, &nodes);
+                    updateTransformations(node_id, utils::Vector::Zero(), rotationChange);
+                    ControlCenter::joints->reattacheJoints(node_id);
                 }
-                else
-                {
-                    throw std::logic_error("NodeManager::editNode does not yet support the requested edit.");
-                    // TODO: Rotate not all?!
-                    //         if(nodeS->relative_id)
-                    //         {
-                    //             iMutex.unlock();
-                    //             setNodeStructPositionFromRelative(nodeS);
-                    //             iMutex.lock();
-                    //             NodeData da = editedNode->getSNode();
-                    //             da.rot = nodeS->rot;
-                    //             editedNode->setRelativePosition(da);
-                    //         }
-                    //         rotation_point = editedNode->getPosition();
-                    //         //if(nodeS->relative_id && !load_actual)
-                    //         //setNodeStructPositionFromRelative(nodeS);
-                    //         q = editedNode->setRotation(nodeS->rot, 0);
 
-                    //         //(*iter)->rotateAtPoint(&rotation_point, &nodeS->rot, false);
-
-                    //         NodeMap nodes = simNodes;
-                    //         NodeMap nodesj = simNodes;
-                    //         std::vector<std::shared_ptr<SimJoint> > jointsj = control->joints->getSimJoints();
-                    //         nodes.erase(nodes.find(editedNode->getID()));
-                    //         rotateRelativeNodes(*editedNode, &nodes, rotation_point, q);
-
-                    //         if(sNode.groupID != 0)
-                    //         {
-                    //             for(it=simNodes.begin(); it!=simNodes.end(); ++it)
-                    //             {
-                    //                 if(it->second->getGroupID() == sNode.groupID)
-                    //                 {
-                    //                    control->joints->reattacheJoints(it->second->getID());
-                    //                 }
-                    //             }
-                    //         }
-                    //         else
-                    //         {
-                    //             control->joints->reattacheJoints(nodeS->index);
-                    //         }
-
-                    //         iMutex.unlock(); // is this desired???
-                    //         resetRelativeJoints(*editedNode, &nodesj, &jointsj);
-                    //         iMutex.lock();
-                }
-                // TODO: What does this do?
-                update_all_nodes = true;
+                // TODO: What does this do? -> It's related to preGraphicsUpdate
+                // update_all_nodes = true;
             }
+
             if ((changes & EDIT_NODE_SIZE) || (changes & EDIT_NODE_TYPE) || (changes & EDIT_NODE_CONTACT) ||
                 (changes & EDIT_NODE_MASS) || (changes & EDIT_NODE_NAME) ||
                 (changes & EDIT_NODE_GROUP) || (changes & EDIT_NODE_PHYSICS))
@@ -998,18 +950,72 @@ namespace mars
             }
         }
 
-        void NodeManager::updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation)
+        void NodeManager::rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all)
+        {
+            const auto& globalPose = getAbsolutePose(node_id);
+
+            // Set up processing pool
+            std::vector<mars::interfaces::DynamicObject*> processingPool;
+            processingPool.push_back(getDynamicObject(node_id));
+
+            // set up set of already processed objects
+            std::set<const mars::interfaces::DynamicObject*> processedObjects;
+
+            // Process linked dynamic objects
+            const auto zero = mars::utils::Vector{0.0, 0.0, 0.0};
+            mars::utils::Vector position;
+            while(!processingPool.empty())
+            {
+                // Get next object
+                auto& currentObject = processingPool.back();
+                processingPool.pop_back();
+
+                currentObject->rotateAtPoint(globalPose.getPosition(), rotationChange, false);
+
+                // Reset velocities
+                currentObject->setLinearVelocity(zero);
+                currentObject->setAngularVelocity(zero);
+
+                if (!move_all)
+                {
+                    return;
+                }
+
+                // Mark processed
+                processedObjects.insert(currentObject);
+
+                // Extend processing pool
+                for (const auto& linkedObject: currentObject->getLinkedFrames())
+                {
+                    auto* const linkedObjectRaw = linkedObject.get();
+                    if (processedObjects.find(linkedObjectRaw) != processedObjects.end())
+                    {
+                        // already processed
+                        continue;
+                    }
+
+                    const auto it = std::find(processingPool.begin(), processingPool.end(), linkedObjectRaw);
+                    if (it != processingPool.end())
+                    {
+                        // already planned for processing
+                        continue;
+                    }
+
+                    processingPool.push_back(linkedObjectRaw);
+                }
+            }
+        }
+
+        void NodeManager::updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation)
         {
             const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
             if (!ControlCenter::envireGraph->containsFrame(nodeName))
             {
+                LOG_WARN(std::string{"NodeManager::updateTransformation: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
                 return;
             }
 
-            const auto& target = ControlCenter::envireGraph->getVertex(nodeName);
-            const auto& origin = ControlCenter::graphTreeView->getParent(target);
-            auto edgeProperty = ControlCenter::envireGraph->getEdgeProperty(origin, target);
-            ControlCenter::envireGraph->setEdgeProperty(origin, target, envire::core::Transform{translation, edgeProperty.transform.orientation});
+            throw std::logic_error{"NodeManager::updateTransformations not implemented yet."};
         }
 
         /**
