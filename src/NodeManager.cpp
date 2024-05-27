@@ -904,12 +904,18 @@ namespace mars
 
         interfaces::DynamicObject* NodeManager::getDynamicObject(const NodeId& node_id)
         {
-            using DynamicObjectEnvireItem = envire::core::Item<interfaces::DynamicObjectItem>;
+            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            {
+                LOG_WARN(std::string{"NodeManager::getDynamicObject: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
+                return nullptr;
+            }
 
-            const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
-            const auto& vertex = ControlCenter::envireGraph->getVertex(frameId);
+            const auto& vertex = ControlCenter::envireGraph->getVertex(nodeName);
+            using DynamicObjectEnvireItem = envire::core::Item<interfaces::DynamicObjectItem>;
             if (!ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(vertex))
             {
+                LOG_WARN(std::string{"NodeManager::getDynamicObject: Frame \"" + nodeName + "\" does not contain a DynamicObjectItem."}.c_str());
                 return nullptr;
             }
 
@@ -919,14 +925,14 @@ namespace mars
 
         interfaces::AbsolutePose& NodeManager::getAbsolutePose(const interfaces::NodeId& node_id)
         {
-            using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
+            // Method shall only be called for nodes representing frames
+            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            assert(ControlCenter::envireGraph->containsFrame(nodeName));
 
-            const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
-            const auto& vertex = ControlCenter::envireGraph->getVertex(frameId);
-            if (!ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(vertex))
-            {
-                throw std::logic_error{(std::string{"There is no AbsolutePose for frame "} + frameId).c_str()};
-            }
+            // Method shall only be called for nodes containing AbsolutePose instances.
+            const auto& vertex = ControlCenter::envireGraph->getVertex(nodeName);
+            using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
+            assert(ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(vertex));
 
             return ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(vertex)->getData();
         }

@@ -245,8 +245,13 @@ namespace mars
 
         void JointManager::reattacheJoints(unsigned long node_id)
         {
-            const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
-            auto jointReattachor = [frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            {
+                LOG_WARN(std::string{"JointManager::reattacheJoints: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
+                return;
+            }
+            auto jointReattachor = [nodeName] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
                 {
                     const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
                     if(numJoints == 0)
@@ -262,7 +267,7 @@ namespace mars
                         auto configMap = jointItemPtr->getData().jointInterface->getConfigMap();
                         const auto parentFrameId = configMap["parent_link_name"].toString();
                         const auto childFrameId = configMap["child_link_name"].toString();
-                        if(parentFrameId == frameId || childFrameId == frameId)
+                        if(parentFrameId == nodeName || childFrameId == nodeName)
                         {
                             jointItemPtr->getData().jointInterface->reattacheJoint();
                         }
