@@ -155,6 +155,7 @@ namespace mars
             static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
             static interfaces::AbsolutePose& getAbsolutePose(const interfaces::NodeId& node_id);
             static void moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all);
+            static void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation);
 
             interfaces::CollisionInterface* getGlobalCollisionInterface();
 

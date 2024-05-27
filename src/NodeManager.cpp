@@ -208,15 +208,20 @@ namespace mars
         void NodeManager::editNode(NodeData *nodeS, int changes)
         {
             const auto& nodeId = nodeS->index;
-            const auto& linkName = ControlCenter::linkIDManager->getName(nodeId);
+            const bool move_all = changes & EDIT_NODE_MOVE_ALL;
             if (changes & EDIT_NODE_POS)
             {
                 const auto& absolutePose = getAbsolutePose(nodeId);
                 const auto& currentPosition = absolutePose.getPosition();
                 const auto& translation = nodeS->pos - currentPosition;
-                const bool move_all = changes & EDIT_NODE_MOVE_ALL;
                 moveDynamicObjects(nodeId, translation, move_all);
-                // TODO: More to do for move_all == false?
+
+                if (!move_all)
+                {
+                    updateTransformations(nodeId, translation);
+                    ControlCenter::joints->reattacheJoints(nodeId);
+                }
+
                 // TODO: What does this do?
                 // update_all_nodes = true;
             }
@@ -991,6 +996,20 @@ namespace mars
                     processingPool.push_back(linkedObjectRaw);
                 }
             }
+        }
+
+        void NodeManager::updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation)
+        {
+            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            {
+                return;
+            }
+
+            const auto& target = ControlCenter::envireGraph->getVertex(nodeName);
+            const auto& origin = ControlCenter::graphTreeView->getParent(target);
+            auto edgeProperty = ControlCenter::envireGraph->getEdgeProperty(origin, target);
+            ControlCenter::envireGraph->setEdgeProperty(origin, target, envire::core::Transform{translation, edgeProperty.transform.orientation});
         }
 
         /**
