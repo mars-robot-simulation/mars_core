@@ -171,6 +171,7 @@ namespace mars
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>{new IDManager{}};
             ControlCenter::linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
+            ControlCenter::linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
             ControlCenter::motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
             ControlCenter::sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
 
