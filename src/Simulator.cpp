@@ -19,6 +19,7 @@
 #include "SensorManager.hpp"
 #include "JointManager.hpp"
 #include "NodeManager.hpp"
+#include "FrameIDManager.hpp"
 
 //#include "PhysicsMapper.h"
 
@@ -145,7 +146,7 @@ namespace mars
 
             // build the factories
             control = std::make_shared<ControlCenter>();
-	    ControlCenter::loadCenter = new LoadCenter();
+            ControlCenter::loadCenter = new LoadCenter();
             control->sim = (SimulatorInterface*)this;
             control->cfg = 0;//defaultCFG;
             dbSimTimePackage.add("simTime", 0.);
@@ -169,7 +170,7 @@ namespace mars
             ControlCenter::nodes = new NodeManager{control.get(), theManager};
 
             ControlCenter::jointIDManager = std::unique_ptr<IDManager>{new IDManager{}};
-            ControlCenter::linkIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            ControlCenter::linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
             ControlCenter::motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
             ControlCenter::sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
 
