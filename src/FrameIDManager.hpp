@@ -22,6 +22,11 @@ namespace mars
             {
                 addIfUnknown(e.frame);
             }
+
+            virtual void frameRemoved(const envire::core::FrameRemovedEvent& e) override
+            {
+                removeEntry(e.frame);
+            }
         };
     }
 }
