@@ -308,14 +308,18 @@ namespace mars
                 }
 
                 using AbsolutePoseEnvireItem = envire::core::Item<interfaces::AbsolutePose>;
-                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(linkName))
+                if (ControlCenter::envireGraph->containsFrame(linkName) && ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(linkName))
                 {
                     const auto& absolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(linkName)->getData();
                     obj.pos = absolutePose.getPosition();
                     obj.rot = absolutePose.getRotation();
                 }
+                else
+                {
+                    // TODO: Handle non-link nodes
+                }
 
-                // TODO: set these as well.
+                // TODO: set these as well?
                 // obj->groupID = sNode.groupID;
                 // obj->visOffsetPos = sNode.visual_offset_pos;
                 // obj->visOffsetRot = sNode.visual_offset_rot;
