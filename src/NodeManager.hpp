@@ -159,6 +159,7 @@ namespace mars
             static void moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all);
             static void rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all);
             static void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation);
+            static bool isRootFrame(const interfaces::NodeId& node_id);
 
             interfaces::CollisionInterface* getGlobalCollisionInterface();
 

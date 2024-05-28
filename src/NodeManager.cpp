@@ -190,7 +190,7 @@ namespace mars
           */
         int NodeManager::getNodeCount() const
         {
-            return static_cast<size_t>(ControlCenter::linkIDManager->size());
+            return static_cast<int>(ControlCenter::linkIDManager->size());
         }
 
         NodeId NodeManager::getNextNodeID() const
@@ -211,8 +211,18 @@ namespace mars
             {
                 throw std::logic_error{"NodeManager::editNode: Handling of groupID != 0 is not supported yet."};
             }
-
             const auto& node_id = nodeS->index;
+            if (isRootFrame(node_id))
+            {
+                LOG_WARN("NodeManager::editNode: Can't edit root node.");
+                return;
+            }
+            if (!getDynamicObject(node_id))
+            {
+                LOG_WARN("NodeManager::editNode currently only supports nodes with dynamic objects.");
+                return;
+            }
+
             if (changes & EDIT_NODE_POS)
             {
                 const auto& absolutePose = getAbsolutePose(node_id);
@@ -513,32 +523,28 @@ namespace mars
             if (auto* const dynamicObject = getDynamicObject(id))
             {
                 dynamicObject->setPosition(pos);
-                // TODO: Set linear velocity?
-                // const auto zero = Vector{.0, .0, .0};
-                // dynamicObject->setLinearVelocity(zero);
+                dynamicObject->setLinearVelocity(utils::Vector::Zero());
             }
+
+            // TODO: Handle frames without dynamic objects
         }
 
 
         const Vector NodeManager::getPosition(NodeId id) const
         {
-            if (const auto* const dynamicObject = getDynamicObject(id))
+            if (!isRootFrame(id))
             {
-                Vector position;
-                dynamicObject->getPosition(&position);
-                return position;
+                return getAbsolutePose(id).getPosition();
             }
-            return Vector{.0, .0, .0};
+            return utils::Vector::Zero();
         }
 
 
         const Quaternion NodeManager::getRotation(NodeId id) const
         {
-            if (const auto* const dynamicObject = getDynamicObject(id))
+            if (!isRootFrame(id))
             {
-                Quaternion rotation;
-                dynamicObject->getRotation(&rotation);
-                return rotation;
+                return getAbsolutePose(id).getRotation();
             }
             return Quaternion::Identity();
         }
@@ -551,7 +557,8 @@ namespace mars
                 dynamicObject->getLinearVelocity(&velocity);
                 return velocity;
             }
-            return Vector{.0, .0, .0};
+            return utils::Vector::Zero();
+            // TODO: Handle frames without dynamic objects?
         }
 
         const Vector NodeManager::getAngularVelocity(NodeId id) const
@@ -562,7 +569,8 @@ namespace mars
                 dynamicObject->getAngularVelocity(&velocity);
                 return velocity;
             }
-            return Vector{.0, .0, .0};
+            return utils::Vector::Zero();
+            // TODO: Handle frames without dynamic objects?
         }
 
         const Vector NodeManager::getLinearAcceleration(NodeId id) const
@@ -599,10 +607,9 @@ namespace mars
             if (auto* const dynamicObject = getDynamicObject(id))
             {
                 dynamicObject->setRotation(rot);
-                // TODO: Set angular velocity?
-                // const auto zero = Vector{.0, .0, .0};
-                // dynamicObject->setAngularVelocity(zero);
+                dynamicObject->setAngularVelocity(utils::Vector::Zero());
             }
+            // TODO: Handle frames without dynamic objects
         }
 
         /**
@@ -956,6 +963,7 @@ namespace mars
 
         void NodeManager::rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all)
         {
+            assert(!isRootFrame(node_id));
             const auto& globalPose = getAbsolutePose(node_id);
 
             // Set up processing pool
@@ -966,7 +974,7 @@ namespace mars
             std::set<const mars::interfaces::DynamicObject*> processedObjects;
 
             // Process linked dynamic objects
-            const auto zero = mars::utils::Vector{0.0, 0.0, 0.0};
+            const auto& zero = mars::utils::Vector::Zero();
             mars::utils::Vector position;
             while(!processingPool.empty())
             {
@@ -1998,6 +2006,12 @@ namespace mars
             }
 
             return true;
+        }
+
+        bool NodeManager::isRootFrame(const interfaces::NodeId& node_id)
+        {
+            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            return nodeName == SIM_CENTER_FRAME_NAME;
         }
     } // end of namespace core
 } // end of namespace mars
