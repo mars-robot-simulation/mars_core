@@ -105,7 +105,7 @@ namespace mars
             // id == 0 is invalid indicating getID that no specific id is desired
             const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
 
-            return ControlCenter::jointIDManager->addIfUnknown(jointS->frameID, desiredId);
+            return ControlCenter::jointIDManager->addIfUnknown(jointS->name, desiredId);
         }
 
         int JointManager::getJointCount()
