@@ -551,6 +551,10 @@ namespace mars
         void MotorManager::addSimMotor(std::shared_ptr<SimMotor> newMotor)
         {
             const auto& motorID = ControlCenter::motorIDManager->getID(newMotor->getName());
+            if (motorID == INVALID_ID)
+            {
+                throw std::runtime_error{(std::string{"Tried adding unknown motor \""} + newMotor->getName() + "\".").c_str()};
+            }
             simMotors[motorID] = newMotor.get();
         }
 
