@@ -331,7 +331,13 @@ namespace mars
          */
         unsigned long MotorManager::getID(const std::string& name) const
         {
-            return ControlCenter::motorIDManager->getID(name);
+            const auto& id = ControlCenter::motorIDManager->getID(name);
+            if (id == INVALID_ID)
+            {
+                const auto msg = std::string{"MotorManager::getID: Motor named \""} + name + "\" does not have an id.";
+                LOG_WARN(msg.c_str());
+            }
+            return id;
         }
 
 
