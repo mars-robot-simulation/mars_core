@@ -1426,8 +1426,6 @@ namespace mars
             realStartTime = utils::getTime();
             dbSimTimePackage[0].set(0.);
 
-            // TODO: If hard reset, clearing the envireGraph should yield clearing motors, joints etc. obsolete; is "newWorld" a hard reset?
-            // control->controllers->clearAllControllers();
             control->sensors->clearAllSensors(clear_all);
             control->motors->clearAllMotors(clear_all);
             control->joints->clearAllJoints(clear_all);

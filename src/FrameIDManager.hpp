@@ -13,7 +13,7 @@ namespace mars
                                 public envire::core::GraphEventDispatcher
         {
         public:
-            FrameIDManager() : interfaces::IDManager{}
+            FrameIDManager()
             {
                 GraphEventDispatcher::subscribe(interfaces::ControlCenter::envireGraph.get());
             }
