@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/IDManager.hpp>
 #include <envire_core/events/GraphEventDispatcher.hpp>

@@ -20,6 +20,7 @@
 #include "JointManager.hpp"
 #include "NodeManager.hpp"
 #include "FrameIDManager.hpp"
+#include "JointIDManager.hpp"
 
 //#include "PhysicsMapper.h"
 
@@ -169,7 +170,7 @@ namespace mars
             ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
             ControlCenter::nodes = new NodeManager{control.get(), theManager};
 
-            ControlCenter::jointIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            ControlCenter::jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{}};
             ControlCenter::linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
             ControlCenter::linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
             ControlCenter::motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
