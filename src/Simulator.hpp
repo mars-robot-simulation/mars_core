@@ -282,6 +282,9 @@ namespace mars
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
 
+            // @getStepSizeS: Returns step size of the physics simulations in seconds.
+            interfaces::sReal getStepSizeS() const;
+
         private:
 
             struct LoadOptions {

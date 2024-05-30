@@ -1999,15 +1999,13 @@ namespace mars
         {
             if(_property.paramId == cfgCalcMs.paramId)
             {
+                // TODO: Make interaction between calc_ms and stepSize more obvious.
+                // @calc_ms: getStepSizeS uses this to calculate the step size.
                 calc_ms = _property.dValue;
 
-                using ms_dur = std::chrono::duration<double, std::milli>;
-                using s_dur = std::chrono::duration<double>;
-                const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
-                const auto calc_s = calc_s_dur.count();
                 for(auto &it: subWorlds)
                 {
-                    it.second->control->physics->step_size = static_cast<sReal>(calc_s); // The physics step_size is defined in seconds.
+                    it.second->control->physics->step_size = getStepSizeS();
                     //if(control->joints) control->joints->changeStepSize();
                 }
                 return;
@@ -2454,6 +2452,15 @@ namespace mars
             };
             ControlCenter::graphTreeView->visitDfs(rootVertex, absolutePoseCheckFunctor);
 #endif
+        }
+
+        interfaces::sReal Simulator::getStepSizeS() const
+        {
+            using ms_dur = std::chrono::duration<double, std::milli>;
+            using s_dur = std::chrono::duration<double>;
+            const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
+            static auto calc_s = static_cast<sReal>(calc_s_dur.count());
+            return calc_s;
         }
 
     } // end of namespace core
