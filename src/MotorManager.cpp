@@ -152,7 +152,10 @@ namespace mars
             }
             simMotorsMutex.unlock();
 
-            ControlCenter::motorIDManager->removeEntry(index);
+            if (ControlCenter::motorIDManager->isKnown(index))
+            {
+                ControlCenter::motorIDManager->removeEntry(index);
+            }
 
             if(control)
             {
