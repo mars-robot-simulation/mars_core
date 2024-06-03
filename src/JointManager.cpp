@@ -421,7 +421,7 @@ namespace mars
             const auto& jointID = ControlCenter::jointIDManager->getID(joint_name);
             if (jointID == INVALID_ID)
             {
-                const auto msg = std::string{"JointManager::getID: Can't find joint with the internal name \""} + joint_name + "\".";
+                const auto msg = std::string{"JointManager::getID: Can't find joint with the name \""} + joint_name + "\".";
                 LOG_ERROR(msg.c_str());
             }
             return jointID;

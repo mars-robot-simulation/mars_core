@@ -337,8 +337,8 @@ namespace mars
             const auto& id = ControlCenter::motorIDManager->getID(name);
             if (id == INVALID_ID)
             {
-                const auto msg = std::string{"MotorManager::getID: Motor named \""} + name + "\" does not have an id.";
-                LOG_WARN(msg.c_str());
+                const auto msg = std::string{"MotorManager::getID: Can't find motor with the name \""} + name + "\".";
+                LOG_ERROR(msg.c_str());
             }
             return id;
         }

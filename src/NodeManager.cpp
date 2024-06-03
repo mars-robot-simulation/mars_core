@@ -1494,7 +1494,13 @@ namespace mars
 
         NodeId NodeManager::getID(const std::string& node_name) const
         {
-            return ControlCenter::linkIDManager->getID(node_name);
+            const auto& node_id = ControlCenter::linkIDManager->getID(node_name);
+            if (node_id == INVALID_ID)
+            {
+                const auto msg = std::string{"NodeManager::getID: Can't find node with the name \""} + node_name + "\".";
+                LOG_ERROR(msg.c_str());
+            }
+            return node_id;
         }
 
         std::vector<interfaces::NodeId> NodeManager::getNodeIDs(const std::string& str_in_name) const
@@ -2010,6 +2016,11 @@ namespace mars
 
         bool NodeManager::isRootFrame(const interfaces::NodeId& node_id)
         {
+            if (!ControlCenter::linkIDManager->isKnown(node_id))
+            {
+                return false;
+            }
+
             const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
             return nodeName == SIM_CENTER_FRAME_NAME;
         }

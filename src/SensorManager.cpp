@@ -179,13 +179,14 @@ namespace mars
 
         unsigned long SensorManager::getSensorID(std::string name) const
         {
-            try
+            const auto& id = ControlCenter::sensorIDManager->getID(name);
+            if (id == INVALID_ID)
             {
-                return ControlCenter::sensorIDManager->getID(name);
+                const auto msg = std::string{"SensorManager::getSensorID: Can't find sensor with the name \""} + name + "\".";
+                LOG_ERROR(msg.c_str());
             }
-            catch(...){}
 
-            return 0;
+            return id;
         }
 
         /**
