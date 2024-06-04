@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(mars_core VERSION 2.0.0 DESCRIPTION "This library contains the core functionality of mars2")
 
+find_package(Boost COMPONENTS serialization)
 
 find_package(Rock)
 
@@ -111,6 +112,7 @@ set(_INSTALL_DESTINATIONS
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
             ${PKGCONFIG_LIBRARIES}
             ${WIN_LIBS}
+            ${Boost_LIBRARIES}
 )
 
 
