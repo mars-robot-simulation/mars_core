@@ -196,40 +196,8 @@ namespace mars
             {
                 LOG_ERROR("no physics loaded");
             }
-            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
-            collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
 
-            collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
-            if(collisionSpaceLoader)
-            {
-                LOG_DEBUG("collision space loaded");
-                collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
-                collisionSpace->initSpace();
-                ControlCenter::collision = collisionSpace;
-
-                // add the space as main collision space to the root frame
-                CollisionInterfaceItem item;
-                item.collisionInterface = collisionSpace;
-                item.pluginName = "mars_ode_collision";
-                collisionManager->addCollisionInterfaceItem(item);
-                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
-                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
-
-
-                if(control->graphics)
-                {
-                    control->graphics->addGraphicsUpdateInterface(this);
-                    contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
-                    contactLines->setLineWidth(3.0);
-                    const auto color_transparent_red = osg_lines::Color{1.0, .0, .0, .5};
-                    contactLines->setColor(color_transparent_red);
-                    contactLines->drawStrip(false);
-                }
-            }
-            else
-            {
-                LOG_ERROR("no collision space loaded");
-            }
+            setupCollisions();
 
             getTimeMutex.lock();
             realStartTime = utils::getTime();
@@ -418,6 +386,43 @@ namespace mars
             else
             {
                 LOG_ERROR("Simulator: try to setup log_console, but there is no data broker.");
+            }
+        }
+
+        void Simulator::setupCollisions()
+        {
+            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
+            collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
+
+            collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
+            if(collisionSpaceLoader)
+            {
+                LOG_DEBUG("collision space loaded");
+                collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
+                collisionSpace->initSpace();
+                ControlCenter::collision = collisionSpace;
+
+                // add the space as main collision space to the root frame
+                CollisionInterfaceItem item;
+                item.collisionInterface = collisionSpace;
+                item.pluginName = "mars_ode_collision";
+                collisionManager->addCollisionInterfaceItem(item);
+                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
+                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
+
+                if(control->graphics)
+                {
+                    control->graphics->addGraphicsUpdateInterface(this);
+                    contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
+                    contactLines->setLineWidth(3.0);
+                    const auto color_transparent_red = osg_lines::Color{1.0, .0, .0, .5};
+                    contactLines->setColor(color_transparent_red);
+                    contactLines->drawStrip(false);
+                }
+            }
+            else
+            {
+                LOG_ERROR("no collision space loaded");
             }
         }
 
