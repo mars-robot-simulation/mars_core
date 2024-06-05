@@ -51,7 +51,7 @@ namespace mars
          */
         unsigned long MotorManager::addMotor(MotorData *motorS, bool reload)
         {
-            motorS->index = ControlCenter::motorIDManager->addIfUnknown(motorS->name);
+            motorS->index = control->motorIDManager->addIfUnknown(motorS->name);
 
             // TODO: Create envire motor from MotorData
             //  - SimMotor will be added from envire_mars_motors
@@ -152,9 +152,9 @@ namespace mars
             }
             simMotorsMutex.unlock();
 
-            if (ControlCenter::motorIDManager->isKnown(index))
+            if (control->motorIDManager->isKnown(index))
             {
-                ControlCenter::motorIDManager->removeEntry(index);
+                control->motorIDManager->removeEntry(index);
             }
 
             if(control)
@@ -334,7 +334,7 @@ namespace mars
          */
         unsigned long MotorManager::getID(const std::string& name) const
         {
-            const auto& id = ControlCenter::motorIDManager->getID(name);
+            const auto& id = control->motorIDManager->getID(name);
             if (id == INVALID_ID)
             {
                 const auto msg = std::string{"MotorManager::getID: Can't find motor with the name \""} + name + "\".";
@@ -379,24 +379,24 @@ namespace mars
                 const MutexLocker locker{&simMotorsMutex};
                 simMotors.clear();
             }
-
-            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemRemover<std::shared_ptr<SimMotor>>(node);
+                itemRemover<std::shared_ptr<SimMotor>>(graph, node);
 
                 // TODO: Is this still needed?
                 if (clear_all)
                 {
-                    itemRemover<envire::types::motors::DC>(node);
-                    itemRemover<envire::types::motors::PID>(node);
-                    itemRemover<envire::types::motors::DirectEffort>(node);
+                    itemRemover<envire::types::motors::DC>(graph, node);
+                    itemRemover<envire::types::motors::PID>(graph, node);
+                    itemRemover<envire::types::motors::DirectEffort>(graph, node);
                 }
             };
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, removeFunctor);
 
-            ControlCenter::motorIDManager->clear();
+            control->motorIDManager->clear();
         }
 
 
@@ -408,14 +408,15 @@ namespace mars
          */
         void MotorManager::reloadMotors(void)
         {
-            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::types::motors::DC>(node);
-                itemReadder<envire::types::motors::PID>(node);
-                itemReadder<envire::types::motors::DirectEffort>(node);
+                itemReadder<envire::types::motors::DC>(graph, node);
+                itemReadder<envire::types::motors::PID>(graph, node);
+                itemReadder<envire::types::motors::DirectEffort>(graph, node);
             };
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
         }
 
         /**
@@ -553,7 +554,7 @@ namespace mars
 
         void MotorManager::addSimMotor(std::shared_ptr<SimMotor> newMotor)
         {
-            const auto& motorID = ControlCenter::motorIDManager->getID(newMotor->getName());
+            const auto& motorID = control->motorIDManager->getID(newMotor->getName());
             if (motorID == INVALID_ID)
             {
                 throw std::runtime_error{(std::string{"Tried adding unknown motor \""} + newMotor->getName() + "\".").c_str()};

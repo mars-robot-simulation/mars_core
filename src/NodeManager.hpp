@@ -154,12 +154,12 @@ namespace mars
                               const std::string &value);
 
         private:
-            static interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id);
-            static interfaces::AbsolutePose& getAbsolutePose(const interfaces::NodeId& node_id);
-            static void moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all);
-            static void rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all);
-            static void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation);
-            static bool isRootFrame(const interfaces::NodeId& node_id);
+            interfaces::DynamicObject* getDynamicObject(const interfaces::NodeId& node_id) const;
+            interfaces::AbsolutePose& getAbsolutePose(const interfaces::NodeId& node_id) const;
+            void moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all);
+            void rotateDynamicObjects(const interfaces::NodeId& node_id, const utils::Quaternion& rotationChange, const bool move_all);
+            void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation);
+            bool isRootFrame(const interfaces::NodeId& node_id) const;
 
             interfaces::CollisionInterface* getGlobalCollisionInterface();
 

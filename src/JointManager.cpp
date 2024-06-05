@@ -49,6 +49,8 @@ namespace mars
         using namespace interfaces;
         using namespace std;
 
+        using Iterator = envire::core::EnvireGraph::ItemIterator<envire::core::Item<interfaces::JointInterfaceItem>>;
+
         /**
          *\brief Initialization of a new JointManager
          *
@@ -67,14 +69,14 @@ namespace mars
             const auto className = std::string{JOINT_NAMESPACE} + jointMap["type"].toString();
             envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, jointMap);
 
-            const envire::core::FrameId parentFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex1);
-            const envire::core::FrameId childFrame = ControlCenter::linkIDManager->getName(jointS->nodeIndex2);
+            const envire::core::FrameId parentFrame = control->linkIDManager->getName(jointS->nodeIndex1);
+            const envire::core::FrameId childFrame = control->linkIDManager->getName(jointS->nodeIndex2);
 
-            if(!ControlCenter::envireGraph->containsFrame(parentFrame))
+            if(!control->envireGraph_->containsFrame(parentFrame))
             {
                 throw std::logic_error((std::string{"JointManager::addJoint: Tried adding joint linked to non-existant link "} + std::string{parentFrame}).c_str());
             }
-            if(!ControlCenter::envireGraph->containsFrame(childFrame))
+            if(!control->envireGraph_->containsFrame(childFrame))
             {
                 throw std::logic_error((std::string{"JointManager::addJoint: Tried adding joint linked to non-existant link "} + std::string{childFrame}).c_str());
             }
@@ -83,21 +85,21 @@ namespace mars
             if(!isFixedJoint(*jointS))
             {
                 // Insert new frame for non-fixed joints
-                if(ControlCenter::envireGraph->containsFrame(jointFrameName))
+                if(control->envireGraph_->containsFrame(jointFrameName))
                 {
                     throw std::logic_error((std::string{"JointManager::addJoint: There is already a joint frame with the name "} + std::string{jointFrameName}).c_str());
                 }
 
-                const auto parentToChildTransform = ControlCenter::envireGraph->getTransform(parentFrame, childFrame);
-                ControlCenter::envireGraph->removeTransform(parentFrame, childFrame);
-                ControlCenter::envireGraph->addFrame(jointFrameName);
-                ControlCenter::envireGraph->addTransform(parentFrame, jointFrameName, parentToChildTransform);
+                const auto parentToChildTransform = control->envireGraph_->getTransform(parentFrame, childFrame);
+                control->envireGraph_->removeTransform(parentFrame, childFrame);
+                control->envireGraph_->addFrame(jointFrameName);
+                control->envireGraph_->addTransform(parentFrame, jointFrameName, parentToChildTransform);
                 envire::core::Transform identityTransform;
                 identityTransform.setIdentity();
-                ControlCenter::envireGraph->addTransform(jointFrameName, childFrame, identityTransform);
+                control->envireGraph_->addTransform(jointFrameName, childFrame, identityTransform);
             }
 
-            ControlCenter::envireGraph->addItemToFrame(jointFrameName, item);
+            control->envireGraph_->addItemToFrame(jointFrameName, item);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -109,7 +111,7 @@ namespace mars
 
         int JointManager::getJointCount()
         {
-            return ControlCenter::jointIDManager->size();
+            return control->jointIDManager->size();
         }
 
         void JointManager::editJoint(JointData *jointS)
@@ -168,15 +170,15 @@ namespace mars
                 if(b_isFixedJoint)
                 {
                     // Remove jointinterfaceitem from graph
-                    ControlCenter::envireGraph->removeItemFromFrame(jointInterfaceItemPtr);
+                    control->envireGraph_->removeItemFromFrame(jointInterfaceItemPtr);
 
                     // Also remove corresponding envire fixed joint item
-                    const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<envire::types::joints::Fixed>>(jointFrameId);
+                    const auto& range = control->envireGraph_->getItems<envire::core::Item<envire::types::joints::Fixed>>(jointFrameId);
                     for(auto iter = range.first; iter != range.second; ++iter)
                     {
                         if(iter->getData().name == configMap["name"].toString())
                         {
-                            ControlCenter::envireGraph->removeItemFromFrame(jointFrameId, iter);
+                            control->envireGraph_->removeItemFromFrame(jointFrameId, iter);
                         }
                     }
                 } else
@@ -184,18 +186,18 @@ namespace mars
                     // Remove joint frame and reconnect graph
                     const auto& parentFrameId = configMap["parent_link_name"].toString();
                     const auto& childFrameId = configMap["child_link_name"].toString();
-                    const auto& parentToJoint = ControlCenter::envireGraph->getTransform(parentFrameId, jointFrameId);
-                    const auto& jointToChild = ControlCenter::envireGraph->getTransform(jointFrameId, childFrameId);
+                    const auto& parentToJoint = control->envireGraph_->getTransform(parentFrameId, jointFrameId);
+                    const auto& jointToChild = control->envireGraph_->getTransform(jointFrameId, childFrameId);
 
-                    ControlCenter::envireGraph->disconnectFrame(jointFrameId);
-                    ControlCenter::envireGraph->removeFrame(jointFrameId);
-                    ControlCenter::envireGraph->addTransform(parentFrameId, childFrameId, parentToJoint * jointToChild);
+                    control->envireGraph_->disconnectFrame(jointFrameId);
+                    control->envireGraph_->removeFrame(jointFrameId);
+                    control->envireGraph_->addTransform(parentFrameId, childFrameId, parentToJoint * jointToChild);
                 }
             } else
             {
                 throw std::logic_error((std::string{"JointManager::removeJoint: Could not remove joint with index "} + std::to_string(index)).c_str());
             }
-            ControlCenter::jointIDManager->removeEntry(index);
+            control->jointIDManager->removeEntry(index);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -227,7 +229,7 @@ namespace mars
         std::vector<std::shared_ptr<mars::core::SimJoint>> JointManager::getSimJoints(void)
         {
             vector<std::shared_ptr<mars::core::SimJoint>> simJoints;
-            simJoints.reserve(ControlCenter::jointIDManager->size());
+            simJoints.reserve(control->jointIDManager->size());
             for(const auto potentialJoint : getJoints())
             {
                 if(const auto& joint = potentialJoint.lock())
@@ -244,22 +246,23 @@ namespace mars
 
         void JointManager::reattacheJoints(unsigned long node_id)
         {
-            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
-            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            const auto& nodeName = control->linkIDManager->getName(node_id);
+            if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"JointManager::reattacheJoints: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
                 return;
             }
-            auto jointReattachor = [nodeName] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto jointReattachor = [nodeName, graph] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
                 {
-                    const size_t numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+                    const size_t numJoints = graph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
                     if(numJoints == 0)
                     {
                         return;
                     }
 
                     const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
-                    const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+                    const auto& items = graph->getItems(node, typeIndex);
                     for(const auto& item : items)
                     {
                         const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
@@ -273,22 +276,23 @@ namespace mars
                     }
                 };
 
-            const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, jointReattachor);
+            const auto rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, jointReattachor);
         }
 
         void JointManager::reloadJoints(void)
         {
-            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::types::joints::Fixed>(node);
-                itemReadder<envire::types::joints::Continuous>(node);
-                itemReadder<envire::types::joints::Prismatic>(node);
-                itemReadder<envire::types::joints::Revolute>(node);
+                itemReadder<envire::types::joints::Fixed>(graph, node);
+                itemReadder<envire::types::joints::Continuous>(graph, node);
+                itemReadder<envire::types::joints::Prismatic>(graph, node);
+                itemReadder<envire::types::joints::Revolute>(graph, node);
             };
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
         }
 
         void JointManager::updateJoints(sReal calc_ms)
@@ -299,27 +303,29 @@ namespace mars
 
         void JointManager::clearAllJoints(bool clear_all)
         {
-            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemRemover<interfaces::JointInterfaceItem>(node);
+                itemRemover<interfaces::JointInterfaceItem>(graph, node);
 
                 // TODO: Discuss how to handle clear_all: Remove frames or only additionally remove envire joint items? Is there even still use for clear_all?
                 if (clear_all)
                 {
                     // TODO: For non-fixed joints remove frame!
-                    itemRemover<envire::types::joints::Fixed>(node);
-                    itemRemover<envire::types::joints::Continuous>(node);
-                    itemRemover<envire::types::joints::Prismatic>(node);
-                    itemRemover<envire::types::joints::Revolute>(node);
+                    itemRemover<envire::types::joints::Fixed>(graph, node);
+                    itemRemover<envire::types::joints::Continuous>(graph, node);
+                    itemRemover<envire::types::joints::Prismatic>(graph, node);
+                    itemRemover<envire::types::joints::Revolute>(graph, node);
                 }
             };
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, removeFunctor);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
 
-            ControlCenter::jointIDManager->clear();
+            control->jointIDManager->clear();
         }
 
         std::list<JointData>::iterator JointManager::getReloadJoint(unsigned long id)
@@ -418,7 +424,7 @@ namespace mars
 
         unsigned long JointManager::getID(const std::string& joint_name) const
         {
-            const auto& jointID = ControlCenter::jointIDManager->getID(joint_name);
+            const auto& jointID = control->jointIDManager->getID(joint_name);
             if (jointID == INVALID_ID)
             {
                 const auto msg = std::string{"JointManager::getID: Can't find joint with the name \""} + joint_name + "\".";
@@ -429,19 +435,21 @@ namespace mars
 
         std::vector<unsigned long> JointManager::getIDsByNodeID(unsigned long node_id)
         {
-            const auto& num_joints = ControlCenter::jointIDManager->size();
+            const auto& num_joints = control->jointIDManager->size();
             auto jointIds = std::vector<unsigned long>(num_joints);
-            const auto& frameId = ControlCenter::linkIDManager->getName(node_id);
-            auto jointIdCollector = [&jointIds, frameId] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            const auto& frameId = control->linkIDManager->getName(node_id);
+            interfaces::ControlCenter *c = control;
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto jointIdCollector = [&jointIds, frameId, c] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                const auto& numJoints = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+                const auto& numJoints = c->envireGraph_->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
                 if(numJoints == 0)
                 {
                     return;
                 }
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
-                const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+                const auto& items = c->envireGraph_->getItems(node, typeIndex);
                 for(const auto item : items)
                 {
                     const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
@@ -452,27 +460,27 @@ namespace mars
                     {
                         std::string jointName;
                         jointItemPtr->getData().jointInterface->getName(&jointName);
-                        jointIds.push_back(ControlCenter::jointIDManager->getID(jointName));
+                        jointIds.push_back(c->jointIDManager->getID(jointName));
                     }
                 }
             };
 
-            const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, jointIdCollector);
+            const auto rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, jointIdCollector);
 
             return jointIds;
         }
 
         unsigned long JointManager::getIDByNodeIDs(unsigned long id1, unsigned long id2)
         {
-            const auto& frameId1 = ControlCenter::linkIDManager->getName(id1);
-            const auto& frameId2 = ControlCenter::linkIDManager->getName(id2);
+            const auto& frameId1 = control->linkIDManager->getName(id1);
+            const auto& frameId2 = control->linkIDManager->getName(id2);
       
             if(const auto joint = getJointInterface(frameId1, frameId2).lock())
             {
                 std::string jointName;
                 joint->getName(&jointName);
-                return ControlCenter::jointIDManager->getID(jointName);
+                return control->jointIDManager->getID(jointName);
             }
             return 0;
         }
@@ -504,10 +512,10 @@ namespace mars
                     std::string jointName;
                     joint->getName(&jointName);
                     envire::core::FrameId jointFrameName = constructFrameIdFromJointName(jointName, b_isFixedJoint);
-                    const auto jointFrameVertex = ControlCenter::envireGraph->getVertex(jointFrameName);
+                    const auto jointFrameVertex = control->envireGraph_->getVertex(jointFrameName);
 
                     Simulator* const simulator = dynamic_cast<Simulator*>(control->sim);
-                    simulator->rotateHingeJoint(jointFrameVertex, relativeRotationRad, ControlCenter::envireGraph, ControlCenter::graphTreeView);
+                    simulator->rotateHingeJoint(jointFrameVertex, relativeRotationRad, control->envireGraph_, control->graphTreeView_);
                 } else
                 {
                     throw std::logic_error((std::string{"JointManager::setOfflineValue can't handle JointType "} + std::to_string(static_cast<int>(jointType))).c_str());
@@ -622,13 +630,13 @@ namespace mars
         {
             std::string jointName;
             joint->getName(&jointName);
-            const auto& jointId = ControlCenter::jointIDManager->getID(jointName);
+            const auto& jointId = control->jointIDManager->getID(jointName);
 
             auto configMap = joint->getConfigMap();
             const auto parentNodeName = configMap["parent_link_name"].toString();
             const auto childNodeName = configMap["child_link_name"].toString();
-            const auto& parentNodeId = ControlCenter::linkIDManager->getID(parentNodeName);
-            const auto& childNodeId = ControlCenter::linkIDManager->getID(childNodeName);
+            const auto& parentNodeId = control->linkIDManager->getID(parentNodeName);
+            const auto& childNodeId = control->linkIDManager->getID(childNodeName);
 
             return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
         }
@@ -662,14 +670,15 @@ namespace mars
 
         envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId)
         {
-            const auto jointName = std::string{ControlCenter::jointIDManager->getName(jointId)};
+            const auto jointName = std::string{control->jointIDManager->getName(jointId)};
             return getItemBasePtr(jointName);
         }
 
         envire::core::ItemBase::Ptr JointManager::getItemBasePtr(const std::string& jointName)
         {
             envire::core::ItemBase::Ptr foundItem = nullptr;
-            auto jointInterfaceSearchFunctor = [&foundItem, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            interfaces::ControlCenter *c = control;
+            auto jointInterfaceSearchFunctor = [&foundItem, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
             {
                 // a item with the given name is already found
                 if(foundItem)
@@ -678,14 +687,14 @@ namespace mars
                 }
 
                 // the current frame has no joint items
-                const size_t numItems = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+                const size_t numItems = c->envireGraph_->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
                 if(numItems == 0)
                 {
                     return;
                 }
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
-                const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+                const auto& items = c->envireGraph_->getItems(node, typeIndex);
                 for(const auto item : items)
                 {
                     std::string currentJointName;
@@ -699,21 +708,28 @@ namespace mars
                 }
             };
 
-            const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
+            const auto rootVertex = c->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            c->graphTreeView_->visitBfs(rootVertex, jointInterfaceSearchFunctor);
             return foundItem;
         }
 
         std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId)
         {
-            const auto jointName = ControlCenter::jointIDManager->getName(jointId);
+            const auto jointName = control->jointIDManager->getName(jointId);
+            return getJointInterface(jointName);
+        }
+
+        const std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId) const
+        {
+            const auto jointName = control->jointIDManager->getName(jointId);
             return getJointInterface(jointName);
         }
 
         std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName)
         {
             auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
-            auto jointInterfaceSearchFunctor = [&foundJoint, jointName](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            interfaces::ControlCenter *c = control;
+            auto jointInterfaceSearchFunctor = [&foundJoint, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
             {
                 // a joint with the given name is already found
                 if(foundJoint)
@@ -721,10 +737,15 @@ namespace mars
                     return;
                 }
 
-                const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
-                for(auto item = range.first; item != range.second; item++)
+                Iterator begin, end;
+                boost::tie(begin, end) = c->envireGraph_->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
+                for(auto item = begin; item != end; item++)
                 {
                     std::string currentJointName;
+                    if(!item->getData().jointInterface) {
+                        LOG_ERROR("we have an joint interface item but jointInterface is not set...");
+                        continue;
+                    }
                     item->getData().jointInterface->getName(&currentJointName);
                     if(jointName == currentJointName)
                     {
@@ -734,16 +755,16 @@ namespace mars
                 }
             };
 
-            const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, jointInterfaceSearchFunctor);
+            const auto rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, jointInterfaceSearchFunctor);
             return foundJoint;
         }
 
-        std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1)
+        std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const
         {
             // Ensure that frames are directly connected.
-            const bool parent0 = ControlCenter::envireGraph->containsEdge(linkedFrame0, linkedFrame1);
-            const bool parent1 = ControlCenter::envireGraph->containsEdge(linkedFrame1, linkedFrame0);
+            const bool parent0 = control->envireGraph_->containsEdge(linkedFrame0, linkedFrame1);
+            const bool parent1 = control->envireGraph_->containsEdge(linkedFrame1, linkedFrame0);
             if(!parent0 && !parent1)
             {
                 throw std::logic_error((std::string{"Tried getting Joint between unconnected frames \""} + linkedFrame0 + "\" and \"" + linkedFrame1 + "\".").c_str());
@@ -752,7 +773,7 @@ namespace mars
             const auto& parentFrame = parent0 ? linkedFrame0 : linkedFrame1;
             const auto& childFrame = parent0 ? linkedFrame1 : linkedFrame0;
 
-            const auto& range = ControlCenter::envireGraph->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(childFrame);
+            const auto& range = control->envireGraph_->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(childFrame);
             for(auto item = range.first; item != range.second; item++)
             {
                 auto configMap = item->getData().jointInterface->getConfigMap();
@@ -766,19 +787,55 @@ namespace mars
             throw std::logic_error((std::string{"There is no Joint between the frames \""} + linkedFrame0 + "\" and \"" + linkedFrame1 + "\".").c_str());
         }
 
+        const std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName) const
+        {
+            auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
+            const interfaces::ControlCenter *c = control;
+            auto jointInterfaceSearchFunctor = [&foundJoint, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            {
+                // a joint with the given name is already found
+                if(foundJoint)
+                {
+                    return;
+                }
+
+                Iterator begin, end;
+                boost::tie(begin, end) = c->envireGraph_->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
+                for(auto item = begin; item != end; item++)
+                {
+                    std::string currentJointName;
+                    if(!item->getData().jointInterface) {
+                        LOG_ERROR("we have an joint interface item but jointInterface is not set...");
+                        continue;
+                    }
+                    item->getData().jointInterface->getName(&currentJointName);
+                    if(jointName == currentJointName)
+                    {
+                        foundJoint = item->getData().jointInterface;
+                        return;
+                    }
+                }
+            };
+
+            const auto rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, jointInterfaceSearchFunctor);
+            return foundJoint;
+        }
+
         std::list<std::weak_ptr<interfaces::JointInterface>> JointManager::getJoints()
         {
             std::list<std::weak_ptr<interfaces::JointInterface>> joints;
-            auto jointCollector = [&joints](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            interfaces::ControlCenter *c = control;
+            auto jointCollector = [&joints, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                const auto& numItems = ControlCenter::envireGraph->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
+                const auto& numItems = c->envireGraph_->getItemCount<envire::core::Item<JointInterfaceItem>>(node);
                 if(numItems == 0)
                 {
                     return;
                 }
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
-                const auto& items = ControlCenter::envireGraph->getItems(node, typeIndex);
+                const auto& items = c->envireGraph_->getItems(node, typeIndex);
                 for(const auto item : items)
                 {
                     const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
@@ -786,8 +843,8 @@ namespace mars
                 }
             };
 
-            const auto rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, jointCollector);
+            const auto rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, jointCollector);
             return joints;
         }
     } // end of namespace core

@@ -1011,7 +1011,7 @@ namespace mars
             {
                 std::string jointName;           
                 validJoint->getName(&jointName);
-                return ControlCenter::jointIDManager->getID(jointName);
+                return control->jointIDManager->getID(jointName);
             }
             return 0;
         }

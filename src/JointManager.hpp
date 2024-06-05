@@ -75,21 +75,23 @@ namespace mars
                               const std::string &value);
 
             // TODO: Don't expose ownershp!
-            static std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId);
-            static std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName);
+            virtual std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId);
+            virtual std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName);
+            const std::weak_ptr<interfaces::JointInterface> getJointInterface(unsigned long jointId) const;
+            const std::weak_ptr<interfaces::JointInterface> getJointInterface(const std::string& jointName) const;
         private:
             static configmaps::ConfigMap constructEnvireJointConfigMap(const interfaces::JointData& jointData);
-            static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
-            static const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
+            //static std::string constructDataBrokerName(const unsigned long jointId, const std::string& jointName);
+            const interfaces::JointData constructJointData(const std::shared_ptr<interfaces::JointInterface> joint);
             static envire::core::FrameId constructFrameIdFromJointName(const std::string& jointName, bool isFixedJoint);
             static envire::core::FrameId constructFrameIdFromJointData(const interfaces::JointData& jointData);
             static bool isFixedJoint(const interfaces::JointData& jointData);
-            static bool isFixedJoint(const unsigned int jointId);
+            bool isFixedJoint(const unsigned int jointId);
 
-            static envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId);
-            static envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName);
-            static std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1);
-            static std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
+            envire::core::ItemBase::Ptr getItemBasePtr(unsigned long jointId);
+            envire::core::ItemBase::Ptr getItemBasePtr(const std::string& jointName);
+            std::weak_ptr<interfaces::JointInterface> getJointInterface(const envire::core::FrameId& linkedFrame0, const envire::core::FrameId& linkedFrame1) const;
+            std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
 
             interfaces::ControlCenter *control;
 
@@ -98,39 +100,39 @@ namespace mars
 
         // TODO: Move to central location
         template<typename T>
-        void itemRemover(envire::core::GraphTraits::vertex_descriptor node)
+        void itemRemover(std::shared_ptr<envire::core::EnvireGraph> envireGraph, envire::core::GraphTraits::vertex_descriptor node)
         {
             const auto& typeIndex = typeid(envire::core::Item<T>);
-            while (interfaces::ControlCenter::envireGraph->containsItems<envire::core::Item<T>>(node))
+            while (envireGraph->containsItems<envire::core::Item<T>>(node))
             {
-                auto items = interfaces::ControlCenter::envireGraph->getItems(node, typeIndex);
-                interfaces::ControlCenter::envireGraph->removeItemFromFrame(*items.begin());
+                auto items = envireGraph->getItems(node, typeIndex);
+                envireGraph->removeItemFromFrame(*items.begin());
             }
         };
 
         // TODO: Move to central location
         template<typename T>
-        void itemReadder(envire::core::GraphTraits::vertex_descriptor node)
+        void itemReadder(std::shared_ptr<envire::core::EnvireGraph> envireGraph, envire::core::GraphTraits::vertex_descriptor node)
         {
-            if (!interfaces::ControlCenter::envireGraph->containsItems<envire::core::Item<T>>(node))
+            if (!envireGraph->containsItems<envire::core::Item<T>>(node))
             {
                 return;
             }
 
             const auto typeIndex = std::type_index{typeid(envire::core::Item<T>)};
-            auto items = interfaces::ControlCenter::envireGraph->getItems(node, typeIndex);
+            auto items = envireGraph->getItems(node, typeIndex);
 
             // Remove all items
             for(const auto item : items)
             {
-                interfaces::ControlCenter::envireGraph->removeItemFromFrame(item);
+                envireGraph->removeItemFromFrame(item);
             }
 
             // Readd all items
-            const auto frameId = interfaces::ControlCenter::envireGraph->getFrameId(node);
+            const auto frameId = envireGraph->getFrameId(node);
             for (const auto item : items)
             {
-                interfaces::ControlCenter::envireGraph->addItemToFrame(frameId, item);
+                envireGraph->addItemToFrame(frameId, item);
             }
         }
     } // end of namespace core

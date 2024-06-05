@@ -181,7 +181,7 @@ namespace mars
           */
         bool NodeManager::exists(NodeId id) const
         {
-            return ControlCenter::linkIDManager->isKnown(id);
+            return control->linkIDManager->isKnown(id);
         }
 
         /**
@@ -190,14 +190,14 @@ namespace mars
           */
         int NodeManager::getNodeCount() const
         {
-            return static_cast<int>(ControlCenter::linkIDManager->size());
+            return static_cast<int>(control->linkIDManager->size());
         }
 
         NodeId NodeManager::getNextNodeID() const
         {
             throw std::logic_error("NodeManager::getNextNodeID not implemented yet");
             // TODO: Enable IDManager to return the next id.
-            // return ControlCenter::linkIDManger->getNextID();
+            // return control->linkIDManger->getNextID();
             return 0;
         }
 
@@ -298,9 +298,9 @@ namespace mars
         void NodeManager::getListNodes(vector<core_objects_exchange>* nodeList) const
         {
             nodeList->clear();
-            for(const auto id : ControlCenter::linkIDManager->getAllIDs())
+            for(const auto id : control->linkIDManager->getAllIDs())
             {
-                const auto& linkName = ControlCenter::linkIDManager->getName(id);
+                const auto& linkName = control->linkIDManager->getName(id);
                 core_objects_exchange obj;
 
                 obj.index = id;
@@ -318,9 +318,9 @@ namespace mars
                 }
 
                 using AbsolutePoseEnvireItem = envire::core::Item<interfaces::AbsolutePose>;
-                if (ControlCenter::envireGraph->containsFrame(linkName) && ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(linkName))
+                if (control->envireGraph_->containsFrame(linkName) && control->envireGraph_->containsItems<AbsolutePoseEnvireItem>(linkName))
                 {
-                    const auto& absolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(linkName)->getData();
+                    const auto& absolutePose = control->envireGraph_->getItem<AbsolutePoseEnvireItem>(linkName)->getData();
                     obj.pos = absolutePose.getPosition();
                     obj.rot = absolutePose.getRotation();
                 }
@@ -870,39 +870,39 @@ namespace mars
             // updateDynamicNodes(0);
         }
 
-        interfaces::DynamicObject* NodeManager::getDynamicObject(const NodeId& node_id)
+        interfaces::DynamicObject* NodeManager::getDynamicObject(const NodeId& node_id) const
         {
-            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
-            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            const auto& nodeName = control->linkIDManager->getName(node_id);
+            if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"NodeManager::getDynamicObject: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
                 return nullptr;
             }
 
-            const auto& vertex = ControlCenter::envireGraph->getVertex(nodeName);
+            const auto& vertex = control->envireGraph_->getVertex(nodeName);
             using DynamicObjectEnvireItem = envire::core::Item<interfaces::DynamicObjectItem>;
-            if (!ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(vertex))
+            if (!control->envireGraph_->containsItems<DynamicObjectEnvireItem>(vertex))
             {
                 LOG_WARN(std::string{"NodeManager::getDynamicObject: Frame \"" + nodeName + "\" does not contain a DynamicObjectItem."}.c_str());
                 return nullptr;
             }
 
-            return ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(vertex)->getData().dynamicObject.get();
+            return control->envireGraph_->getItem<DynamicObjectEnvireItem>(vertex)->getData().dynamicObject.get();
         }
 
 
-        interfaces::AbsolutePose& NodeManager::getAbsolutePose(const interfaces::NodeId& node_id)
+        interfaces::AbsolutePose& NodeManager::getAbsolutePose(const interfaces::NodeId& node_id) const
         {
             // Method shall only be called for nodes representing frames
-            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
-            assert(ControlCenter::envireGraph->containsFrame(nodeName));
+            const auto& nodeName = control->linkIDManager->getName(node_id);
+            assert(control->envireGraph_->containsFrame(nodeName));
 
             // Method shall only be called for nodes containing AbsolutePose instances.
-            const auto& vertex = ControlCenter::envireGraph->getVertex(nodeName);
+            const auto& vertex = control->envireGraph_->getVertex(nodeName);
             using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
-            assert(ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(vertex));
+            assert(control->envireGraph_->containsItems<AbsolutePoseEnvireItem>(vertex));
 
-            return ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(vertex)->getData();
+            return control->envireGraph_->getItem<AbsolutePoseEnvireItem>(vertex)->getData();
         }
 
         void NodeManager::moveDynamicObjects(const interfaces::NodeId& node_id, const utils::Vector& translation, const bool move_all)
@@ -1020,8 +1020,8 @@ namespace mars
 
         void NodeManager::updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation)
         {
-            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
-            if (!ControlCenter::envireGraph->containsFrame(nodeName))
+            const auto& nodeName = control->linkIDManager->getName(node_id);
+            if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"NodeManager::updateTransformation: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
                 return;
@@ -1494,7 +1494,7 @@ namespace mars
 
         NodeId NodeManager::getID(const std::string& node_name) const
         {
-            const auto& node_id = ControlCenter::linkIDManager->getID(node_name);
+            const auto& node_id = control->linkIDManager->getID(node_name);
             if (node_id == INVALID_ID)
             {
                 const auto msg = std::string{"NodeManager::getID: Can't find node with the name \""} + node_name + "\".";
@@ -1507,7 +1507,7 @@ namespace mars
         {
             throw std::logic_error("NodeManager::getNodeIDs not implemented yet");
             // TODO: Enable IDManager to find all entries which contain str_in_name in their name.
-            // ControlCenter::linkIDManager->getIDsContaining(str_in_name);
+            // control->linkIDManager->getIDsContaining(str_in_name);
             //
             // iMutex.lock();
             // NodeMap::const_iterator iter;
@@ -1592,13 +1592,13 @@ namespace mars
         bool NodeManager::getDataBrokerNames(NodeId id, std::string *groupName,
                                               std::string *dataName) const
         {
-            if (!ControlCenter::linkIDManager->isKnown(id))
+            if (!control->linkIDManager->isKnown(id))
             {
                 return false;
             }
 
             *groupName = "mars_sim";
-            *dataName = std::string{"Nodes/"} + ControlCenter::linkIDManager->getName(id);
+            *dataName = std::string{"Nodes/"} + control->linkIDManager->getName(id);
 
             return true;
         }
@@ -1974,8 +1974,8 @@ namespace mars
             if (globalCollisionInterface_.expired())
             {
                 globalCollisionInterface_.reset();
-                assert(ControlCenter::envireGraph->containsItems<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME));
-                globalCollisionInterface_ = ControlCenter::envireGraph->getItem<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME)->getData().collisionInterface;
+                assert(control->envireGraph_->containsItems<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME));
+                globalCollisionInterface_ = control->envireGraph_->getItem<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME)->getData().collisionInterface;
             }
 
             if (auto collisionInterface = globalCollisionInterface_.lock())
@@ -2014,14 +2014,14 @@ namespace mars
             return true;
         }
 
-        bool NodeManager::isRootFrame(const interfaces::NodeId& node_id)
+        bool NodeManager::isRootFrame(const interfaces::NodeId& node_id) const
         {
-            if (!ControlCenter::linkIDManager->isKnown(node_id))
+            if (!control->linkIDManager->isKnown(node_id))
             {
                 return false;
             }
 
-            const auto& nodeName = ControlCenter::linkIDManager->getName(node_id);
+            const auto& nodeName = control->linkIDManager->getName(node_id);
             return nodeName == SIM_CENTER_FRAME_NAME;
         }
     } // end of namespace core

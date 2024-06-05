@@ -131,7 +131,7 @@ namespace mars
          */
         bool SensorManager::exists(unsigned long index) const
         {
-            return ControlCenter::sensorIDManager->isKnown(index);
+            return control->sensorIDManager->isKnown(index);
         }
 
         /**
@@ -179,7 +179,7 @@ namespace mars
 
         unsigned long SensorManager::getSensorID(std::string name) const
         {
-            const auto& id = ControlCenter::sensorIDManager->getID(name);
+            const auto& id = control->sensorIDManager->getID(name);
             if (id == INVALID_ID)
             {
                 const auto msg = std::string{"SensorManager::getSensorID: Can't find sensor with the name \""} + name + "\".";
@@ -211,7 +211,7 @@ namespace mars
             }
             simSensorsMutex.unlock();
 
-            ControlCenter::sensorIDManager->removeEntry(index);
+            control->sensorIDManager->removeEntry(index);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -269,7 +269,7 @@ namespace mars
          */
         int SensorManager::getSensorCount() const
         {
-            return ControlCenter::sensorIDManager->size();
+            return control->sensorIDManager->size();
         }
 
 
@@ -288,23 +288,23 @@ namespace mars
                 const MutexLocker locker{&simSensorsMutex};
                 simSensors.clear();
             }
-
-            auto removeFunctor = [clear_all](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemRemover<std::shared_ptr<BaseSensor>>(node);
+                itemRemover<std::shared_ptr<BaseSensor>>(graph, node);
 
                 // TODO: Is this still needed?
                 if (clear_all)
                 {
-                    itemRemover<envire::types::sensors::CameraSensor>(node);
-                    itemRemover<envire::types::sensors::RaySensor>(node);
+                    itemRemover<envire::types::sensors::CameraSensor>(graph, node);
+                    itemRemover<envire::types::sensors::RaySensor>(graph, node);
                 }
             };
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, removeFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, removeFunctor);
 
-            ControlCenter::sensorIDManager->clear();
+            control->sensorIDManager->clear();
         }
 
         /**
@@ -315,14 +315,15 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
-            auto readdFunctor = [](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
+            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                itemReadder<envire::types::sensors::CameraSensor>(node);
-                itemReadder<envire::types::sensors::RaySensor>(node);
+                itemReadder<envire::types::sensors::CameraSensor>(graph, node);
+                itemReadder<envire::types::sensors::RaySensor>(graph, node);
             };
 
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView->visitBfs(rootVertex, readdFunctor);
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
         }
 
         void SensorManager::addMarsParser(const std::string string, BaseConfig* (*func)(ControlCenter*, ConfigMap*))
@@ -353,7 +354,7 @@ namespace mars
                 // str << "SENSOR-" << id;
                 // config->name = str.str();
             }
-            config->id = ControlCenter::sensorIDManager->addIfUnknown(config->name);
+            config->id = control->sensorIDManager->addIfUnknown(config->name);
 
             BaseSensor *sensor = ((*it).second)(this->control,config);
             simSensorsMutex.lock();

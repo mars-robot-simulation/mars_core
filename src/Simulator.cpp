@@ -131,22 +131,26 @@ namespace mars
 
             gravity = Vector{0.0, 0.0, -9.81}; // set gravity to earth conditions
 
+            control = std::make_shared<ControlCenter>();
 
             // create envire graph
-            ControlCenter::envireGraph = std::make_shared<envire::core::EnvireGraph>();
-            ControlCenter::envireGraph->addFrame(SIM_CENTER_FRAME_NAME);
-            ControlCenter::graphTreeView = std::make_shared<envire::core::TreeView>();
-            ControlCenter::envireGraph->getTree(SIM_CENTER_FRAME_NAME, true, ControlCenter::graphTreeView.get());
-
+            control->envireGraph_ = std::make_shared<envire::core::EnvireGraph>();
+            control->envireGraph_->addFrame(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_ = std::make_shared<envire::core::TreeView>();
+            control->envireGraph_->getTree(SIM_CENTER_FRAME_NAME, true, control->graphTreeView_.get());
+            if(!ControlCenter::envireGraph)
+            {
+                ControlCenter::envireGraph = control->envireGraph_;   
+                ControlCenter::graphTreeView = control->graphTreeView_;   
+            }
 
             // add subscribe to be notified if some items have been added into the graph
-            GraphItemEventDispatcher<envire::core::Item<::envire::types::World>>::subscribe(ControlCenter::envireGraph.get());
-            //GraphEventDispatcher::subscribe(ControlCenter::envireGraph.get());
+            GraphItemEventDispatcher<envire::core::Item<::envire::types::World>>::subscribe(control->envireGraph_.get());
+            //GraphEventDispatcher::subscribe(control->envireGraph_.get());
 
-            absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{ControlCenter::envireGraph}};
+            absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{control->envireGraph_}};
 
             // build the factories
-            control = std::make_shared<ControlCenter>();
             ControlCenter::loadCenter = new LoadCenter();
             control->sim = (SimulatorInterface*)this;
             control->cfg = 0;//defaultCFG;
@@ -164,17 +168,21 @@ namespace mars
             //checkOptionalDependency("envire_mls");
             //checkOptionalDependency("envire_mls_tests");
 
-
             ControlCenter::motors = std::make_shared<MotorManager>(control.get());
             ControlCenter::joints = std::make_shared<JointManager>(control.get());
             ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
             ControlCenter::nodes = new NodeManager{control.get(), theManager};
 
-            ControlCenter::jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{}};
-            ControlCenter::linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
-            ControlCenter::linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
-            ControlCenter::motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
-            ControlCenter::sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            control->jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{}};
+            control->linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
+            control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
+            control->motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            control->sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+
+            ControlCenter::jointIDManager_ = control->jointIDManager;
+            ControlCenter::linkIDManager_ = control->linkIDManager;
+            ControlCenter::motorIDManager_ = control->motorIDManager;
+            ControlCenter::sensorIDManager_ = control->sensorIDManager;
 
             // TODO: add worldphysicsLoaderInterface to mars_interfaces
 
@@ -205,7 +213,7 @@ namespace mars
                 item.pluginName = "mars_ode_collision";
                 collisionManager->addCollisionInterfaceItem(item);
                 auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
-                ControlCenter::envireGraph->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
+                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
 
 
                 if(control->graphics)
@@ -493,14 +501,14 @@ namespace mars
             // SubControlItem::Ptr worldItemPtr(new SubControlItem(world->control));
 
             // envire::core::FrameId frameId = world->control->getFrameId();
-            // ControlCenter::envireGraph->addFrame(frameId);
-            // ControlCenter::envireGraph->addItemToFrame(frameId, worldItemPtr);
+            // control->envireGraph_->addFrame(frameId);
+            // control->envireGraph_->addItemToFrame(frameId, worldItemPtr);
             // // TODO: add Identity() with current time to the envire::core::Transform
             // envire::core::Transform iniPose;
             // iniPose.transform.orientation = base::Quaterniond::Identity();
             // iniPose.transform.translation << 0.0, 0.0, 0.0;
             // iniPose.time = base::Time::now();
-            // ControlCenter::envireGraph->addTransform(SIM_CENTER_FRAME_NAME, frameId, iniPose);
+            // control->envireGraph_->addTransform(SIM_CENTER_FRAME_NAME, frameId, iniPose);
 
             // // add collision item into graph
             // CollisionInterfaceItem collisionItem;
@@ -508,7 +516,7 @@ namespace mars
             // collisionItem.pluginName = "mars_ode_collision";
             // collisionManager->addCollisionInterfaceItem(collisionItem);
             // envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr collisionItemPtr(new envire::core::Item<interfaces::CollisionInterfaceItem>(collisionItem));
-            // ControlCenter::envireGraph->addItemToFrame(frameId, collisionItemPtr);
+            // control->envireGraph_->addItemToFrame(frameId, collisionItemPtr);
 
             // return world->control;
             return nullptr;
@@ -1189,23 +1197,23 @@ namespace mars
             }
 
             // FIX: update Graph
-            if(ControlCenter::graphTreeView->crossEdges.size() > 0)
+            if(control->graphTreeView_->crossEdges.size() > 0)
             {
-                const auto& source = ControlCenter::envireGraph->getSourceVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
-                const auto& target = ControlCenter::envireGraph->getTargetVertex(ControlCenter::graphTreeView->crossEdges[0].edge);
-                const auto& sourceId = ControlCenter::envireGraph->getFrameId(source);
-                const auto& targetId = ControlCenter::envireGraph->getFrameId(target);
+                const auto& source = control->envireGraph_->getSourceVertex(control->graphTreeView_->crossEdges[0].edge);
+                const auto& target = control->envireGraph_->getTargetVertex(control->graphTreeView_->crossEdges[0].edge);
+                const auto& sourceId = control->envireGraph_->getFrameId(source);
+                const auto& targetId = control->envireGraph_->getFrameId(target);
                 const auto msg = std::string{"Loop in tree detected: "} + sourceId + " --> " + targetId +
                     ". The physics plugin cannot handle loops in the graph";
                 throw std::runtime_error(msg);
             }
             // update the graph from top to bottom
             // starts with the parent and go to children
-            const VertexDesc originDesc = ControlCenter::envireGraph->vertex(SIM_CENTER_FRAME_NAME);
+            const VertexDesc originDesc = control->envireGraph_->vertex(SIM_CENTER_FRAME_NAME);
 
             physicsThreadLock();
             Simulator::updateChildPositions(originDesc, base::TransformWithCovariance::Identity(),
-                                            ControlCenter::envireGraph, ControlCenter::graphTreeView);
+                                            control->envireGraph_, control->graphTreeView_);
             physicsThreadUnlock();
         }
 
@@ -2276,7 +2284,7 @@ namespace mars
 
         std::shared_ptr<envire::core::EnvireGraph> Simulator::getGraph()
         {
-            return ControlCenter::envireGraph;
+            return control->envireGraph_;
         }
 
 
@@ -2291,16 +2299,16 @@ namespace mars
             bool done = false;
             while(!done)
             {
-                const auto& vertex = ControlCenter::envireGraph->vertex(frame);
-                const auto& parentVertex = ControlCenter::graphTreeView->tree[vertex].parent;
+                const auto& vertex = control->envireGraph_->vertex(frame);
+                const auto& parentVertex = control->graphTreeView_->tree[vertex].parent;
                 // TODO: check if this check is correct
                 if(parentVertex)
                 {
-                    frame = ControlCenter::envireGraph->getFrameId(parentVertex);
+                    frame = control->envireGraph_->getFrameId(parentVertex);
                     try
                     {
                         using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
-                        const auto& it = ControlCenter::envireGraph->getItem<SubControlItem>(frame);
+                        const auto& it = control->envireGraph_->getItem<SubControlItem>(frame);
                         return it->getData();
                     }
                     catch (...)
@@ -2350,7 +2358,7 @@ namespace mars
             using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
             auto subWorldItemPtr = SubControlItem::Ptr{new SubControlItem{subWorld->control}};
 
-            ControlCenter::envireGraph->addItemToFrame(e.frame, subWorldItemPtr);
+            control->envireGraph_->addItemToFrame(e.frame, subWorldItemPtr);
 
             // add collision item into graph
             CollisionInterfaceItem collisionItem;
@@ -2358,17 +2366,18 @@ namespace mars
             collisionItem.pluginName = "mars_ode_collision";
             collisionManager->addCollisionInterfaceItem(collisionItem);
             auto collisionItemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
-            ControlCenter::envireGraph->addItemToFrame(e.frame, collisionItemPtr);
+            control->envireGraph_->addItemToFrame(e.frame, collisionItemPtr);
         }
 
         void Simulator::saveGraph(const std::string &fileName)
         {
-            envire::core::GraphDrawing::write(*(ControlCenter::envireGraph.get()), fileName);
+            envire::core::GraphDrawing::write(*(control->envireGraph_.get()), fileName);
         }
 
         void Simulator::resetPoses()
         {
-            auto resetPoseFunctor = [](VertexDesc node, VertexDesc parent)
+            std::shared_ptr<interfaces::ControlCenter> c = control;
+            auto resetPoseFunctor = [c](VertexDesc node, VertexDesc parent)
             {
                 // TODO: This has implicit assumptions which are not enforced nor documented!
                 //  * Root frame is assumed to not have an AbsolutePose.
@@ -2376,16 +2385,16 @@ namespace mars
                 //  * Each other frame has exactly one Item of type AbsolutePose
 
                 using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
-                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(node))
+                if (c->envireGraph_->containsItems<AbsolutePoseEnvireItem>(node))
                 {
                     // Calculate where node should be after potential change of parents position.
-                    const auto parentAbsolutePose = ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(parent) ? ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(parent)->getData() : AbsolutePose{};
-                    const auto& transformation = ControlCenter::envireGraph->getTransform(parent, node);
+                    const auto parentAbsolutePose = c->envireGraph_->containsItems<AbsolutePoseEnvireItem>(parent) ? c->envireGraph_->getItem<AbsolutePoseEnvireItem>(parent)->getData() : AbsolutePose{};
+                    const auto& transformation = c->envireGraph_->getTransform(parent, node);
                     const auto parentTransform = envire::core::Transform{parentAbsolutePose.getPosition(), parentAbsolutePose.getRotation()};
                     const auto rootToNode = parentTransform * transformation;
 
                     // Set where node should be after the reset of parent.
-                    auto& currentAbsolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(node)->getData();
+                    auto& currentAbsolutePose = c->envireGraph_->getItem<AbsolutePoseEnvireItem>(node)->getData();
                     currentAbsolutePose.setPosition(rootToNode.transform.translation);
                     currentAbsolutePose.setRotation(rootToNode.transform.orientation);
 
@@ -2393,40 +2402,40 @@ namespace mars
                     const auto transformationChange = envire::core::Transform{currentAbsolutePose.resetPose()};
 
                     // Adapt the transformation from parent to node to reflect the reset pose of node.
-                    ControlCenter::envireGraph->setEdgeProperty(parent, node, transformation * transformationChange);
+                    c->envireGraph_->setEdgeProperty(parent, node, transformation * transformationChange);
 
                     // Also set the position of a potential dynamicobject for node.
                     using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
-                    if (ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(node))
+                    if (c->envireGraph_->containsItems<DynamicObjectEnvireItem>(node))
                     {
-                        auto dynamicObject = ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
+                        auto dynamicObject = c->envireGraph_->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
                         constexpr bool reset_velocities = true;
                         dynamicObject->setPose(currentAbsolutePose.getPosition(), currentAbsolutePose.getRotation(), reset_velocities);
                     }
                 }
             };
-            const auto& rootVertex = ControlCenter::envireGraph->getVertex(SIM_CENTER_FRAME_NAME);
+            const auto& rootVertex = c->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
 
             physicsThreadLock();
-            ControlCenter::graphTreeView->visitDfs(rootVertex, resetPoseFunctor);
+            c->graphTreeView_->visitDfs(rootVertex, resetPoseFunctor);
             physicsThreadUnlock();
 
 #if 0 // Tests if reset was performed correctly.
-            auto absolutePoseCheckFunctor = [](VertexDesc node, VertexDesc parent)
+            auto absolutePoseCheckFunctor = [c](VertexDesc node, VertexDesc parent)
             {
                 using AbsolutePoseEnvireItem = envire::core::Item<AbsolutePose>;
-                if (ControlCenter::envireGraph->containsItems<AbsolutePoseEnvireItem>(node))
+                if (c->envireGraph_->containsItems<AbsolutePoseEnvireItem>(node))
                 {
-                    const auto& absolutePose = ControlCenter::envireGraph->getItem<AbsolutePoseEnvireItem>(node)->getData();
+                    const auto& absolutePose = c->envireGraph_->getItem<AbsolutePoseEnvireItem>(node)->getData();
                     if (!absolutePose.isInInitialPose())
                     {
-                        std::cout << "Incorrect pose for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                        std::cout << "Incorrect pose for frame " << control->envireGraph_->getFrameId(node) << std::endl;
                     }
 
                     using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
-                    if (ControlCenter::envireGraph->containsItems<DynamicObjectEnvireItem>(node))
+                    if (c->envireGraph_->containsItems<DynamicObjectEnvireItem>(node))
                     {
-                        const auto& dynamicObject = ControlCenter::envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
+                        const auto& dynamicObject = c->envireGraph_->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
                         utils::Vector position;
                         dynamicObject->getPosition(&position);
                         utils::Quaternion rotation;
@@ -2437,20 +2446,20 @@ namespace mars
                         const bool rotationMatches = rotation.coeffs().isApprox(utils::Quaternion{absolutePose.getRotation()}.coeffs(), eps);
                         if (!positionMatches)
                         {
-                            std::cout << "Incorrect position for dynamic object for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                            std::cout << "Incorrect position for dynamic object for frame " << control->envireGraph_->getFrameId(node) << std::endl;
                             std::cout << "dynamic object position: " << position << std::endl;
                             std::cout << "absolute pose position: " << absolutePose.getPosition() << std::endl;
                         }
                         if (!rotationMatches)
                         {
-                            std::cout << "Incorrect rotation for dynamic object for frame " << ControlCenter::envireGraph->getFrameId(node) << std::endl;
+                            std::cout << "Incorrect rotation for dynamic object for frame " << control->envireGraph_->getFrameId(node) << std::endl;
                             std::cout << "dynamic object rotation: " << rotation.coeffs() << std::endl;
                             std::cout << "absolute pose position: " << absolutePose.getRotation().coeffs() << std::endl;
                         }
                     }
                 }
             };
-            ControlCenter::graphTreeView->visitDfs(rootVertex, absolutePoseCheckFunctor);
+            c->graphTreeView_->visitDfs(rootVertex, absolutePoseCheckFunctor);
 #endif
         }
 
