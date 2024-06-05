@@ -300,7 +300,10 @@ namespace mars
             void setupCFGManager();
             void setupMarsGraphics();
             void setupLogConsole();
+            void setupManagers(lib_manager::LibManager* const libManager);
+            void setupPhysics();
             void setupCollisions();
+            void loadConfigurations();
 
             int arg_no_gui, arg_run, arg_grid, arg_ortho;
             bool reloadSim, reloadGraphics;
