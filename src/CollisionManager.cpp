@@ -15,6 +15,11 @@ namespace mars
         void CollisionManager::addCollisionHandler(const std::string &name1, const std::string &name2,
                                                    std::shared_ptr<interfaces::CollisionHandler> collisionHandler)
         {
+            if (collisionHandlers.count(std::make_pair(name2, name1)) > 0)
+            {
+                const auto msg = std::string{"CollisionManager::addCollisionManager: Adding collision handler for (\""} + name1 + "\", \"" + name2 + "\") but there is already one for the inverse tuple.";
+                LOG_WARN(msg.c_str());
+            }
             collisionHandlers[std::make_pair(name1, name2)] =  collisionHandler;
         }
 
