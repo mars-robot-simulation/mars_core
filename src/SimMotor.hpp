@@ -1,6 +1,7 @@
 #pragma once
 
 //#include "SimJoint.h"
+#include "PID.hpp"
 
 #include <data_broker/ProducerInterface.h>
 #include <data_broker/ReceiverInterface.h>
@@ -70,6 +71,7 @@ namespace mars
             void runVelocityController(interfaces::sReal time_ms);
             void runEffortController(interfaces::sReal time_ms);
             void runEffortPipe(interfaces::sReal time);
+            void runFFEffortPipe(interfaces::sReal time);
             void addMimic(SimMotor* mimic);
             void removeMimic(std::string mimicname);
             void clearMimics();
@@ -121,6 +123,7 @@ namespace mars
             void setMaxValue(interfaces::sReal d);
             void setVelocity(interfaces::sReal v);
             void setControlValue(interfaces::sReal value);
+            void setFeedForwardTorque(interfaces::sReal value);
             void setMimic(interfaces::sReal multiplier, interfaces::sReal offset);
 
 
@@ -155,6 +158,8 @@ namespace mars
             void refreshAngle() __attribute__ ((deprecated("use refreshPosition(s)")));
 
         private:
+            void initPIDs();
+
             // typedefs for function pointers
             typedef  void (interfaces::JointInterface::*JointControlFunction)(interfaces::sReal);
             typedef void (SimMotor::*MotorControlFunction)(interfaces::sReal);
@@ -173,6 +178,7 @@ namespace mars
             interfaces::sReal tmpmaxeffort, tmpmaxspeed;
             interfaces::sReal current, temperature, filterValue;
             interfaces::sReal *position; // we use this pointer to access whatever axis-position is used
+            interfaces::sReal feedForwardEffort;
             bool active;
             std::map<std::string, SimMotor*> mimics;
             bool mimic;
@@ -222,6 +228,7 @@ namespace mars
             long dbIdIndex, dbControlParameterIndex, dbPositionIndex, dbCurrentIndex, dbEffortIndex, dbMaxEffortIndex;
             bool effortMotor;
             int pushToDataBroker;
+            PID posPID, velPID;
         };
 
     } // end of namespace core

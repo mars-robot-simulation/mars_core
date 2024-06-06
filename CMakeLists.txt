@@ -68,6 +68,7 @@ set(SOURCES_H
        src/JointIDManager.hpp
        src/CollisionManager.hpp
        src/AbsolutePoseExtender.hpp
+       src/PID.hpp
 )
 set(SOURCES_SENSORS_H
     src/sensors/CameraSensor.hpp
@@ -92,6 +93,7 @@ set(TARGET_SRC
        src/registration/DynamicObjectItemRegister.cpp
        src/registration/JointInterfaceItemRegister.cpp
        src/AbsolutePoseExtender.cpp
+       src/PID.cpp
 )
 
 #cmake variables

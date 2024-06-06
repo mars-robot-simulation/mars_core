@@ -64,6 +64,8 @@ namespace mars
             maxspeed_x = &sMotor.maxSpeed;
             maxeffort_x = &sMotor.maxEffort;
             effortMotor = 0;
+            feedForwardEffort = 0;
+            initPIDs();
 
             //myPlayJoint = 0;
             active = true;
@@ -306,6 +308,23 @@ namespace mars
                 }
                 runController = &SimMotor::runEffortPipe;
                 break;
+            case MOTOR_TYPE_FF_EFFORT:
+                controlValue = sMotor.value;
+                controlLimit = &(sMotor.maxEffort);
+                if(sMotor.config.hasKey("maxEffortControl") and
+                   (bool)(sMotor.config["maxEffortControl"]) == true)
+                {
+                    controlParameter = &velocity;
+                    setJointControlParameter = &JointInterface::setVelocity;
+                } else
+                {
+                    controlParameter = &effort;
+                    // TODO: handle axis
+                    setJointControlParameter = &JointInterface::setTorque;
+                }
+                posPID.p = sMotor.p;
+                runController = &SimMotor::runFFEffortPipe;
+                break;
             case MOTOR_TYPE_UNDEFINED:
                 // TODO: output error
                 controlParameter = &velocity; // default to position
@@ -356,6 +375,7 @@ namespace mars
         void SimMotor::runEffortPipe(sReal time)
         {
             // limit to range of motion
+            controlValue += feedForwardEffort;
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
@@ -365,7 +385,7 @@ namespace mars
                 if(controlValue >= 0)
                 {
                     velocity = 10000;
-                } else 
+                } else
                 {
                     velocity = -10000;
                 }
@@ -383,6 +403,29 @@ namespace mars
             {
                 effort = controlValue;
             }
+        }
+
+        void SimMotor::runFFEffortPipe(sReal time)
+        {
+            controlValue = mimic_multiplier * controlValue + mimic_offset;
+            sReal origControlValue = controlValue;
+            sReal effort = 0;
+            controlValue = std::max(sMotor.minValue,
+                                    std::min(controlValue, sMotor.maxValue));
+            // set current state
+            // todo: better get the velocity directly from the physics state
+
+            velPID.current_value = (*position - posPID.current_value)*(1000.0/time);
+            posPID.current_value = *position;
+
+            posPID.target_value = controlValue;
+            posPID.step();
+            velPID.target_value = posPID.output_value;
+            velPID.step();
+            //fprintf(stderr, "%lu %g %g\n", sMotor.index, posPID.output_value, velPID.output_value);
+            controlValue = velPID.output_value;
+            runEffortPipe(time);
+            controlValue = origControlValue;
         }
 
         void SimMotor::runVelocityController(sReal time)
@@ -846,16 +889,19 @@ namespace mars
         void SimMotor::setP(sReal p)
         {
             sMotor.p = p;
+            posPID.p = p;
         }
 
         void SimMotor::setI(sReal i)
         {
             sMotor.i = i;
+            posPID.i = i;
         }
 
         void SimMotor::setD(sReal d)
         {
             sMotor.d = d;
+            posPID.d = d;
         }
 
         sReal SimMotor::getP() const
@@ -877,6 +923,7 @@ namespace mars
         {
             // TODO: handle name change correctly
             this->sMotor = sMotor;
+            initPIDs();
             filterValue = 0.0;
             if(this->sMotor.config.hasKey("filterValue"))
             {
@@ -953,6 +1000,11 @@ namespace mars
             }
         }
 
+        void SimMotor::setFeedForwardTorque(interfaces::sReal value)
+        {
+            feedForwardEffort = value;
+        }
+
         /*switch (sMotor.type) {
           case MOTOR_TYPE_POSITION:
           case MOTOR_TYPE_PID:
@@ -1009,7 +1061,7 @@ namespace mars
         {
             if (auto validJoint = joint.lock())
             {
-                std::string jointName;           
+                std::string jointName;
                 validJoint->getName(&jointName);
                 return control->jointIDManager->getID(jointName);
             }
@@ -1154,10 +1206,10 @@ namespace mars
                     setMaxValue(atof(value.c_str()));
                 } else if(mars::utils::matchPattern("*/type", configPath))
                 {
-                    if(value == "DC" || value == "2") 
+                    if(value == "DC" || value == "2")
                     {
                         setType(MOTOR_TYPE_VELOCITY);
-                    } else 
+                    } else
                     {
                         setType(MOTOR_TYPE_POSITION);
                     }
@@ -1181,6 +1233,50 @@ namespace mars
                 break;
             }
         };
+
+        void SimMotor::initPIDs()
+        {
+            posPID.p = sMotor.p;
+            posPID.i = sMotor.i;
+            posPID.d = sMotor.d;
+            posPID.max_out = sMotor.maxSpeed;
+            posPID.min_out = -sMotor.maxSpeed;
+            if(sMotor.config.hasKey("filetPos"))
+            {
+                posPID.filter_value = sMotor.config["filterPos"];
+            }
+            if(sMotor.config.hasKey("maxPosI"))
+            {
+                posPID.max_i = sMotor.config["maxPosI"];
+            }
+            posPID.last_error = 0;
+            posPID.last_i = 0;
+
+            if(sMotor.config.hasKey("velP"))
+            {
+                velPID.p = sMotor.config["velP"];
+            }
+            if(sMotor.config.hasKey("velI"))
+            {
+                velPID.i = sMotor.config["velI"];
+            }
+            if(sMotor.config.hasKey("velD"))
+            {
+                velPID.d = sMotor.config["velD"];
+            }
+            velPID.max_out = sMotor.maxEffort;
+            velPID.min_out = -sMotor.maxEffort;
+            if(sMotor.config.hasKey("filterVel"))
+            {
+                velPID.filter_value = sMotor.config["filterVel"];
+            }
+            if(sMotor.config.hasKey("maxVelI"))
+            {
+                velPID.max_i = sMotor.config["maxVelI"];
+            }
+            velPID.last_error = 0;
+            velPID.last_i = 0;
+        }
 
     } // end of namespace core
 } // end of namespace mars
