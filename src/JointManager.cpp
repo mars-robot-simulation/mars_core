@@ -728,11 +728,12 @@ namespace mars
         std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName)
         {
             auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
+            std::shared_ptr<interfaces::JointInterface> *foundJointPtr = &foundJoint;
             interfaces::ControlCenter *c = control;
-            auto jointInterfaceSearchFunctor = [&foundJoint, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
             {
                 // a joint with the given name is already found
-                if(foundJoint)
+                if(*foundJointPtr)
                 {
                     return;
                 }
@@ -749,7 +750,7 @@ namespace mars
                     item->getData().jointInterface->getName(&currentJointName);
                     if(jointName == currentJointName)
                     {
-                        foundJoint = item->getData().jointInterface;
+                        *foundJointPtr = item->getData().jointInterface;
                         return;
                     }
                 }
@@ -790,11 +791,12 @@ namespace mars
         const std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(const std::string& jointName) const
         {
             auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
+            std::shared_ptr<interfaces::JointInterface> *foundJointPtr = &foundJoint;
             const interfaces::ControlCenter *c = control;
-            auto jointInterfaceSearchFunctor = [&foundJoint, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
             {
                 // a joint with the given name is already found
-                if(foundJoint)
+                if(*foundJointPtr)
                 {
                     return;
                 }
@@ -811,7 +813,7 @@ namespace mars
                     item->getData().jointInterface->getName(&currentJointName);
                     if(jointName == currentJointName)
                     {
-                        foundJoint = item->getData().jointInterface;
+                        *foundJointPtr = item->getData().jointInterface;
                         return;
                     }
                 }
