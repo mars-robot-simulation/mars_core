@@ -22,7 +22,8 @@ namespace mars
 {
     namespace core
     {
-        class CollisionManager : public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>
+        class CollisionManager :    public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>,
+                                    public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>
         {
         public:
             CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter);
@@ -31,13 +32,14 @@ namespace mars
             void addCollisionHandler(const std::string &name1, const std::string &name2,
                                      std::shared_ptr<interfaces::CollisionHandler> collisionHandler);
             void handleContacts();
-            void addCollisionInterfaceItem(const interfaces::CollisionInterfaceItem &item);
             std::vector<interfaces::ContactData>& getContactVector();
             void updateTransforms();
 
         protected:
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;
             virtual void itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;
+            virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event) override;
+            virtual void itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event) override;
 
         private:
             void setupContactVector();

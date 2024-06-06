@@ -17,11 +17,13 @@ namespace mars
         CollisionManager::CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter)
         {
             envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::subscribe(controlCenter->envireGraph_.get());
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::subscribe(controlCenter->envireGraph_.get());
         }
 
         CollisionManager::~CollisionManager()
         {
             envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::unsubscribe();
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::unsubscribe();
         }
 
         void CollisionManager::addCollisionHandler(const std::string &name1, const std::string &name2,
@@ -33,11 +35,6 @@ namespace mars
                 LOG_WARN(msg.c_str());
             }
             collisionHandlers[std::make_pair(name1, name2)] =  collisionHandler;
-        }
-
-        void CollisionManager::addCollisionInterfaceItem(const interfaces::CollisionInterfaceItem &item)
-        {
-            collisionItems.push_back(item);
         }
 
         std::vector<interfaces::ContactData>& CollisionManager::getContactVector()
@@ -63,15 +60,28 @@ namespace mars
 
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
-            auto& contactPluginItem = event.item->getData();
-            contactPluginItems.push_back(contactPluginItem);
+            auto& item = event.item->getData();
+            contactPluginItems.push_back(item);
         }
 
         void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
-            auto& contactPluginItem = event.item->getData();
-            auto positionOfItem = std::find(std::begin(contactPluginItems), std::end(contactPluginItems), contactPluginItem);
+            auto& item = event.item->getData();
+            auto positionOfItem = std::find(std::begin(contactPluginItems), std::end(contactPluginItems), item);
             contactPluginItems.erase(positionOfItem);
+        }
+
+        void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event)
+        {
+            auto& item = event.item->getData();
+            collisionItems.push_back(item);
+        }
+
+        void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event)
+        {
+            auto& item = event.item->getData();
+            auto positionOfItem = std::find(std::begin(collisionItems), std::end(collisionItems), item);
+            collisionItems.erase(positionOfItem);
         }
 
         void CollisionManager::setupContactVector()

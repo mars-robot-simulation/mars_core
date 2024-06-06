@@ -389,7 +389,6 @@ namespace mars
                 CollisionInterfaceItem item;
                 item.collisionInterface = collisionSpace;
                 item.pluginName = "mars_ode_collision";
-                collisionManager->addCollisionInterfaceItem(item);
                 auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
                 control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
 
@@ -2384,7 +2383,6 @@ namespace mars
             CollisionInterfaceItem collisionItem;
             collisionItem.collisionInterface = subWorld->control->collision;
             collisionItem.pluginName = "mars_ode_collision";
-            collisionManager->addCollisionInterfaceItem(collisionItem);
             auto collisionItemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
             control->envireGraph_->addItemToFrame(e.frame, collisionItemPtr);
         }
