@@ -881,6 +881,10 @@ namespace mars
                     long valSleep = (dbSimTimePackage[0].d-simStartTime)-simRealTime;//calc_ms - timeDiff;
                     msleep(valSleep);
                 }
+                else
+                {
+                    msleep(1);
+                }
             }
 #endif
             //timeDiff = getTimeDiff(myTime);
