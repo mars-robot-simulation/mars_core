@@ -6,12 +6,24 @@
 
 #include "CollisionManager.hpp"
 
+#include <envire_core/graph/EnvireGraph.hpp>
+#include <envire_core/events/GraphEventPublisher.hpp>
 #include <mars_interfaces/sim/ControlCenter.h>
 
 namespace mars
 {
     namespace core
     {
+        CollisionManager::CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter)
+        {
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::subscribe(controlCenter->envireGraph_.get());
+        }
+
+        CollisionManager::~CollisionManager()
+        {
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::unsubscribe();
+        }
+
         void CollisionManager::addCollisionHandler(const std::string &name1, const std::string &name2,
                                                    std::shared_ptr<interfaces::CollisionHandler> collisionHandler)
         {
@@ -47,6 +59,19 @@ namespace mars
             {
                 it.collisionInterface->updateTransforms();
             }
+        }
+
+        void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
+        {
+            auto& contactPluginItem = event.item->getData();
+            contactPluginItems.push_back(contactPluginItem);
+        }
+
+        void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
+        {
+            auto& contactPluginItem = event.item->getData();
+            auto positionOfItem = std::find(std::begin(contactPluginItems), std::end(contactPluginItems), contactPluginItem);
+            contactPluginItems.erase(positionOfItem);
         }
 
         void CollisionManager::setupContactVector()
@@ -101,6 +126,7 @@ namespace mars
                     }
 
                     contactPlugin->updateContact(contact);
+                    break; // TODO: Apply affecting contact plugin with highest priority.
                 }
             }
         }

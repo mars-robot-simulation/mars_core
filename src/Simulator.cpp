@@ -374,7 +374,7 @@ namespace mars
 
         void Simulator::setupCollisions()
         {
-            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
+            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{control}};
             collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
 
             collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
