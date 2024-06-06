@@ -15,6 +15,11 @@ namespace mars
         void CollisionManager::addCollisionHandler(const std::string &name1, const std::string &name2,
                                                    std::shared_ptr<interfaces::CollisionHandler> collisionHandler)
         {
+            if (collisionHandlers.count(std::make_pair(name2, name1)) > 0)
+            {
+                const auto msg = std::string{"CollisionManager::addCollisionManager: Adding collision handler for (\""} + name1 + "\", \"" + name2 + "\") but there is already one for the inverse tuple.";
+                LOG_WARN(msg.c_str());
+            }
             collisionHandlers[std::make_pair(name1, name2)] =  collisionHandler;
         }
 
@@ -30,11 +35,26 @@ namespace mars
 
         void CollisionManager::handleContacts()
         {
-            // TODO: find a good mechanism to flixible get contacts between different collision spaces
-            contactVector.clear();
             updateTransforms();
 
-            // for future:
+            setupContactVector();
+            applyContactPlugins();
+        }
+
+        void CollisionManager::updateTransforms()
+        {
+            for(auto &it: collisionItems)
+            {
+                it.collisionInterface->updateTransforms();
+            }
+        }
+
+        void CollisionManager::setupContactVector()
+        {
+            // TODO: find a good mechanism to flixible get contacts between different collision spaces
+            contactVector.clear();
+
+            // TODO: for future:
             // - where to load spaces? from envire_graph?
             // - how to deal with sub-collision-spaces?
             // - first check bounding boxes // collect boxes of sub-spaces
@@ -68,11 +88,20 @@ namespace mars
             }
         }
 
-        void CollisionManager::updateTransforms()
+        void CollisionManager::applyContactPlugins()
         {
-            for(auto &it: collisionItems)
+            for (auto& contact : contactVector)
             {
-                it.collisionInterface->updateTransforms();
+                for (const auto& contactPluginItem : contactPluginItems)
+                {
+                    const auto& contactPlugin = contactPluginItem.contactPluginInterface;
+                    if (!contactPlugin->affects(contact))
+                    {
+                        continue;
+                    }
+
+                    contactPlugin->updateContact(contact);
+                }
             }
         }
 

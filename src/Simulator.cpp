@@ -97,7 +97,7 @@ namespace mars
             sync_graphics{false}, physics_mutex_count{0},
             haveNewPlugin{false}
         {
-
+            // TODO: Initialize instead of define
             config_dir = DEFAULT_CONFIG_DIR;
             calc_time = 0;
             avg_step_time = avg_log_time = 0;
@@ -132,6 +132,8 @@ namespace mars
             gravity = Vector{0.0, 0.0, -9.81}; // set gravity to earth conditions
 
             control = std::make_shared<ControlCenter>();
+
+            // TODO: Can calling setupManagers be moved here and be combined with setting up of the evnireGraph? Then manually adding root frame to frameIDManager would be obsolete.
 
             // create envire graph
             control->envireGraph_ = std::make_shared<envire::core::EnvireGraph>();
@@ -168,68 +170,9 @@ namespace mars
             //checkOptionalDependency("envire_mls");
             //checkOptionalDependency("envire_mls_tests");
 
-            ControlCenter::motors = std::make_shared<MotorManager>(control.get());
-            ControlCenter::joints = std::make_shared<JointManager>(control.get());
-            ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
-            ControlCenter::nodes = new NodeManager{control.get(), theManager};
-
-            control->jointIDManager = std::shared_ptr<JointIDManager>{new JointIDManager(control->envireGraph_)};
-            control->linkIDManager = std::shared_ptr<FrameIDManager>{new FrameIDManager{}};
-            control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
-            control->motorIDManager = std::shared_ptr<IDManager>{new IDManager{}};
-            control->sensorIDManager = std::shared_ptr<IDManager>{new IDManager{}};
-
-            ControlCenter::jointIDManager_ = control->jointIDManager;
-            ControlCenter::linkIDManager_ = control->linkIDManager;
-            ControlCenter::motorIDManager_ = control->motorIDManager;
-            ControlCenter::sensorIDManager_ = control->sensorIDManager;
-
-            // TODO: add worldphysicsLoaderInterface to mars_interfaces
-
-            physicsLoader = libManager->getLibraryAs<ode_physics::WorldPhysicsLoader>("mars_ode_physics", true);
-            if(physicsLoader)
-            {
-                LOG_DEBUG("physics loaded");
-                //physics = physicsLoader->createWorldInstance(control);
-            }
-            else
-            {
-                LOG_ERROR("no physics loaded");
-            }
-            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
-            collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
-
-            collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
-            if(collisionSpaceLoader)
-            {
-                LOG_DEBUG("collision space loaded");
-                collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
-                collisionSpace->initSpace();
-                ControlCenter::collision = collisionSpace;
-
-                // add the space as main collision space to the root frame
-                CollisionInterfaceItem item;
-                item.collisionInterface = collisionSpace;
-                item.pluginName = "mars_ode_collision";
-                collisionManager->addCollisionInterfaceItem(item);
-                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
-                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
-
-
-                if(control->graphics)
-                {
-                    control->graphics->addGraphicsUpdateInterface(this);
-                    contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
-                    contactLines->setLineWidth(3.0);
-                    const auto color_transparent_red = osg_lines::Color{1.0, .0, .0, .5};
-                    contactLines->setColor(color_transparent_red);
-                    contactLines->drawStrip(false);
-                }
-            }
-            else
-            {
-                LOG_ERROR("no collision space loaded");
-            }
+            setupManagers(theManager);
+            setupPhysics();
+            setupCollisions();
 
             getTimeMutex.lock();
             realStartTime = utils::getTime();
@@ -237,33 +180,7 @@ namespace mars
 
             if(control->cfg)
             {
-                configPath = control->cfg->getOrCreateProperty("Config", "config_path", config_dir);
-
-                //control->cfg->getOrCreateProperty("Preferences", "resources_path",
-                //                                  std::string(MARS_PREFERENCES_DEFAULT_RESOURCES_PATH));
-
-                const auto simulatorFile = std::string{configPath.sValue + "/mars_Simulator.yaml"};
-                control->cfg->loadConfig(simulatorFile.c_str());
-                const auto physicsFile = std::string{configPath.sValue + "/mars_Physics.yaml"};
-                control->cfg->loadConfig(physicsFile.c_str());
-
-                // @loadLastSave: Used to receive value from config and hence not constexpr.
-                bool loadLastSave = false;
-                control->cfg->getPropertyValue("Config", "loadLastSave", "value", &loadLastSave);
-                if (loadLastSave)
-                {
-                    const auto saveOnCloseFile = std::string{configPath.sValue + "/mars_saveOnClose.yaml"};
-                    control->cfg->loadConfig(saveOnCloseFile.c_str());
-                }
-
-                initCfgParams();
-                if(control->graphics)
-                {
-                    if(cfgDrawContact.bValue)
-                    {
-                        control->graphics->addOSGNode(contactLines->getOSGNode());
-                    }
-                }
+                loadConfigurations();
             }
         }
 
@@ -418,6 +335,108 @@ namespace mars
             else
             {
                 LOG_ERROR("Simulator: try to setup log_console, but there is no data broker.");
+            }
+        }
+
+        void Simulator::setupManagers(lib_manager::LibManager* const libManager)
+        {
+            ControlCenter::motors = std::make_shared<MotorManager>(control.get());
+            ControlCenter::joints = std::make_shared<JointManager>(control.get());
+            ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
+            ControlCenter::nodes = new NodeManager{control.get(), libManager};
+
+            control->jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{control->envireGraph_}};
+            control->linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
+            control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
+            control->motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            control->sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+
+            ControlCenter::jointIDManager_ = control->jointIDManager;
+            ControlCenter::linkIDManager_ = control->linkIDManager;
+            ControlCenter::motorIDManager_ = control->motorIDManager;
+            ControlCenter::sensorIDManager_ = control->sensorIDManager;
+        }
+
+        void Simulator::setupPhysics()
+        {
+            // TODO: add worldphysicsLoaderInterface to mars_interfaces
+            physicsLoader = libManager->getLibraryAs<ode_physics::WorldPhysicsLoader>("mars_ode_physics", true);
+            if(physicsLoader)
+            {
+                LOG_DEBUG("physics loaded");
+                //physics = physicsLoader->createWorldInstance(control);
+            }
+            else
+            {
+                LOG_ERROR("no physics loaded");
+            }
+        }
+
+        void Simulator::setupCollisions()
+        {
+            collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{}};
+            collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
+
+            collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
+            if(collisionSpaceLoader)
+            {
+                LOG_DEBUG("collision space loaded");
+                collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
+                collisionSpace->initSpace();
+                ControlCenter::collision = collisionSpace;
+
+                // add the space as main collision space to the root frame
+                CollisionInterfaceItem item;
+                item.collisionInterface = collisionSpace;
+                item.pluginName = "mars_ode_collision";
+                collisionManager->addCollisionInterfaceItem(item);
+                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
+                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
+
+                if(control->graphics)
+                {
+                    control->graphics->addGraphicsUpdateInterface(this);
+                    contactLines = std::unique_ptr<osg_lines::Lines>{osg_lines::LinesFactory().createLines()};
+                    contactLines->setLineWidth(3.0);
+                    const auto color_transparent_red = osg_lines::Color{1.0, .0, .0, .5};
+                    contactLines->setColor(color_transparent_red);
+                    contactLines->drawStrip(false);
+                }
+            }
+            else
+            {
+                LOG_ERROR("no collision space loaded");
+            }
+        }
+
+        void Simulator::loadConfigurations()
+        {
+            configPath = control->cfg->getOrCreateProperty("Config", "config_path", config_dir);
+
+            //control->cfg->getOrCreateProperty("Preferences", "resources_path",
+            //                                  std::string(MARS_PREFERENCES_DEFAULT_RESOURCES_PATH));
+
+            const auto simulatorFile = std::string{configPath.sValue + "/mars_Simulator.yaml"};
+            control->cfg->loadConfig(simulatorFile.c_str());
+            const auto physicsFile = std::string{configPath.sValue + "/mars_Physics.yaml"};
+            control->cfg->loadConfig(physicsFile.c_str());
+
+            // @loadLastSave: Used to receive value from config and hence not constexpr.
+            bool loadLastSave = false;
+            control->cfg->getPropertyValue("Config", "loadLastSave", "value", &loadLastSave);
+            if (loadLastSave)
+            {
+                const auto saveOnCloseFile = std::string{configPath.sValue + "/mars_saveOnClose.yaml"};
+                control->cfg->loadConfig(saveOnCloseFile.c_str());
+            }
+
+            initCfgParams();
+            if(control->graphics)
+            {
+                if(cfgDrawContact.bValue)
+                {
+                    control->graphics->addOSGNode(contactLines->getOSGNode());
+                }
             }
         }
 

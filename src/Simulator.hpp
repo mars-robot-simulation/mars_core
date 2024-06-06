@@ -107,12 +107,6 @@ namespace mars
 
             void newLibLoaded(const std::string &libName) override;
             CREATE_MODULE_INFO();
-            void checkOptionalDependency(const std::string &libName);
-            void setupDataBroker();
-            void setupCFGManager();
-            void setupMarsGraphics();
-            void setupLogConsole();
-
 
             // --- SimulatorInterface ---
 
@@ -299,6 +293,17 @@ namespace mars
             // simulation control
             void processRequests();
             void reloadWorld(void);
+
+            // Setup
+            void checkOptionalDependency(const std::string &libName);
+            void setupDataBroker();
+            void setupCFGManager();
+            void setupMarsGraphics();
+            void setupLogConsole();
+            void setupManagers(lib_manager::LibManager* const libManager);
+            void setupPhysics();
+            void setupCollisions();
+            void loadConfigurations();
 
             int arg_no_gui, arg_run, arg_grid, arg_ortho;
             bool reloadSim, reloadGraphics;
