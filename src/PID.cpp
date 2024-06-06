@@ -9,7 +9,7 @@ namespace mars
         PID::PID() :
             p(0), i(0), d(0), last_value(0), last_error(0), last_i(0),
             current_value(0), target_value(0), output_value(0),
-            min_out(0), max_out(0), max_i(0)
+            min_out(0), max_out(0), max_i(0), filter_value(0)
         {
         }
 
