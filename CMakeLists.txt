@@ -65,6 +65,7 @@ set(SOURCES_H
        src/SensorManager.hpp
        src/NodeManager.hpp
        src/JointManager.hpp
+       src/JointIDManager.hpp
        src/CollisionManager.hpp
        src/AbsolutePoseExtender.hpp
 )

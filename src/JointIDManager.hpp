@@ -16,9 +16,9 @@ namespace mars
                                 public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::JointInterfaceItem>>
         {
         public:
-            JointIDManager()
+            JointIDManager(std::shared_ptr<envire::core::EnvireGraph> envireGraph)
             {
-                GraphItemEventDispatcher<envire::core::Item<interfaces::JointInterfaceItem>>::subscribe(interfaces::ControlCenter::envireGraph.get());
+                GraphItemEventDispatcher<envire::core::Item<interfaces::JointInterfaceItem>>::subscribe(envireGraph.get());
             }
 
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::JointInterfaceItem>>& e) override

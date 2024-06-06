@@ -925,7 +925,7 @@ namespace mars
 
         void SimMotor::setOfflinePosition(interfaces::sReal value)
         {
-            if(control && control->sim->isSimRunning())
+            if(control && control->sim && control->sim->isSimRunning())
             {
                 LOG_WARN("SimMotor: Setting the \"offline\" position if the simulation is running can produce bad simulation states!");
             }
@@ -945,7 +945,7 @@ namespace mars
             if(sMotor.type == MOTOR_TYPE_POSITION ||
                sMotor.type == MOTOR_TYPE_PID)
             {
-                if(control && !control->sim->isSimRunning())
+                if(control && control->sim && !control->sim->isSimRunning())
                 {
                     //myJoint->setOfflinePosition(value);
                     refreshPositions();

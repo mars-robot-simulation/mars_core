@@ -173,11 +173,11 @@ namespace mars
             ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
             ControlCenter::nodes = new NodeManager{control.get(), theManager};
 
-            control->jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{}};
-            control->linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
+            control->jointIDManager = std::shared_ptr<JointIDManager>{new JointIDManager(control->envireGraph_)};
+            control->linkIDManager = std::shared_ptr<FrameIDManager>{new FrameIDManager{}};
             control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
-            control->motorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
-            control->sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
+            control->motorIDManager = std::shared_ptr<IDManager>{new IDManager{}};
+            control->sensorIDManager = std::shared_ptr<IDManager>{new IDManager{}};
 
             ControlCenter::jointIDManager_ = control->jointIDManager;
             ControlCenter::linkIDManager_ = control->linkIDManager;
@@ -2330,6 +2330,7 @@ namespace mars
             auto* subWorld = new SubWorld{};
             // use the control with new physic
             subWorld->control = std::make_shared<SubControlCenter>();
+            subWorld->control->control = control.get();
             subWorld->control->setPrefix(world.prefix);
             subWorld->control->setFrameId(e.frame);
 
