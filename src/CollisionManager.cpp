@@ -61,6 +61,7 @@ namespace mars
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
             auto& item = event.item->getData();
+            item.contactPluginInterface->setFrameID(event.frame);
             contactPluginItems.push_back(item);
         }
 
