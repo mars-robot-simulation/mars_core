@@ -282,8 +282,8 @@ namespace mars
 
         void JointManager::reloadJoints(void)
         {
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto readdFunctor = [&graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemReadder<envire::types::joints::Fixed>(graph, node);
                 itemReadder<envire::types::joints::Continuous>(graph, node);
@@ -304,8 +304,8 @@ namespace mars
         void JointManager::clearAllJoints(bool clear_all)
         {
             
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto removeFunctor = [clear_all, &graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemRemover<interfaces::JointInterfaceItem>(graph, node);
 

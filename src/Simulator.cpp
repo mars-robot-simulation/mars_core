@@ -1146,6 +1146,7 @@ namespace mars
                     interfaces::ControlCenter::motors->clearAllMotors(clear_all);
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
 
+                    collisionManager->clearAllPlugins();
                     resetPoses();
                     collisionManager->updateTransforms();
 

@@ -379,8 +379,8 @@ namespace mars
                 const MutexLocker locker{&simMotorsMutex};
                 simMotors.clear();
             }
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto removeFunctor = [clear_all, &graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemRemover<std::shared_ptr<SimMotor>>(graph, node);
 
@@ -408,8 +408,8 @@ namespace mars
          */
         void MotorManager::reloadMotors(void)
         {
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto readdFunctor = [&graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemReadder<envire::types::motors::DC>(graph, node);
                 itemReadder<envire::types::motors::PID>(graph, node);

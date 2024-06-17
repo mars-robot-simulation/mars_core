@@ -288,8 +288,8 @@ namespace mars
                 const MutexLocker locker{&simSensorsMutex};
                 simSensors.clear();
             }
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto removeFunctor = [clear_all, &graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemRemover<std::shared_ptr<BaseSensor>>(graph, node);
 
@@ -315,8 +315,8 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
-            std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
-            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            auto readdFunctor = [&graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemReadder<envire::types::sensors::CameraSensor>(graph, node);
                 itemReadder<envire::types::sensors::RaySensor>(graph, node);

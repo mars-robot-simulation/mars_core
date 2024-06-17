@@ -9,15 +9,16 @@
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/events/GraphEventPublisher.hpp>
 #include <mars_interfaces/sim/ControlCenter.h>
+#include "JointManager.hpp"
 
 namespace mars
 {
     namespace core
     {
-        CollisionManager::CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter)
+        CollisionManager::CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter) : controlCenter_{controlCenter.get()}
         {
-            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::subscribe(controlCenter->envireGraph_.get());
-            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::subscribe(controlCenter->envireGraph_.get());
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::subscribe(controlCenter_->envireGraph_.get());
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::subscribe(controlCenter_->envireGraph_.get());
         }
 
         CollisionManager::~CollisionManager()
@@ -58,18 +59,37 @@ namespace mars
             }
         }
 
+        void CollisionManager::clearAllPlugins()
+        {
+            auto graph = controlCenter_->envireGraph_.get();
+            using VertexType = envire::core::GraphTraits::vertex_descriptor;
+            auto removeFunctor = [&graph](VertexType node, VertexType parent)
+            {
+                itemRemover<interfaces::ContactPluginInterfaceItem>(graph, node);
+            };
+
+            const auto& rootVertex = controlCenter_->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            controlCenter_->graphTreeView_->visitBfs(rootVertex, removeFunctor);
+            assert(contactPlugins.empty());
+        }
+
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
             auto& item = event.item->getData();
             item.contactPluginInterface->setFrameID(event.frame);
-            contactPluginItems.push_back(item);
+            contactPlugins.push_back(item.contactPluginInterface.get());
         }
 
         void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
-            auto& item = event.item->getData();
-            auto positionOfItem = std::find(std::begin(contactPluginItems), std::end(contactPluginItems), item);
-            contactPluginItems.erase(positionOfItem);
+            auto item = event.item->getData().contactPluginInterface.get();
+            auto positionOfItem = std::find_if(std::begin(contactPlugins), std::end(contactPlugins),
+                [&item](const interfaces::ContactPluginInterface* const x)
+                {
+                    return x == item;
+                });
+            assert(positionOfItem != std::end(contactPlugins));
+            contactPlugins.erase(positionOfItem);
         }
 
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event)
@@ -128,9 +148,8 @@ namespace mars
         {
             for (auto& contact : contactVector)
             {
-                for (const auto& contactPluginItem : contactPluginItems)
+                for (const auto& contactPlugin : contactPlugins)
                 {
-                    const auto& contactPlugin = contactPluginItem.contactPluginInterface;
                     if (!contactPlugin->affects(contact))
                     {
                         continue;

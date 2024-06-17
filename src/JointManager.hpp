@@ -100,7 +100,7 @@ namespace mars
 
         // TODO: Move to central location
         template<typename T>
-        void itemRemover(std::shared_ptr<envire::core::EnvireGraph> envireGraph, envire::core::GraphTraits::vertex_descriptor node)
+        void itemRemover(envire::core::EnvireGraph* envireGraph, envire::core::GraphTraits::vertex_descriptor node)
         {
             const auto& typeIndex = typeid(envire::core::Item<T>);
             while (envireGraph->containsItems<envire::core::Item<T>>(node))
@@ -112,7 +112,7 @@ namespace mars
 
         // TODO: Move to central location
         template<typename T>
-        void itemReadder(std::shared_ptr<envire::core::EnvireGraph> envireGraph, envire::core::GraphTraits::vertex_descriptor node)
+        void itemReadder(envire::core::EnvireGraph* envireGraph, envire::core::GraphTraits::vertex_descriptor node)
         {
             if (!envireGraph->containsItems<envire::core::Item<T>>(node))
             {

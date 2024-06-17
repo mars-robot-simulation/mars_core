@@ -34,6 +34,7 @@ namespace mars
             void handleContacts();
             std::vector<interfaces::ContactData>& getContactVector();
             void updateTransforms();
+            void clearAllPlugins();
 
         protected:
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;
@@ -45,10 +46,11 @@ namespace mars
             void setupContactVector();
             void applyContactPlugins();
 
+            interfaces::ControlCenter* const controlCenter_;
             std::map<std::pair<std::string, std::string>, std::shared_ptr<interfaces::CollisionHandler>> collisionHandlers;
             std::vector<interfaces::ContactData> contactVector;
             std::vector<interfaces::CollisionInterfaceItem> collisionItems;
-            std::vector<interfaces::ContactPluginInterfaceItem> contactPluginItems;
+            std::vector<interfaces::ContactPluginInterface*> contactPlugins;
         };
     } // end of namespace core
 } // end of namespace mars
