@@ -34,7 +34,8 @@ namespace mars
             void handleContacts();
             std::vector<interfaces::ContactData>& getContactVector();
             void updateTransforms();
-            void clearAllPlugins();
+            void resetPlugins();
+            void clearPlugins();
 
         protected:
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;

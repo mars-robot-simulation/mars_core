@@ -11,6 +11,7 @@
 #include <mars_interfaces/sim/ControlCenter.h>
 #include "JointManager.hpp"
 
+
 namespace mars
 {
     namespace core
@@ -59,7 +60,16 @@ namespace mars
             }
         }
 
-        void CollisionManager::clearAllPlugins()
+
+        void CollisionManager::resetPlugins()
+        {
+            for (auto& contactPlugin : contactPlugins)
+            {
+                contactPlugin->reset();
+            }
+        }
+
+        void CollisionManager::clearPlugins()
         {
             auto graph = controlCenter_->envireGraph_.get();
             using VertexType = envire::core::GraphTraits::vertex_descriptor;
