@@ -61,12 +61,18 @@ namespace mars
         }
 
 
-        void CollisionManager::resetPlugins()
+        void CollisionManager::reset()
         {
             for (auto& contactPlugin : contactPlugins)
             {
                 contactPlugin->reset();
             }
+            for (auto& collisionSpace : collisionItems)
+            {
+                collisionSpace.collisionInterface->reset();
+            }
+
+            contactVector.clear();
         }
 
         void CollisionManager::clearPlugins()

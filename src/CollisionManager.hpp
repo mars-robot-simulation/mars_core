@@ -34,7 +34,7 @@ namespace mars
             void handleContacts();
             std::vector<interfaces::ContactData>& getContactVector();
             void updateTransforms();
-            void resetPlugins();
+            void reset();
             void clearPlugins();
 
         protected:
