@@ -152,9 +152,11 @@ namespace mars
 
             absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{control->envireGraph_}};
 
+
+
             // build the factories
-            ControlCenter::loadCenter = new LoadCenter();
-            control->sim = (SimulatorInterface*)this;
+            ControlCenter::loadCenter = new LoadCenter{};
+            control->sim = static_cast<SimulatorInterface*>(this);
             control->cfg = 0;//defaultCFG;
             dbSimTimePackage.add("simTime", 0.);
             dbSimDebugPackage.add("simUpdate", 0.);
@@ -644,13 +646,13 @@ namespace mars
                 const auto n = osg_lines::Vector{contact.pos.x()+contact.normal.x(), contact.pos.y()+contact.normal.y(), contact.pos.z()+contact.normal.z()};
                 contactLinesData.push_back(p);
                 contactLinesData.push_back(n);
-                if(contact.body1)
+                if(auto& body1 = contact.body1)
                 {
-                    contact.body1->addContact(contact);
+                    body1->addContact(contact);
                 }
-                else if(contact.body2)
+                else if(auto& body2 = contact.body2)
                 {
-                    contact.body2->addContact(contact);
+                    body2->addContact(contact);
                 }
             }
             contactLinesDataMutex.unlock();
@@ -1281,7 +1283,7 @@ namespace mars
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
                 const auto& it = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target);
-                const auto object = it->getData().dynamicObject;
+                const auto& object = it->getData().dynamicObject;
 
                 // TODO: check if targetFrame is dynamic?
                 base::TransformWithCovariance absolutTransform;
@@ -1351,7 +1353,7 @@ namespace mars
                 // CAUTION: we assume that there is only one DynamicObjectItem in the frame
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
-                auto object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target)->getData().dynamicObject;
+                auto& object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(target)->getData().dynamicObject;
                 object->setPosition(globalTransform.transform.translation);
                 object->setRotation(globalTransform.transform.orientation);
             }
