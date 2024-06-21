@@ -406,6 +406,7 @@ namespace mars
 
         private:
             void resetPoses();
+            void reloadObjects();
         };
     } // end of namespace core
 } // end of namespace mars

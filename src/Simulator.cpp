@@ -51,6 +51,13 @@
 
 #include <envire_core/graph/GraphDrawing.hpp>
 #include <envire_types/joints/Revolute.hpp>
+#include <envire_types/Link.hpp>
+#include <envire_types/geometry/Box.hpp>
+#include <envire_types/geometry/Capsule.hpp>
+#include <envire_types/geometry/Cylinder.hpp>
+#include <envire_types/geometry/Mesh.hpp>
+#include <envire_types/geometry/Plane.hpp>
+#include <envire_types/geometry/Sphere.hpp>
 
 // TODO: should be replace by MotorInterface later
 #include "SimMotor.hpp"
@@ -1142,16 +1149,25 @@ namespace mars
                 }
                 else
                 {
+                    realStartTime = utils::getTime();
+                    dbSimTimePackage[0].set(0.);
+
                     // @clear_all: true would also clear envire-items, but these will be used for the later reload.
                     constexpr bool clear_all = false;
                     interfaces::ControlCenter::joints->clearAllJoints(clear_all);
                     interfaces::ControlCenter::motors->clearAllMotors(clear_all);
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
 
-                    collisionManager->reset();
+                    collisionManager->clear();
                     resetPoses();
-                    collisionManager->updateTransforms();
+                    for(auto &it: subWorlds)
+                    {
+                        it.second->control->physics->freeTheWorld();
+                        it.second->control->physics->initTheWorld();
+                    }
+                    collisionManager->reset();
 
+                    reloadObjects();
                     interfaces::ControlCenter::joints->reloadJoints();
                     interfaces::ControlCenter::motors->reloadMotors();
                     interfaces::ControlCenter::sensors->reloadSensors();
@@ -2429,19 +2445,14 @@ namespace mars
                     // Adapt the transformation from parent to node to reflect the reset pose of node.
                     c->envireGraph_->setEdgeProperty(parent, node, transformation * transformationChange);
 
-                    // Also set the position of a potential dynamicobject for node.
+                    // Also remove potential dynamicobject from node.
                     using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
-                    if (c->envireGraph_->containsItems<DynamicObjectEnvireItem>(node))
-                    {
-                        auto dynamicObject = c->envireGraph_->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
-                        constexpr bool reset_velocities = true;
-                        dynamicObject->setPose(currentAbsolutePose.getPosition(), currentAbsolutePose.getRotation(), reset_velocities);
-                    }
+                    itemRemover<interfaces::DynamicObjectItem>(c->envireGraph_.get(), node);
                 }
             };
-            const auto& rootVertex = c->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
 
             physicsThreadLock();
+            const auto& rootVertex = c->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             c->graphTreeView_->visitDfs(rootVertex, resetPoseFunctor);
             physicsThreadUnlock();
 
@@ -2486,6 +2497,26 @@ namespace mars
             };
             c->graphTreeView_->visitDfs(rootVertex, absolutePoseCheckFunctor);
 #endif
+        }
+
+        void Simulator::reloadObjects()
+        {
+            auto controlPtr = control.get();
+            auto linkReadder = [controlPtr](VertexDesc node, VertexDesc parent)
+            {
+                itemReadder<envire::types::Link>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Box>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Capsule>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Cylinder>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Mesh>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Plane>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Sphere>(controlPtr->envireGraph_.get(), node);
+            };
+
+            physicsThreadLock();
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitDfs(rootVertex, linkReadder);
+            physicsThreadUnlock();
         }
 
         interfaces::sReal Simulator::getStepSizeS() const

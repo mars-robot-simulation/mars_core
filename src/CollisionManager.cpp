@@ -61,18 +61,35 @@ namespace mars
         }
 
 
-        void CollisionManager::reset()
+        void CollisionManager::clear()
         {
+            using VertexDesc = envire::core::GraphTraits::vertex_descriptor;
+            auto collisionObjectRemover = [this](VertexDesc node, VertexDesc parent)
+            {
+                itemRemover<std::shared_ptr<mars::ode_collision::Object>>(this->controlCenter_->envireGraph_.get(), node);
+            };
+            const auto& rootVertex = controlCenter_->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            controlCenter_->graphTreeView_->visitDfs(rootVertex, collisionObjectRemover);
+
             for (auto& contactPlugin : contactPlugins)
             {
                 contactPlugin->reset();
             }
-            for (auto& collisionSpace : collisionItems)
+            for (auto& collisionItem : collisionItems)
             {
-                collisionSpace.collisionInterface->reset();
+                collisionItem.collisionInterface->freeSpace();
             }
 
             contactVector.clear();
+        }
+
+        void CollisionManager::reset()
+        {
+            updateTransforms();
+            for (auto& collisionItem : collisionItems)
+            {
+                collisionItem.collisionInterface->initSpace();
+            }
         }
 
         void CollisionManager::clearPlugins()
