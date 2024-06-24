@@ -35,7 +35,9 @@ namespace mars
          *
          * \param c The pointer to the ControlCenter of the simulation.
          */
-        MotorManager::MotorManager(ControlCenter *c) : control{c}
+        MotorManager::MotorManager(ControlCenter *c)
+        : control{c},
+        idManager_{new interfaces::IDManager{}}
         {}
 
         /**
@@ -51,7 +53,7 @@ namespace mars
          */
         unsigned long MotorManager::addMotor(MotorData *motorS, bool reload)
         {
-            motorS->index = control->motorIDManager->addIfUnknown(motorS->name);
+            motorS->index = idManager_->addIfUnknown(motorS->name);
 
             // TODO: Create envire motor from MotorData
             //  - SimMotor will be added from envire_mars_motors
@@ -152,9 +154,9 @@ namespace mars
             }
             simMotorsMutex.unlock();
 
-            if (control->motorIDManager->isKnown(index))
+            if (idManager_->isKnown(index))
             {
-                control->motorIDManager->removeEntry(index);
+                idManager_->removeEntry(index);
             }
 
             if(control)
@@ -324,7 +326,6 @@ namespace mars
                 iter->second->deactivate();
         }
 
-
         /**
          * \brief Retrieves the id of a motor by name
          *
@@ -334,7 +335,7 @@ namespace mars
          */
         unsigned long MotorManager::getID(const std::string& name) const
         {
-            const auto& id = control->motorIDManager->getID(name);
+            const auto& id = idManager_->getID(name);
             if (id == INVALID_ID)
             {
                 const auto msg = std::string{"MotorManager::getID: Can't find motor with the name \""} + name + "\".";
@@ -343,6 +344,10 @@ namespace mars
             return id;
         }
 
+        unsigned long MotorManager::registerMotorID(const std::string& motor_name) const
+        {
+            return idManager_->addIfUnknown(motor_name);
+        }
 
         /**
          * \brief Sets the value of the motor with the given id to the given value.
@@ -396,7 +401,7 @@ namespace mars
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             control->graphTreeView_->visitBfs(rootVertex, removeFunctor);
 
-            control->motorIDManager->clear();
+            idManager_->clear();
         }
 
 
@@ -554,7 +559,7 @@ namespace mars
 
         void MotorManager::addSimMotor(std::shared_ptr<SimMotor> newMotor)
         {
-            const auto& motorID = control->motorIDManager->getID(newMotor->getName());
+            const auto& motorID = idManager_->getID(newMotor->getName());
             if (motorID == INVALID_ID)
             {
                 throw std::runtime_error{(std::string{"Tried adding unknown motor \""} + newMotor->getName() + "\".").c_str()};

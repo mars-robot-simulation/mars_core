@@ -12,12 +12,12 @@
 
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/MotorManagerInterface.h>
+#include <mars_interfaces/sim/IDManager.hpp>
 #include <mars_utils/Mutex.h>
 namespace mars
 {
     namespace core
     {
-
         class SimMotor;
 
         /**
@@ -287,6 +287,7 @@ namespace mars
              * \return Id of the motor if it exists, otherwise 0
              */
             virtual unsigned long getID(const std::string& motor_name) const override;
+            unsigned long registerMotorID(const std::string& motor_name) const;
 
             virtual void getDataBrokerNames(unsigned long jointId,
                                             std::string *groupName,
@@ -304,6 +305,7 @@ namespace mars
             std::map<unsigned long, SimMotor*> simMotors;
             //! a mutex for the motor containter
             mutable utils::Mutex simMotorsMutex;
+            std::unique_ptr<interfaces::IDManager> idManager_;
 
             //! a pointer to the control center
             interfaces::ControlCenter *control;
