@@ -29,7 +29,7 @@
 // #include "NodeAngularVelocitySensor.h"
 // #include "MotorCurrentSensor.h"
 // #include "HapticFieldSensor.h"
-// #include "Joint6DOFSensor.h"
+#include "sensors/Joint6DOFSensor.hpp"
 // #include "JointTorqueSensor.h"
 // #include "ScanningSonar.h"
 
@@ -79,7 +79,7 @@ namespace mars
             // addSensorType("JointLoad",&JointLoadSensor::instanciate);
             // addSensorType("JointTorque",&JointTorqueSensor::instanciate);
             // addSensorType("JointAVGTorque",&JointAVGTorqueSensor::instanciate);
-            // addSensorType("Joint6DOF",&Joint6DOFSensor::instanciate);
+            addSensorType("Joint6DOF",&Joint6DOFSensor::instanciate);
             // addSensorType("NodeContact",&NodeContactSensor::instanciate);
             // addSensorType("NodeIMU", &NodeIMUSensor::instanciate);
             // addSensorType("NodePosition",&NodePositionSensor::instanciate);
@@ -107,7 +107,7 @@ namespace mars
             // addMarsParser("JointLoad",&JointArraySensor::parseConfig);
             // addMarsParser("JointTorque",&JointArraySensor::parseConfig);
             // addMarsParser("JointAVGTorque",&JointArraySensor::parseConfig);
-            // addMarsParser("Joint6DOF",&Joint6DOFSensor::parseConfig);
+            addMarsParser("Joint6DOF",&Joint6DOFSensor::parseConfig);
             // addMarsParser("NodeContact",&NodeContactSensor::parseConfig);
             // addMarsParser("NodeIMU", &NodeIMUSensor::parseConfig);
             // addMarsParser("NodePosition",&NodeArraySensor::parseConfig);

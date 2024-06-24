@@ -73,6 +73,7 @@ set(SOURCES_H
 set(SOURCES_SENSORS_H
     src/sensors/CameraSensor.hpp
     src/sensors/RaySensor.hpp
+    src/sensors/Joint6DOFSensor.hpp
 )
 
 set(TARGET_SRC
@@ -87,6 +88,7 @@ set(TARGET_SRC
        src/JointManager.cpp
        src/sensors/CameraSensor.cpp
        src/sensors/RaySensor.cpp
+       src/sensors/Joint6DOFSensor.cpp
        src/CollisionManager.cpp
        src/registration/PhysicsInterfaceItemRegister.cpp
        src/registration/CollisionInterfaceItemRegister.cpp
