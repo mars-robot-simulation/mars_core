@@ -9,6 +9,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include "JointManager.hpp"
+
 namespace mars
 {
     namespace core
@@ -1065,7 +1067,7 @@ namespace mars
             {
                 std::string jointName;
                 validJoint->getName(&jointName);
-                return control->jointIDManager->getID(jointName);
+                return control->joints->getID(jointName);
             }
             return 0;
         }
