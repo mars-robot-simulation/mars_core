@@ -17,6 +17,10 @@
 
 #include <boost/optional.hpp>
 
+#include <memory>
+
+#include "FrameIDManager.hpp"
+
 namespace mars
 {
     namespace interfaces
@@ -132,6 +136,7 @@ namespace mars
              * \return Id of the node if it exists, otherwise 0
              */
             virtual interfaces::NodeId getID(const std::string& node_name) const;
+            const std::string& getLinkName(const unsigned int linkID) const;
             virtual std::vector<interfaces::NodeId> getNodeIDs(const std::string& str_in_name) const;
             virtual double getCollisionDepth(interfaces::NodeId id) const;
             virtual bool getDataBrokerNames(interfaces::NodeId id, std::string *groupName,
@@ -173,6 +178,7 @@ namespace mars
             unsigned long maxGroupID;
             lib_manager::LibManager *libManager;
             interfaces::ControlCenter *control;
+            std::unique_ptr<FrameIDManager> idManager_;
 
             void removeNode(interfaces::NodeId id, bool lock,
                             bool clearGraphics=true);

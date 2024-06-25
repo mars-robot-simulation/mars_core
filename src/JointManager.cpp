@@ -10,6 +10,7 @@
 #include "JointManager.hpp"
 #include "SimJoint.hpp"
 #include "Simulator.hpp"
+#include "NodeManager.hpp"
 
 #ifndef JOINT_NAMESPACE
 // TODO: This should be done differently!
@@ -72,8 +73,8 @@ namespace mars
             const auto className = std::string{JOINT_NAMESPACE} + jointMap["type"].toString();
             envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, jointMap);
 
-            const envire::core::FrameId parentFrame = control->linkIDManager->getName(jointS->nodeIndex1);
-            const envire::core::FrameId childFrame = control->linkIDManager->getName(jointS->nodeIndex2);
+            const envire::core::FrameId parentFrame = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(jointS->nodeIndex1);
+            const envire::core::FrameId childFrame = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(jointS->nodeIndex2);
 
             if(!control->envireGraph_->containsFrame(parentFrame))
             {
@@ -249,7 +250,7 @@ namespace mars
 
         void JointManager::reattacheJoints(unsigned long node_id)
         {
-            const auto& nodeName = control->linkIDManager->getName(node_id);
+            const auto& nodeName = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(node_id);
             if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"JointManager::reattacheJoints: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
@@ -440,7 +441,7 @@ namespace mars
         {
             const auto& num_joints = idManager_->size();
             auto jointIds = std::vector<unsigned long>(num_joints);
-            const auto& frameId = control->linkIDManager->getName(node_id);
+            const auto& frameId = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(node_id);
             interfaces::ControlCenter *c = control;
             std::shared_ptr<envire::core::EnvireGraph> graph = control->envireGraph_;
             auto jointIdCollector = [&jointIds, frameId, c] (envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
@@ -476,8 +477,8 @@ namespace mars
 
         unsigned long JointManager::getIDByNodeIDs(unsigned long id1, unsigned long id2)
         {
-            const auto& frameId1 = control->linkIDManager->getName(id1);
-            const auto& frameId2 = control->linkIDManager->getName(id2);
+            const auto& frameId1 = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(id1);
+            const auto& frameId2 = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(id2);
       
             if(const auto joint = getJointInterface(frameId1, frameId2).lock())
             {
@@ -638,8 +639,8 @@ namespace mars
             auto configMap = joint->getConfigMap();
             const auto parentNodeName = configMap["parent_link_name"].toString();
             const auto childNodeName = configMap["child_link_name"].toString();
-            const auto& parentNodeId = control->linkIDManager->getID(parentNodeName);
-            const auto& childNodeId = control->linkIDManager->getID(childNodeName);
+            const auto& parentNodeId = control->nodes->getID(parentNodeName);
+            const auto& childNodeId = control->nodes->getID(childNodeName);
 
             return JointData::fromJointInterface(joint, jointId, parentNodeId, childNodeId);
         }

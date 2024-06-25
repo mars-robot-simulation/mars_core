@@ -23,6 +23,7 @@
 
 #include <lib_manager/LibManager.hpp>
 
+#include <mars_interfaces/MARSDefs.h>
 #include <mars_interfaces/utils.h>
 #include <mars_utils/mathUtils.h>
 #include <mars_utils/misc.h>
@@ -52,8 +53,11 @@ namespace mars
             visual_rep{1},
             maxGroupID{0},
             control{c},
+            idManager_{new FrameIDManager{}},
             libManager{theManager}
         {
+            idManager_->add(SIM_CENTER_FRAME_NAME);
+
             if(control->graphics)
             {
                 GraphicsUpdateInterface *gui = static_cast<GraphicsUpdateInterface*>(this);
@@ -181,7 +185,7 @@ namespace mars
           */
         bool NodeManager::exists(NodeId id) const
         {
-            return control->linkIDManager->isKnown(id);
+            return idManager_->isKnown(id);
         }
 
         /**
@@ -190,7 +194,7 @@ namespace mars
           */
         int NodeManager::getNodeCount() const
         {
-            return static_cast<int>(control->linkIDManager->size());
+            return static_cast<int>(idManager_->size());
         }
 
         NodeId NodeManager::getNextNodeID() const
@@ -298,9 +302,9 @@ namespace mars
         void NodeManager::getListNodes(vector<core_objects_exchange>* nodeList) const
         {
             nodeList->clear();
-            for(const auto id : control->linkIDManager->getAllIDs())
+            for(const auto id : idManager_->getAllIDs())
             {
-                const auto& linkName = control->linkIDManager->getName(id);
+                const auto& linkName = idManager_->getName(id);
                 core_objects_exchange obj;
 
                 obj.index = id;
@@ -872,7 +876,7 @@ namespace mars
 
         interfaces::DynamicObject* NodeManager::getDynamicObject(const NodeId& node_id) const
         {
-            const auto& nodeName = control->linkIDManager->getName(node_id);
+            const auto& nodeName = idManager_->getName(node_id);
             if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"NodeManager::getDynamicObject: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
@@ -894,7 +898,7 @@ namespace mars
         interfaces::AbsolutePose& NodeManager::getAbsolutePose(const interfaces::NodeId& node_id) const
         {
             // Method shall only be called for nodes representing frames
-            const auto& nodeName = control->linkIDManager->getName(node_id);
+            const auto& nodeName = idManager_->getName(node_id);
             assert(control->envireGraph_->containsFrame(nodeName));
 
             // Method shall only be called for nodes containing AbsolutePose instances.
@@ -1020,7 +1024,7 @@ namespace mars
 
         void NodeManager::updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation)
         {
-            const auto& nodeName = control->linkIDManager->getName(node_id);
+            const auto& nodeName = idManager_->getName(node_id);
             if (!control->envireGraph_->containsFrame(nodeName))
             {
                 LOG_WARN(std::string{"NodeManager::updateTransformation: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
@@ -1494,7 +1498,7 @@ namespace mars
 
         NodeId NodeManager::getID(const std::string& node_name) const
         {
-            const auto& node_id = control->linkIDManager->getID(node_name);
+            const auto& node_id = idManager_->getID(node_name);
             if (node_id == INVALID_ID)
             {
                 const auto msg = std::string{"NodeManager::getID: Can't find node with the name \""} + node_name + "\".";
@@ -1503,11 +1507,17 @@ namespace mars
             return node_id;
         }
 
+
+        const std::string& NodeManager::getLinkName(const unsigned int linkID) const
+        {
+            return idManager_->getName(linkID);
+        }
+
         std::vector<interfaces::NodeId> NodeManager::getNodeIDs(const std::string& str_in_name) const
         {
             throw std::logic_error("NodeManager::getNodeIDs not implemented yet");
             // TODO: Enable IDManager to find all entries which contain str_in_name in their name.
-            // control->linkIDManager->getIDsContaining(str_in_name);
+            // idManager_->getIDsContaining(str_in_name);
             //
             // iMutex.lock();
             // NodeMap::const_iterator iter;
@@ -1592,13 +1602,13 @@ namespace mars
         bool NodeManager::getDataBrokerNames(NodeId id, std::string *groupName,
                                               std::string *dataName) const
         {
-            if (!control->linkIDManager->isKnown(id))
+            if (!idManager_->isKnown(id))
             {
                 return false;
             }
 
             *groupName = "mars_sim";
-            *dataName = std::string{"Nodes/"} + control->linkIDManager->getName(id);
+            *dataName = std::string{"Nodes/"} + idManager_->getName(id);
 
             return true;
         }
@@ -2016,12 +2026,12 @@ namespace mars
 
         bool NodeManager::isRootFrame(const interfaces::NodeId& node_id) const
         {
-            if (!control->linkIDManager->isKnown(node_id))
+            if (!idManager_->isKnown(node_id))
             {
                 return false;
             }
 
-            const auto& nodeName = control->linkIDManager->getName(node_id);
+            const auto& nodeName = idManager_->getName(node_id);
             return nodeName == SIM_CENTER_FRAME_NAME;
         }
     } // end of namespace core

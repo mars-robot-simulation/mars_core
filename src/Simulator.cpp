@@ -353,11 +353,6 @@ namespace mars
             ControlCenter::joints = std::make_shared<JointManager>(control.get());
             ControlCenter::sensors = std::make_shared<SensorManager>(control.get());
             ControlCenter::nodes = new NodeManager{control.get(), libManager};
-
-            control->linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
-            control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
-
-            ControlCenter::linkIDManager_ = control->linkIDManager;
         }
 
         void Simulator::setupPhysics()
