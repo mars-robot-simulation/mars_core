@@ -35,6 +35,7 @@
 
 #include <mars_interfaces/Logging.hpp>
 #include <mars_interfaces/sim/SimulatorInterface.h>
+#include <mars_interfaces/sim/IDManager.hpp>
 #include <mars_utils/MutexLocker.h>
 
 #include <envire_types/sensors/CameraSensor.hpp>
@@ -62,7 +63,8 @@ namespace mars
          *
          * \param c The pointer to the ControlCenter of the simulation.
          */
-        SensorManager::SensorManager(ControlCenter *c) : control{c}
+        SensorManager::SensorManager(ControlCenter *c)
+            : control{c}, idManager_{new interfaces::IDManager{}}
         {
             addSensorTypes();
             addMarsParsers();
@@ -132,7 +134,7 @@ namespace mars
          */
         bool SensorManager::exists(unsigned long index) const
         {
-            return control->sensorIDManager->isKnown(index);
+            return idManager_->isKnown(index);
         }
 
         /**
@@ -180,7 +182,7 @@ namespace mars
 
         unsigned long SensorManager::getSensorID(std::string name) const
         {
-            const auto& id = control->sensorIDManager->getID(name);
+            const auto& id = idManager_->getID(name);
             if (id == INVALID_ID)
             {
                 const auto msg = std::string{"SensorManager::getSensorID: Can't find sensor with the name \""} + name + "\".";
@@ -212,7 +214,7 @@ namespace mars
             }
             simSensorsMutex.unlock();
 
-            control->sensorIDManager->removeEntry(index);
+            idManager_->removeEntry(index);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -270,7 +272,7 @@ namespace mars
          */
         int SensorManager::getSensorCount() const
         {
-            return control->sensorIDManager->size();
+            return idManager_->size();
         }
 
 
@@ -306,7 +308,7 @@ namespace mars
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             control->graphTreeView_->visitBfs(rootVertex, removeFunctor);
 
-            control->sensorIDManager->clear();
+            idManager_->clear();
         }
 
         /**
@@ -357,7 +359,7 @@ namespace mars
                 // str << "SENSOR-" << id;
                 // config->name = str.str();
             }
-            config->id = control->sensorIDManager->addIfUnknown(config->name);
+            config->id = idManager_->addIfUnknown(config->name);
 
             BaseSensor *sensor = ((*it).second)(this->control,config);
             simSensorsMutex.lock();

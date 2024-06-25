@@ -199,6 +199,7 @@ namespace mars
 
             //! a containter for all sensors currently present in the simulation
             std::map<unsigned long, interfaces::BaseSensor*> simSensors;
+            std::unique_ptr<interfaces::IDManager> idManager_;
 
             //! a mutex fot the sensor containter
             mutable utils::Mutex simSensorsMutex;

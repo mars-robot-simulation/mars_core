@@ -357,11 +357,9 @@ namespace mars
             control->jointIDManager = std::unique_ptr<JointIDManager>{new JointIDManager{control->envireGraph_}};
             control->linkIDManager = std::unique_ptr<FrameIDManager>{new FrameIDManager{}};
             control->linkIDManager->add(SIM_CENTER_FRAME_NAME); // root frame was already added to graph and does not have an ID yet.
-            control->sensorIDManager = std::unique_ptr<IDManager>{new IDManager{}};
 
             ControlCenter::jointIDManager_ = control->jointIDManager;
             ControlCenter::linkIDManager_ = control->linkIDManager;
-            ControlCenter::sensorIDManager_ = control->sensorIDManager;
         }
 
         void Simulator::setupPhysics()
