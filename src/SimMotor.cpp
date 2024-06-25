@@ -64,7 +64,7 @@ namespace mars
             maxspeed_x = &sMotor.maxSpeed;
             maxeffort_x = &sMotor.maxEffort;
             effortMotor = 0;
-            feedForwardEffort = 0;
+            feedForwardEffort = feedForwardEffortIntern = 0;
             initPIDs();
 
             //myPlayJoint = 0;
@@ -375,7 +375,8 @@ namespace mars
         void SimMotor::runEffortPipe(sReal time)
         {
             // limit to range of motion
-            controlValue += feedForwardEffort;
+            feedForwardEffortIntern = feedForwardEffortIntern*0.8 + feedForwardEffort*0.2;
+            controlValue += 0.0*feedForwardEffort;
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
@@ -410,6 +411,7 @@ namespace mars
             controlValue = mimic_multiplier * controlValue + mimic_offset;
             sReal origControlValue = controlValue;
             sReal effort = 0;
+            //controlValue = fmod(controlValue, 3.14);
             controlValue = std::max(sMotor.minValue,
                                     std::min(controlValue, sMotor.maxValue));
             // set current state
@@ -422,7 +424,7 @@ namespace mars
             posPID.step();
             velPID.target_value = posPID.output_value;
             velPID.step();
-            //fprintf(stderr, "%lu %g %g\n", sMotor.index, posPID.output_value, velPID.output_value);
+            //fprintf(stderr, "%lu %g %g %g %g %g\n", sMotor.index, *position, controlValue, posPID.current_value, posPID.output_value, velPID.last_error);
             controlValue = velPID.output_value;
             runEffortPipe(time);
             controlValue = origControlValue;

@@ -240,6 +240,15 @@ namespace mars
             }
         }
 
+        void MotorManager::setMotorFFTorque(unsigned long id, interfaces::sReal value)
+        {
+            const MutexLocker locker{&simMotorsMutex};
+            const auto& iter = simMotors.find(id);
+            if(iter != simMotors.end())
+            {
+                iter->second->setFeedForwardTorque(value);
+            }
+        }
 
         void MotorManager::setMotorValueDesiredVelocity(unsigned long id, sReal velocity)
         {

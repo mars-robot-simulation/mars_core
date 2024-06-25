@@ -178,7 +178,7 @@ namespace mars
             interfaces::sReal tmpmaxeffort, tmpmaxspeed;
             interfaces::sReal current, temperature, filterValue;
             interfaces::sReal *position; // we use this pointer to access whatever axis-position is used
-            interfaces::sReal feedForwardEffort;
+            interfaces::sReal feedForwardEffort, feedForwardEffortIntern;
             bool active;
             std::map<std::string, SimMotor*> mimics;
             bool mimic;
