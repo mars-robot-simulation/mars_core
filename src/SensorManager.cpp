@@ -39,6 +39,7 @@
 
 #include <envire_types/sensors/CameraSensor.hpp>
 #include <envire_types/sensors/RaySensor.hpp>
+#include <envire_types/sensors/Joint6DOFSensor.hpp>
 
 // TODO: itemRemover from JointManager.hpp needed. Remove include as soon as the function is moved to a central location.
 #include "JointManager.hpp"
@@ -298,6 +299,7 @@ namespace mars
                 {
                     itemRemover<envire::types::sensors::CameraSensor>(graph, node);
                     itemRemover<envire::types::sensors::RaySensor>(graph, node);
+                    itemRemover<envire::types::sensors::Joint6DOFSensor>(graph, node);
                 }
             };
 
@@ -320,6 +322,7 @@ namespace mars
             {
                 itemReadder<envire::types::sensors::CameraSensor>(graph, node);
                 itemReadder<envire::types::sensors::RaySensor>(graph, node);
+                itemReadder<envire::types::sensors::Joint6DOFSensor>(graph, node);
             };
 
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
