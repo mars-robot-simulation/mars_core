@@ -64,7 +64,7 @@ namespace mars
                 dbPackage.add("tz", 0.0);
 
                 char text[55];
-                sprintf(text, "Sensors/FT_%05lu", config.id);
+                sprintf(text, "Sensors/%s", config.name.c_str());
                 dbPushId = control->dataBroker->pushData("mars_sim", text,
                                                          dbPackage, NULL,
                                                          data_broker::DATA_PACKAGE_READ_FLAG);
