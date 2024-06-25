@@ -20,6 +20,8 @@
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/GraphTypes.hpp>
 
+#include "JointIDManager.hpp"
+
 namespace mars
 {
     namespace core 
@@ -94,6 +96,7 @@ namespace mars
             std::list<std::weak_ptr<interfaces::JointInterface>> getJoints();
 
             interfaces::ControlCenter *control;
+            std::unique_ptr<JointIDManager> idManager_;
 
             std::list<interfaces::JointData>::iterator getReloadJoint(unsigned long id);
         };

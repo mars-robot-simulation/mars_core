@@ -59,7 +59,10 @@ namespace mars
          * post:
          *     - next_node_id should be initialized to one
          */
-        JointManager::JointManager(ControlCenter *c) : control(c) {}
+        JointManager::JointManager(ControlCenter *c)
+            : control(c),
+            idManager_{new JointIDManager{c->envireGraph_}}
+        {}
 
         unsigned long JointManager::addJoint(JointData *jointS, bool reload)
         {
@@ -111,7 +114,7 @@ namespace mars
 
         int JointManager::getJointCount()
         {
-            return control->jointIDManager->size();
+            return idManager_->size();
         }
 
         void JointManager::editJoint(JointData *jointS)
@@ -197,7 +200,7 @@ namespace mars
             {
                 throw std::logic_error((std::string{"JointManager::removeJoint: Could not remove joint with index "} + std::to_string(index)).c_str());
             }
-            control->jointIDManager->removeEntry(index);
+            idManager_->removeEntry(index);
 
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
@@ -229,7 +232,7 @@ namespace mars
         std::vector<std::shared_ptr<mars::core::SimJoint>> JointManager::getSimJoints(void)
         {
             vector<std::shared_ptr<mars::core::SimJoint>> simJoints;
-            simJoints.reserve(control->jointIDManager->size());
+            simJoints.reserve(idManager_->size());
             for(const auto potentialJoint : getJoints())
             {
                 if(const auto& joint = potentialJoint.lock())
@@ -325,7 +328,7 @@ namespace mars
             constexpr bool sceneWasReseted = false;
             control->sim->sceneHasChanged(sceneWasReseted);
 
-            control->jointIDManager->clear();
+            idManager_->clear();
         }
 
         std::list<JointData>::iterator JointManager::getReloadJoint(unsigned long id)
@@ -424,7 +427,7 @@ namespace mars
 
         unsigned long JointManager::getID(const std::string& joint_name) const
         {
-            const auto& jointID = control->jointIDManager->getID(joint_name);
+            const auto& jointID = idManager_->getID(joint_name);
             if (jointID == INVALID_ID)
             {
                 const auto msg = std::string{"JointManager::getID: Can't find joint with the name \""} + joint_name + "\".";
@@ -435,7 +438,7 @@ namespace mars
 
         std::vector<unsigned long> JointManager::getIDsByNodeID(unsigned long node_id)
         {
-            const auto& num_joints = control->jointIDManager->size();
+            const auto& num_joints = idManager_->size();
             auto jointIds = std::vector<unsigned long>(num_joints);
             const auto& frameId = control->linkIDManager->getName(node_id);
             interfaces::ControlCenter *c = control;
@@ -460,7 +463,7 @@ namespace mars
                     {
                         std::string jointName;
                         jointItemPtr->getData().jointInterface->getName(&jointName);
-                        jointIds.push_back(c->jointIDManager->getID(jointName));
+                        jointIds.push_back(c->joints->getID(jointName));
                     }
                 }
             };
@@ -480,7 +483,7 @@ namespace mars
             {
                 std::string jointName;
                 joint->getName(&jointName);
-                return control->jointIDManager->getID(jointName);
+                return idManager_->getID(jointName);
             }
             return 0;
         }
@@ -630,7 +633,7 @@ namespace mars
         {
             std::string jointName;
             joint->getName(&jointName);
-            const auto& jointId = control->jointIDManager->getID(jointName);
+            const auto& jointId = idManager_->getID(jointName);
 
             auto configMap = joint->getConfigMap();
             const auto parentNodeName = configMap["parent_link_name"].toString();
@@ -670,7 +673,7 @@ namespace mars
 
         envire::core::ItemBase::Ptr JointManager::getItemBasePtr(unsigned long jointId)
         {
-            const auto jointName = std::string{control->jointIDManager->getName(jointId)};
+            const auto jointName = std::string{idManager_->getName(jointId)};
             return getItemBasePtr(jointName);
         }
 
@@ -715,13 +718,13 @@ namespace mars
 
         std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId)
         {
-            const auto jointName = control->jointIDManager->getName(jointId);
+            const auto jointName = idManager_->getName(jointId);
             return getJointInterface(jointName);
         }
 
         const std::weak_ptr<interfaces::JointInterface> JointManager::getJointInterface(unsigned long jointId) const
         {
-            const auto jointName = control->jointIDManager->getName(jointId);
+            const auto jointName = idManager_->getName(jointId);
             return getJointInterface(jointName);
         }
 
