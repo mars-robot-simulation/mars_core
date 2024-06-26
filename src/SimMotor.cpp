@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include "JointManager.hpp"
-
+using namespace configmaps;
 namespace mars
 {
     namespace core

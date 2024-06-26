@@ -16,8 +16,7 @@
 #include <stdint.h>
 #include <cstring>
 #include <cstdlib>
-
-
+using namespace configmaps;
 namespace mars
 {
     namespace core
