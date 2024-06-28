@@ -1608,7 +1608,7 @@ namespace mars
             }
 
             *groupName = "mars_sim";
-            *dataName = std::string{"Nodes/"} + idManager_->getName(id);
+            *dataName = std::string{"Frames/"} + idManager_->getName(id);
 
             return true;
         }
