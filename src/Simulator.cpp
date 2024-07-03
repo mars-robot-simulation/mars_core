@@ -1148,6 +1148,7 @@ namespace mars
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
 
                     collisionManager->clear();
+                    control->graphics->reset();
                     resetPoses();
                     for(auto &it: subWorlds)
                     {
