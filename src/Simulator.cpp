@@ -324,7 +324,7 @@ namespace mars
             if(control->graphics)
             {
                 LOG_INFO("loaded mars_graphics");
-		ControlCenter::loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
+                ControlCenter::loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
                 ControlCenter::loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
             }
             control->graphics->initializeOSG(nullptr);
@@ -2510,10 +2510,13 @@ namespace mars
 
         interfaces::sReal Simulator::getStepSizeS() const
         {
-            using ms_dur = std::chrono::duration<double, std::milli>;
-            using s_dur = std::chrono::duration<double>;
-            const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
-            static auto calc_s = static_cast<sReal>(calc_s_dur.count());
+            static auto calc_s = [this]()
+            {
+                using ms_dur = std::chrono::duration<double, std::milli>;
+                using s_dur = std::chrono::duration<double>;
+                const auto calc_s_dur = std::chrono::duration_cast<s_dur>(ms_dur{calc_ms});
+                return static_cast<sReal>(calc_s_dur.count());
+            }();
             return calc_s;
         }
 

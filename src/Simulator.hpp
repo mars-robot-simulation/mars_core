@@ -348,6 +348,8 @@ namespace mars
             // physics
             std::shared_ptr<interfaces::CollisionInterface> collisionSpace;
 
+            // @calc_ms: step size of the simulation.
+            // Is assumed to not change as ode advises against changeing the step size of the simulation (https://ode.org/wiki/index.php/Manual#Variable_Step_Size:_Don.27t.21)
             double calc_ms;
             int load_option;
             int std_port; ///< Controller port (default value: 1600)
