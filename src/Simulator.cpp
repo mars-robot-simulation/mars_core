@@ -259,7 +259,7 @@ namespace mars
             {
                 setupCFGManager();
             }
-            else if(libName == "mars_graphics" and !control->graphics)
+            else if(libName == "mars_graphics" && !control->graphics)
             {
                 setupMarsGraphics();
             }
@@ -320,14 +320,14 @@ namespace mars
 
         void Simulator::setupMarsGraphics()
         {
-            control->graphics = libManager->getLibraryAs<interfaces::GraphicsManagerInterface>("mars_graphics", true);
+            control->graphics = libManager->getLibraryAs<interfaces::GraphicsManagerInterface>("mars_graphics");
             if(control->graphics)
             {
                 LOG_INFO("loaded mars_graphics");
                 ControlCenter::loadCenter->loadMesh = control->graphics->getLoadMeshInterface();
                 ControlCenter::loadCenter->loadHeightmap = control->graphics->getLoadHeightmapInterface();
+                control->graphics->initializeOSG(nullptr);
             }
-            control->graphics->initializeOSG(nullptr);
         }
 
         void Simulator::setupLogConsole()
@@ -1148,7 +1148,10 @@ namespace mars
                     interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
 
                     collisionManager->clear();
-                    control->graphics->reset();
+                    if (control->graphics)
+                    {
+                        control->graphics->reset();
+                    }
                     resetPoses();
                     for(auto &it: subWorlds)
                     {
