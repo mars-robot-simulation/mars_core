@@ -58,6 +58,7 @@
 #include <envire_types/geometry/Mesh.hpp>
 #include <envire_types/geometry/Plane.hpp>
 #include <envire_types/geometry/Sphere.hpp>
+#include <envire_types/geometry/Heightfield.hpp>
 
 // TODO: should be replace by MotorInterface later
 #include "SimMotor.hpp"
@@ -2410,7 +2411,7 @@ namespace mars
 
         void Simulator::resetPoses()
         {
-            std::shared_ptr<interfaces::ControlCenter> c = control;
+            auto* const c = control.get();
             auto resetPoseFunctor = [c](VertexDesc node, VertexDesc parent)
             {
                 // TODO: This has implicit assumptions which are not enforced nor documented!
@@ -2439,7 +2440,6 @@ namespace mars
                     c->envireGraph_->setEdgeProperty(parent, node, transformation * transformationChange);
 
                     // Also remove potential dynamicobject from node.
-                    using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
                     itemRemover<interfaces::DynamicObjectItem>(c->envireGraph_.get(), node);
                 }
             };
@@ -2504,6 +2504,7 @@ namespace mars
                 itemReadder<envire::types::geometry::Mesh>(controlPtr->envireGraph_.get(), node);
                 itemReadder<envire::types::geometry::Plane>(controlPtr->envireGraph_.get(), node);
                 itemReadder<envire::types::geometry::Sphere>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::geometry::Heightfield>(controlPtr->envireGraph_.get(), node);
             };
 
             physicsThreadLock();
