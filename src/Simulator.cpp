@@ -160,8 +160,6 @@ namespace mars
 
             absolutePoseExtender = std::unique_ptr<AbsolutePoseExtender>{new AbsolutePoseExtender{control->envireGraph_}};
 
-
-
             // build the factories
             ControlCenter::loadCenter = new LoadCenter{};
             control->sim = static_cast<SimulatorInterface*>(this);
@@ -383,13 +381,6 @@ namespace mars
                 collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
                 collisionSpace->initSpace();
                 ControlCenter::collision = collisionSpace;
-
-                // add the space as main collision space to the root frame
-                CollisionInterfaceItem item;
-                item.collisionInterface = collisionSpace;
-                item.pluginName = "mars_ode_collision";
-                auto itemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{item}};
-                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, itemPtr);
 
                 if(control->graphics)
                 {
