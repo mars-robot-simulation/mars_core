@@ -99,21 +99,17 @@ namespace mars
         {
             if (!nodeS->noPhysical)
             {
-                const bool success = addGlobalCollisionObject(*nodeS);
-
-                const bool add_draw_object = control->graphics
-                    && loadGraphics
-                    && (!nodeS->map.hasKey("noVisual") || !static_cast<bool>(nodeS->map["noVisual"]));
-                if (add_draw_object)
-                {
-                    const auto& drawId = control->graphics->addDrawObject(*nodeS, visual_rep & 1);
-                    // TODO: Store draw ID somewhere?
-                }
+                // TODO:
+                //  * Add or find world frame with collision object
+                //  * Add suited child frames
+                //  * Create suited envire items
+                //  * Add envire items to child frames
             }
 
-            // TODO: Implement
-            //throw std::logic_error("NodeManager::addNode not implemented yet");
-            return nodeS->index;
+            // TODO: Implement handling of nodes
+            // return nodeS->index;
+
+            throw std::logic_error("NodeManager::addNode not implemented yet");
         }
 
         /**
@@ -1976,52 +1972,6 @@ namespace mars
             //     maxGroupID = nodeS->groupID;
             // }
             // nodesToUpdate[sNode.index] = editedNode;
-        }
-
-
-        interfaces::CollisionInterface* NodeManager::getGlobalCollisionInterface()
-        {
-            if (globalCollisionInterface_.expired())
-            {
-                globalCollisionInterface_.reset();
-                assert(control->envireGraph_->containsItems<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME));
-                globalCollisionInterface_ = control->envireGraph_->getItem<envire::core::Item<interfaces::CollisionInterfaceItem>>(SIM_CENTER_FRAME_NAME)->getData().collisionInterface;
-            }
-
-            if (auto collisionInterface = globalCollisionInterface_.lock())
-            {
-                return collisionInterface.get();
-            }
-
-            // TODO: Handle missing interface
-        }
-
-        bool NodeManager::addGlobalCollisionObject(interfaces::NodeData& nodeData)
-        {
-            auto* const globalCollisionInterface = getGlobalCollisionInterface();
-            assert(globalCollisionInterface);
-
-            configmaps::ConfigMap cfgMap;
-            nodeData.toConfigMap(&cfgMap);
-            cfgMap["type"] = cfgMap["physicmode"];
-
-            auto* const collisionObject = globalCollisionInterface->createObject(cfgMap);
-            if(!collisionObject)
-            {
-                LOG_ERROR("Error creating mars_yaml collision object!");
-                return false;
-            }
-            if(cfgMap["type"] == "plane")
-            {
-                fprintf(stderr, "set position of:\n %s\n", cfgMap.toYamlString().c_str());
-                collisionObject->setPosition(nodeData.pos);
-                collisionObject->setRotation(nodeData.rot);
-                // the position update is applied in updateTransform which is not
-                // called automatically for static objects
-                collisionObject->updateTransform();
-            }
-
-            return true;
         }
 
         bool NodeManager::isRootFrame(const interfaces::NodeId& node_id) const

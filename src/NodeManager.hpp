@@ -166,10 +166,6 @@ namespace mars
             void updateTransformations(const interfaces::NodeId& node_id, const utils::Vector& translation, const utils::Quaternion& rotation);
             bool isRootFrame(const interfaces::NodeId& node_id) const;
 
-            interfaces::CollisionInterface* getGlobalCollisionInterface();
-
-            bool addGlobalCollisionObject(interfaces::NodeData& nodeData);
-
             std::weak_ptr<interfaces::CollisionInterface> globalCollisionInterface_;
 
             bool update_all_nodes;
