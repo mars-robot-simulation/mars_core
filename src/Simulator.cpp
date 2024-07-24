@@ -1122,41 +1122,8 @@ namespace mars
                 reloadSim = false;
                 //control->controllers->setLoadingAllowed(false);
 
-                if(reloadGraphics)
-                {
-                    newWorld();
-                    // reload graph
-                    reloadWorld();
-                }
-                else
-                {
-                    realStartTime = utils::getTime();
-                    dbSimTimePackage[0].set(0.);
+                reloadWorld();
 
-                    // @clear_all: true would also clear envire-items, but these will be used for the later reload.
-                    constexpr bool clear_all = false;
-                    interfaces::ControlCenter::joints->clearAllJoints(clear_all);
-                    interfaces::ControlCenter::motors->clearAllMotors(clear_all);
-                    interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
-
-                    collisionManager->clear();
-                    if (control->graphics)
-                    {
-                        control->graphics->reset();
-                    }
-                    resetPoses();
-                    for(auto &it: subWorlds)
-                    {
-                        it.second->control->physics->freeTheWorld();
-                        it.second->control->physics->initTheWorld();
-                    }
-                    collisionManager->reset();
-
-                    reloadObjects();
-                    interfaces::ControlCenter::joints->reloadJoints();
-                    interfaces::ControlCenter::motors->reloadMotors();
-                    interfaces::ControlCenter::sensors->reloadSensors();
-                }
                 //control->controllers->resetControllerData();
                 //control->entities->resetPose();
                 for (size_t i = 0; i < allPlugins.size(); i++)
@@ -1514,10 +1481,36 @@ namespace mars
 
         void Simulator::reloadWorld(void)
         {
-            // control->nodes->reloadNodes(reloadGraphics);
-            control->joints->reloadJoints();
-            control->motors->reloadMotors();
-            control->sensors->reloadSensors();
+            realStartTime = utils::getTime();
+            dbSimTimePackage[0].set(0.);
+
+            // @clear_all: true would also clear envire-items, but these will be used for the later reload.
+            constexpr bool clear_all = false;
+            interfaces::ControlCenter::joints->clearAllJoints(clear_all);
+            interfaces::ControlCenter::motors->clearAllMotors(clear_all);
+            interfaces::ControlCenter::sensors->clearAllSensors(clear_all);
+
+            collisionManager->clear();
+            if (control->graphics)
+            {
+                control->graphics->clearDrawItems();
+                if (reloadGraphics)
+                {
+                    control->graphics->reset();
+                }
+            }
+            resetPoses();
+            for(auto &it: subWorlds)
+            {
+                it.second->control->physics->freeTheWorld();
+                it.second->control->physics->initTheWorld();
+            }
+            collisionManager->reset();
+
+            reloadObjects();
+            interfaces::ControlCenter::joints->reloadJoints();
+            interfaces::ControlCenter::motors->reloadMotors();
+            interfaces::ControlCenter::sensors->reloadSensors();
         }
 
         void Simulator::readArguments(int argc, char **argv)
