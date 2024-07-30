@@ -404,6 +404,8 @@ namespace mars
 
         void SimNode::setMesh(const snmesh &objectmesh)
         {
+            // TODO: this should not be used.
+            throw std::runtime_error{"SimNode::setMesh is not implemented."};
             MutexLocker locker(&iMutex);
             sNode.mesh = objectmesh;
         }
@@ -525,6 +527,8 @@ namespace mars
 
         void SimNode::setFromSNode(const NodeData &sNode_)
         {
+            // TODO: This is broken but probably not used.
+            throw std::runtime_error{"SimNode::setFromSNode is not implemented."};
             MutexLocker locker(&iMutex);
             this->sNode.name = sNode.name.c_str();
             this->sNode.origName = sNode.origName.c_str();
