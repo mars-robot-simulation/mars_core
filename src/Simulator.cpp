@@ -373,7 +373,6 @@ namespace mars
         {
             collisionManager = std::unique_ptr<CollisionManager>{new CollisionManager{control}};
             collisionManager->addCollisionHandler("mars_ode_collision", "mars_ode_collision", std::make_shared<ode_collision::CollisionHandler>());
-
             collisionSpaceLoader = libManager->getLibraryAs<ode_collision::CollisionSpaceLoader>("mars_ode_collision", true);
             if(collisionSpaceLoader)
             {
@@ -381,7 +380,6 @@ namespace mars
                 collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
                 collisionSpace->initSpace();
                 ControlCenter::collision = collisionSpace;
-
                 if(control->graphics)
                 {
                     control->graphics->addGraphicsUpdateInterface(this);
@@ -628,10 +626,14 @@ namespace mars
 
             contactLinesDataMutex.lock();
             contactLinesData.clear();
-            for(auto &contact: collisionManager->getContactVector())
+            for(const auto& contact: collisionManager->getContactVector())
             {
-                const auto p = osg_lines::Vector{contact.pos.x(), contact.pos.y(), contact.pos.z()};
-                const auto n = osg_lines::Vector{contact.pos.x()+contact.normal.x(), contact.pos.y()+contact.normal.y(), contact.pos.z()+contact.normal.z()};
+                const auto p = osg_lines::Vector{   contact.pos.x(),
+                                                    contact.pos.y(),
+                                                    contact.pos.z()};
+                const auto n = osg_lines::Vector{   contact.pos.x()+contact.normal.x(),
+                                                    contact.pos.y()+contact.normal.y(),
+                                                    contact.pos.z()+contact.normal.z()};
                 contactLinesData.push_back(p);
                 contactLinesData.push_back(n);
                 if(auto& body1 = contact.body1)
@@ -2070,6 +2072,12 @@ namespace mars
                 for(const auto &it: subWorlds)
                 {
                     CPP_UNUSED(it);
+                    if (!contactLines)
+                    {
+                        LOG_ERROR("Contact lines are not properly set up.");
+                        break;
+                    }
+
                     //it.second->control->physics->draw_contact_points = _property.bValue;
                     if(cfgDrawContact.bValue != _property.bValue)
                     {
