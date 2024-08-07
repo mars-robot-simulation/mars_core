@@ -52,6 +52,7 @@
 #include <envire_core/graph/GraphDrawing.hpp>
 #include <envire_types/joints/Revolute.hpp>
 #include <envire_types/Link.hpp>
+#include <envire_types/Inertial.hpp>
 #include <envire_types/geometry/Box.hpp>
 #include <envire_types/geometry/Capsule.hpp>
 #include <envire_types/geometry/Cylinder.hpp>
@@ -2482,6 +2483,7 @@ namespace mars
             auto linkReadder = [controlPtr](VertexDesc node, VertexDesc parent)
             {
                 itemReadder<envire::types::Link>(controlPtr->envireGraph_.get(), node);
+                itemReadder<envire::types::Inertial>(controlPtr->envireGraph_.get(), node);
                 itemReadder<envire::types::geometry::Box>(controlPtr->envireGraph_.get(), node);
                 itemReadder<envire::types::geometry::Capsule>(controlPtr->envireGraph_.get(), node);
                 itemReadder<envire::types::geometry::Cylinder>(controlPtr->envireGraph_.get(), node);
