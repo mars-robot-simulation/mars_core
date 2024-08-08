@@ -25,22 +25,22 @@ namespace mars
         using namespace utils;
         using namespace interfaces;
 
-        BaseSensor* CameraSensor::instanciate(ControlCenter *control, BaseConfig *config )
+        BaseSensor* CameraSensor::instanciate(ControlCenter *control, BaseConfig *config)
         {
             CameraConfigStruct *cfg = dynamic_cast<CameraConfigStruct*>(config);
             assert(cfg);
-            return new CameraSensor(control,*cfg);
+            return new CameraSensor{control,*cfg};
         }
 
         int CameraConfigStruct::globalFrameOffset = 1;
         int CameraConfigStruct::globalHudPos = 0;
 
         CameraSensor::CameraSensor(ControlCenter *control, const CameraConfigStruct config) :
-            BaseNodeSensor(config.id,config.name),
+            BaseNodeSensor(config.id, config.name),
             SensorInterface(control),
-            config(config),
-            depthCamera(id,name,config.width,config.height,1,true, false),
-            imageCamera(id,name,config.width,config.height,4,false, false)
+            config{config},
+            depthCamera{id, name, config.width, config.height, 1, true, false},
+            imageCamera{id, name, config.width, config.height, 4, false, false}
             //logicalCamera(id,name,config.width,config.height,1,false, true)
         {
             have_new_data = false;
@@ -87,14 +87,16 @@ namespace mars
                 hudCam.border_width    = 5.0;
 
                 if(config.show_cam)
+                {
                     cam_id = control->graphics->addHUDElement(&hudCam);
-
+                }
 
                 cam_window_id = control->graphics->new3DWindow(0, true, config.width,
                                                                config.height, name);
                 if(config.show_cam)
-                    control->graphics->setHUDElementTextureRTT(cam_id, cam_window_id,
-                                                               false);
+                {
+                    control->graphics->setHUDElementTextureRTT(cam_id, cam_window_id, false);
+                }
 
                 gw = control->graphics->get3DWindow(cam_window_id);
                 gw->setGrabFrames(false);
@@ -140,9 +142,13 @@ namespace mars
         void CameraSensor::getCameraInfo(cameraStruct* cs)
         {
             if( gc )
+            {
                 gc->getCameraInfo( cs );
+            }
             else
+            {
                 std::cerr << "could not get camera info." << std::endl;
+            }
         }
 
         void CameraSensor::getImage(std::vector< Pixel >& buffer) const
@@ -296,7 +302,11 @@ namespace mars
                     unsigned char *buffer;
                     gw->getImageData((void**)&buffer, width, height);
                     unsigned int size = width*height;
-                    if(size == 0) return 0;
+                    if(size == 0)
+                    {
+                        return 0;
+                    }
+
                     *data = (sReal*)calloc(size*4, sizeof(sReal));
                     double s = 1./255;
                     for(unsigned int i=0; i<size; ++i)

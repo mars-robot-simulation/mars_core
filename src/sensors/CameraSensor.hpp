@@ -53,15 +53,15 @@ namespace mars
             CameraConfigStruct()
                 {
                     name = "Unknown Camera";
-                    width=640;
-                    height=480;
+                    width= 640;
+                    height= 480;
                     enabled = true;
                     show_cam = false;
-                    hud_pos=0;
+                    hud_pos = 0;
                     pos_offset.setZero();
                     ori_offset.setIdentity();
-                    opening_width=90;
-                    opening_height=-1;
+                    opening_width = 90;
+                    opening_height = -1;
                     hud_width = 320;
                     hud_height = -1;
                     depthImage = false;
@@ -95,9 +95,9 @@ namespace mars
                              public interfaces::GraphicsUpdateInterface
         {
         public:
-            static interfaces::BaseSensor* instanciate(interfaces::ControlCenter *control,
-                                                       interfaces::BaseConfig *config );
-            CameraSensor(interfaces::ControlCenter *control, const CameraConfigStruct config);
+            static interfaces::BaseSensor* instanciate(interfaces::ControlCenter* control,
+                                                       interfaces::BaseConfig* config );
+            CameraSensor(interfaces::ControlCenter* control, const CameraConfigStruct config);
             ~CameraSensor(void);
 
             virtual int getSensorData(interfaces::sReal** data) const;
@@ -137,7 +137,7 @@ namespace mars
             interfaces::BaseCameraSensor<char*> imageCamera;
             //interfaces::BaseCameraSensor<SimEntity*> logicalCamera;
             unsigned long cam_window_id;
-            interfaces::GraphicsWindowInterface *gw;
+            interfaces::GraphicsWindowInterface* gw;
             interfaces::GraphicsCameraInterface* gc;
             long dbPosIndices[3];
             long dbRotIndices[4];

@@ -179,14 +179,16 @@ namespace mars
                 sensor_data.body_q.x() = -sensor_data.body_q.x();
                 sensor_data.body_q.y() = -sensor_data.body_q.y();
                 sensor_data.body_q.z() = -sensor_data.body_q.z();
-            } else if(jointPackageId == info.dataId)
+            }
+            else if(jointPackageId == info.dataId)
             {
                 for(int i = 0; i < 3; ++i)
                 {
                     package.get(jointForceIndices[i], &sensor_data.force[i]);
                     package.get(jointTorqueIndices[i], &sensor_data.torque[i]);
                 }
-            } else
+            }
+            else
             {
                 // we don't know the dataId yet, so assign the ids...
                 switch(callbackParam)

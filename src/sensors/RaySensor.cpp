@@ -40,7 +40,6 @@ namespace mars
                                         config.opening_height),
             SensorInterface(control), config(config)
         {
-
             updateRate = config.updateRate;
             maxDistance = config.maxDistance;
             //this->attached_node = config.attached_node;

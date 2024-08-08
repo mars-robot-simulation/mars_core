@@ -199,6 +199,7 @@ namespace mars
          */
         void SensorManager::removeSensor(unsigned long index)
         {
+            throw std::logic_error{"SensorManager::removeSensor not implemented yet."};
             // TODO: Remove envire sensor item and base sensor item from graph.
             BaseSensor* tmpSensor = nullptr;
             simSensorsMutex.lock();
@@ -291,8 +292,8 @@ namespace mars
                 const MutexLocker locker{&simSensorsMutex};
                 simSensors.clear();
             }
-            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
-            auto removeFunctor = [clear_all, &graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            auto* const graph = control->envireGraph_.get();
+            auto removeFunctor = [clear_all, graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemRemover<std::shared_ptr<BaseSensor>>(graph, node);
 
@@ -319,8 +320,8 @@ namespace mars
          */
         void SensorManager::reloadSensors(void)
         {
-            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
-            auto readdFunctor = [&graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            auto* const graph = control->envireGraph_.get();
+            auto readdFunctor = [graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 itemReadder<envire::types::sensors::CameraSensor>(graph, node);
                 itemReadder<envire::types::sensors::RaySensor>(graph, node);

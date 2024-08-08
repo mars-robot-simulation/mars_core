@@ -123,7 +123,7 @@ namespace mars
             }
 
             const auto typeIndex = std::type_index{typeid(envire::core::Item<T>)};
-            auto items = envireGraph->getItems(node, typeIndex);
+            const auto items = envire::core::Frame::ItemList{envireGraph->getItems(node, typeIndex)};
 
             // Remove all items
             for(const auto item : items)
@@ -132,7 +132,7 @@ namespace mars
             }
 
             // Readd all items
-            const auto frameId = envireGraph->getFrameId(node);
+            const auto& frameId = envireGraph->getFrameId(node);
             for (const auto item : items)
             {
                 envireGraph->addItemToFrame(frameId, item);
