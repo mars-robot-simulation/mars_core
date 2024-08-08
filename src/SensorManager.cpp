@@ -362,7 +362,8 @@ namespace mars
             }
             config->id = idManager_->addIfUnknown(config->name);
 
-            BaseSensor *sensor = ((*it).second)(this->control,config);
+            BaseSensor *sensor = ((*it).second)(this->control, config); // This copies config
+            delete config;
             simSensorsMutex.lock();
             simSensors[sensor->getID()] = sensor;
             simSensorsMutex.unlock();
@@ -380,7 +381,7 @@ namespace mars
                 return 0;
             }
             //LOG_DEBUG("found sensor: %s", type.c_str());
-            BaseConfig *cfg = ((*it).second)(control, config);
+            BaseConfig *cfg = ((*it).second)(control, config); // This allocates memory for BaseConfig
             cfg->name = (*config)["name"][0].getString();
             return createAndAddSensor(type, cfg);
         }
