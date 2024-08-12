@@ -90,6 +90,7 @@ set(TARGET_SRC
        src/sensors/RaySensor.cpp
        src/sensors/Joint6DOFSensor.cpp
        src/CollisionManager.cpp
+       src/registration/AbsolutePoseRegister.cpp
        src/registration/PhysicsInterfaceItemRegister.cpp
        src/registration/CollisionInterfaceItemRegister.cpp
        src/registration/DynamicObjectItemRegister.cpp
