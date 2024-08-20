@@ -151,8 +151,8 @@ namespace mars
             control->envireGraph_->getTree(SIM_CENTER_FRAME_NAME, true, control->graphTreeView_.get());
             if(!ControlCenter::envireGraph)
             {
-                ControlCenter::envireGraph = control->envireGraph_;   
-                ControlCenter::graphTreeView = control->graphTreeView_;   
+                ControlCenter::envireGraph = control->envireGraph_;
+                ControlCenter::graphTreeView = control->graphTreeView_;
             }
 
             // add subscribe to be notified if some items have been added into the graph
@@ -1059,7 +1059,7 @@ namespace mars
                               filename.c_str(), suffix.c_str());
                     return 0; //failed
                 }
-            } 
+            }
             catch(SceneParseException& e)
             {
                 LOG_ERROR("Could not parse scene: %s", e.what());
@@ -1342,6 +1342,14 @@ namespace mars
             Simulator::applyChildPositions(target, globalTransform.transform, envireGraph, graphTreeView);
         }
 
+        void Simulator::rotateHingeJoint(envire::core::FrameId origin, double angle,
+                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            rotateRevolute(envireGraph->getVertex(origin), angle, envireGraph, graphTreeView);
+        }
+
+
         void Simulator::rotateHingeJoint(const envire::core::GraphTraits::vertex_descriptor origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
@@ -1420,6 +1428,9 @@ namespace mars
                     tf.transform.orientation = q*tf.transform.orientation;
                     envireGraph->updateTransform(origin, child, tf);
                 }
+                // Propagate change of childrens transforms
+                const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+                applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
             }
         }
 

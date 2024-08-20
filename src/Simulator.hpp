@@ -267,6 +267,9 @@ namespace mars
                                         const base::TransformWithCovariance& rootToOrigin,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void rotateHingeJoint(envire::core::FrameId origin, double angle,
+                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
             static void rotateHingeJoint(const envire::core::GraphTraits::vertex_descriptor origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
