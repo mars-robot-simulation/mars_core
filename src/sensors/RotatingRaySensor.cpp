@@ -13,6 +13,7 @@
 
 #include <data_broker/DataBrokerInterface.h>
 #include <mars_interfaces/graphics/GraphicsManagerInterface.h>
+#include <mars_interfaces/sim/CollisionInterface.hpp>
 #include <cfg_manager/CFGManagerInterface.h>
 #include <mars_utils/MutexLocker.h>
 
@@ -68,18 +69,14 @@ namespace mars {
       for(int i = 0; i < 4; ++i)
         rotationIndices[i] = -1;
 
-      //bool erg = control->nodes->getDataBrokerNames(attached_node, &groupName, &dataName);
-      //if(!erg) { // To remove warning.
-      //  assert(erg);
-      //}
-      if(control->dataBroker->registerTimedReceiver(this, groupName, dataName,"mars_sim/simTimer",updateRate)) {
+      if(control->dataBroker->registerTimedReceiver(this, config.groupName, config.dataName,"mars_sim/simTimer",updateRate)) {
       }
 
       //position = control->nodes->getPosition(attached_node);
       //orientation = control->nodes->getRotation(attached_node);
       //orientation_offset.setIdentity();
 
-      fprintf(stderr, "RotatingRaySensor init pos: %g %g %g\n", config.init_position.x(), config.init_position.y(), config.init_position.z());
+      LOG_INFO("RotatingRaySensor init pos: %g %g %g\n", config.init_position.x(), config.init_position.y(), config.init_position.z());
       position = config.init_position + config.init_orientation*config.pos_offset;
       orientation = config.init_orientation * config.ori_offset;
 
@@ -115,7 +112,7 @@ namespace mars {
             Vector(1,0,0);
 
           directions.push_back(tmp);
-          
+
           // Add a drawing item for each ray regarding the initial sensor orientation.
           if(config.draw_rays) {
             draw.ptr_draw = (DrawInterface*)this;
@@ -138,9 +135,6 @@ namespace mars {
           }
         }
       }
-
-      // Add sensor after everything has been initialized.
-      //control->nodes->addNodeSensor(this);
 
       // GraphicsManager crashes if default constructor drawStruct is passed.
       if(config.draw_rays) {
@@ -224,6 +218,16 @@ namespace mars {
       // data[] contains all the measured distances according to the define directions.
       assert((int)data.size() == config.bands * config.lasers);
 
+      turn();
+      Vector tmp;
+      for(size_t i=0; i<directions.size(); i++)
+      {
+          // todo: handle rotation of bands
+          tmp = orientation * orientation_offset * directions[i];
+          tmp *= config.maxDistance;
+          data[i] = control->sim->getVectorCollision(position, tmp);
+      }
+
       int i = 0; // data_counter
       utils::Vector local_ray, tmpvec;
       for(int b=0; b<config.bands; ++b) {
@@ -255,7 +259,8 @@ namespace mars {
       unsigned int i;
 
       if(update_available) {
-        control->nodes->updateRay(attached_node);
+          //control->nodes->updateRay(attached_node);
+
         update_available = false;
       }
       if(config.draw_rays) {
@@ -399,6 +404,8 @@ namespace mars {
       if((it = config->find("horizontal_resolution")) != config->end())
         cfg->horizontal_resolution = it->second;
       cfg->attached_node = attachedNodeID;
+      cfg->groupName << (*config)["groupName"];
+      cfg->dataName << (*config)["dataName"];
 
       ConfigMap::iterator it2;
       if((it = config->find("rotation_offset")) != config->end()) {

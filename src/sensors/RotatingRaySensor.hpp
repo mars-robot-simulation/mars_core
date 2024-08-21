@@ -56,6 +56,7 @@ namespace mars {
       double minDistance;
       double maxDistance;
       bool draw_rays;
+      std::string groupName, dataName;
       double horizontal_resolution;
       double cloud_offset;
       // Describes the orientation of the sensor in the unturned sensor frame. 

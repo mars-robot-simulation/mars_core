@@ -2517,6 +2517,20 @@ namespace mars
             return calc_s;
         }
 
+        interfaces::sReal Simulator::getVectorCollision(Vector position, Vector ray)
+        {
+            // todo: - order subworlds by bounding box ray collision
+            //       - don't continue with subworlds if collision distance
+            //         is already lower then bounding box collision
+            double min = -1, d;
+            for(auto &it: subWorlds)
+            {
+                d = it.second->control->collision->getVectorCollision(position, ray);
+                if(min < 0 || min > d) min = d;
+            }
+            return d;
+        }
+
     } // end of namespace core
 
     namespace interfaces

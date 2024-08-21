@@ -278,6 +278,7 @@ namespace mars
 
             // @getStepSizeS: Returns step size of the physics simulations in seconds.
             interfaces::sReal getStepSizeS() const;
+            virtual interfaces::sReal getVectorCollision(utils::Vector position, utils::Vector ray);
 
         private:
 
