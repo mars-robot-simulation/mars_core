@@ -23,7 +23,7 @@
 #include "sensors/CameraSensor.hpp"
 // #include "NodeVelocitySensor.h"
 #include "sensors/RaySensor.hpp"
-// #include "RotatingRaySensor.h"
+#include "sensors/RotatingRaySensor.hpp"
 // #include "MultiLevelLaserRangeFinder.h"
 // #include "RayGridSensor.h"
 // #include "NodeAngularVelocitySensor.h"
@@ -40,6 +40,7 @@
 
 #include <envire_types/sensors/CameraSensor.hpp>
 #include <envire_types/sensors/RaySensor.hpp>
+#include <envire_types/sensors/RotatingRaySensor.hpp>
 #include <envire_types/sensors/Joint6DOFSensor.hpp>
 
 // TODO: itemRemover from JointManager.hpp needed. Remove include as soon as the function is moved to a central location.
@@ -73,7 +74,7 @@ namespace mars
         void SensorManager::addSensorTypes()
         {
             addSensorType("RaySensor",&RaySensor::instanciate);
-            // addSensorType("RotatingRaySensor",&RotatingRaySensor::instanciate);
+            addSensorType("RotatingRaySensor",&RotatingRaySensor::instanciate);
             // addSensorType("MultiLevelLaserRangeFinder",&MultiLevelLaserRangeFinder::instanciate);
             addSensorType("CameraSensor",&CameraSensor::instanciate);
             // addSensorType("ScanningSonar",&ScanningSonar::instanciate);
@@ -101,7 +102,7 @@ namespace mars
         void SensorManager::addMarsParsers()
         {
             addMarsParser("RaySensor",&RaySensor::parseConfig);
-            // addMarsParser("RotatingRaySensor",&RotatingRaySensor::parseConfig);
+            addMarsParser("RotatingRaySensor",&RotatingRaySensor::parseConfig);
             // addMarsParser("MultiLevelLaserRangeFinder",&MultiLevelLaserRangeFinder::parseConfig);
             addMarsParser("CameraSensor",&CameraSensor::parseConfig);
             // addMarsParser("ScanningSonar",&ScanningSonar::parseConfig);
@@ -302,6 +303,7 @@ namespace mars
                 {
                     itemRemover<envire::types::sensors::CameraSensor>(graph, node);
                     itemRemover<envire::types::sensors::RaySensor>(graph, node);
+                    itemRemover<envire::types::sensors::RotatingRaySensor>(graph, node);
                     itemRemover<envire::types::sensors::Joint6DOFSensor>(graph, node);
                 }
             };
@@ -325,6 +327,7 @@ namespace mars
             {
                 itemReadder<envire::types::sensors::CameraSensor>(graph, node);
                 itemReadder<envire::types::sensors::RaySensor>(graph, node);
+                itemReadder<envire::types::sensors::RotatingRaySensor>(graph, node);
                 itemReadder<envire::types::sensors::Joint6DOFSensor>(graph, node);
             };
 

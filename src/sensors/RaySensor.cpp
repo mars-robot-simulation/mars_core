@@ -191,7 +191,7 @@ namespace mars
                 {
                     tmp = orientation * directions[i];
                     tmp *= config.maxDistance;
-                    data[i] = control->collision->getVectorCollision(position, tmp);
+                    data[i] = control->sim->getVectorCollision(position, tmp);
                 }
             }
         }
