@@ -180,7 +180,7 @@ namespace mars
                     const auto& range = control->envireGraph_->getItems<envire::core::Item<envire::types::joints::Fixed>>(jointFrameId);
                     for(auto iter = range.first; iter != range.second; ++iter)
                     {
-                        if(iter->getData().name == configMap["name"].toString())
+                        if(iter->getData().getName() == configMap["name"].toString())
                         {
                             control->envireGraph_->removeItemFromFrame(jointFrameId, iter);
                         }
@@ -602,7 +602,7 @@ namespace mars
                 joint->edit(key, value);
             }
         }
-  
+
         configmaps::ConfigMap JointManager::constructEnvireJointConfigMap(const interfaces::JointData& jointData)
         {
             configmaps::ConfigMap result;
