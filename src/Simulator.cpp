@@ -1416,7 +1416,7 @@ namespace mars
                 //   - get the joint anchor (due to relative positioning and joints have their own frame
                 //     the anchor is always (0,0,0)
                 // the axis should be defined in the joint frame
-                const auto& q = utils::angleAxisToQuaternion(angle, joint.axis);
+                const auto& q = utils::angleAxisToQuaternion(angle, joint.getAxis());
 
                 // get children
                 const auto& children = graphTreeView->tree[origin].children;
@@ -2370,7 +2370,7 @@ namespace mars
             // use the control with new physic
             subWorld->control = std::make_shared<SubControlCenter>();
             subWorld->control->control = control.get();
-            subWorld->control->setPrefix(world.prefix);
+            subWorld->control->setPrefix(world.getPrefix());
             subWorld->control->setFrameId(e.frame);
 
             subWorld->control->physics = physicsLoader->createWorldInstance();
