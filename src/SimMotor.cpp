@@ -1,4 +1,5 @@
 #include "SimMotor.hpp"
+#include "Simulator.hpp"
 #include <mars_utils/misc.h> // matchPattern
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/SimulatorInterface.h>
@@ -994,10 +995,19 @@ namespace mars
             controlValue = value;
             //fprintf(stderr, "control value: %g\n", controlValue);
             if(sMotor.type == MOTOR_TYPE_POSITION ||
-               sMotor.type == MOTOR_TYPE_PID)
+               sMotor.type == MOTOR_TYPE_PID ||
+               sMotor.type == MOTOR_TYPE_FF_EFFORT)
             {
                 if(control && control->sim && !control->sim->isSimRunning())
                 {
+                    if(auto validJoint = joint.lock())
+                    {
+                        std::string jointName;
+                        validJoint->getName(&jointName);
+                        jointName += "_joint";
+                        Simulator::rotateHingeJoint(jointName, value - position1,
+                                                    control->envireGraph_, control->graphTreeView_);
+                    }
                     //myJoint->setOfflinePosition(value);
                     refreshPositions();
                 }
