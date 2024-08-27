@@ -111,6 +111,7 @@ namespace mars
             // id == 0 is invalid indicating getID that no specific id is desired
             const unsigned long desiredId = jointS->config.hasKey("desired_id") ? jointS->config["desired_id"] : 0;
             // TODO: Enable resquesting desired id for joint
+            return idManager_->getID(jointS->name);
         }
 
         int JointManager::getJointCount()
