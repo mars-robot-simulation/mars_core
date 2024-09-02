@@ -1342,59 +1342,12 @@ namespace mars
             Simulator::applyChildPositions(target, globalTransform.transform, envireGraph, graphTreeView);
         }
 
-        void Simulator::rotateHingeJoint(envire::core::FrameId origin, double angle,
-                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
-                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
-        {
-            rotateRevolute(envireGraph->getVertex(origin), angle, envireGraph, graphTreeView);
-        }
-
-
-        void Simulator::rotateHingeJoint(const envire::core::GraphTraits::vertex_descriptor origin,
+        void Simulator::rotateRevolute( envire::core::FrameId origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
-            if (!envireGraph->containsItems<envire::core::Item<interfaces::JointInterfaceItem>>(origin))
-            {
-                const auto& frameId = envireGraph->getFrameId(origin);
-                LOG_WARN((std::string{"Simulator::rotateHingeJoint: There is no joint in frame \""} + frameId + "\" to rotate around.").c_str());
-                return;
-            }
-            std::shared_ptr<interfaces::JointInterface> joint = envireGraph->getItem<envire::core::Item<interfaces::JointInterfaceItem>>(origin)->getData().jointInterface;
-
-            if (joint->getType() != JointType::JOINT_TYPE_HINGE)
-            {
-                const auto& frameId = envireGraph->getFrameId(origin);
-                LOG_WARN((std::string{"Simulator::rotateHingeJoint: The joint in frame \""} + frameId + "\" has the wrong type (" + std::to_string(joint->getType()) + ").").c_str());
-                return;
-            }
-
-            if (!envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(origin))
-            {
-                const auto& frameId = envireGraph->getFrameId(origin);
-                throw std::logic_error{(std::string{"Simulator::rotateHingeJoint: Frame \""} + frameId + "\" misses AbsolutePose!").c_str()};
-            }
-
-            const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
-            // TODO: Ensure joint anchor == aps.position
-
-            utils::Vector axis;
-            joint->getAxis(&axis); // <- axis is in global coordinate frame
-            axis = absolutePose.getRotation().inverse() * axis; // <- axis is now in local coordinate frame
-            const auto& q = utils::angleAxisToQuaternion(angle, axis);
-
-            // Update transform to all children to account for rotation
-            for(const auto& child : graphTreeView->tree[origin].children)
-            {
-                auto tf = envireGraph->getTransform(origin, child);
-                tf.transform.translation = q * tf.transform.translation;
-                tf.transform.orientation = q * tf.transform.orientation;
-                envireGraph->updateTransform(origin, child, tf);
-            }
-
-            // Propagate change of childrens transforms
-            applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
+            rotateRevolute(envireGraph->getVertex(origin), angle, envireGraph, graphTreeView);
         }
 
         // TODO: currently we add the angle to the actual rotation
