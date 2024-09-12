@@ -410,6 +410,7 @@ namespace mars
         private:
             void resetPoses();
             void reloadObjects();
+            bool pluginIsLoaded(const interfaces::pluginStruct& p) const;
         };
     } // end of namespace core
 } // end of namespace mars
