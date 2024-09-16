@@ -1150,6 +1150,13 @@ namespace mars
                 pluginLocker.lockForWrite();
                 for (size_t i = 0; i < newPlugins.size(); i++)
                 {
+                    if (pluginIsLoaded(newPlugins[i]))
+                    {
+                        const auto msg = std::string{"Plugin \""} + newPlugins[i].name + "\" is already loaded.";
+                        LOG_WARN(msg.c_str()); // TODO: Make log_warn work.
+                        std::cout << msg << std::endl;
+                        continue;
+                    }
                     allPlugins.push_back(newPlugins[i]);
                     activePlugins.push_back(newPlugins[i]);
                     getTimeMutex.lock();
@@ -2516,6 +2523,14 @@ namespace mars
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             control->graphTreeView_->visitDfs(rootVertex, linkReadder);
             physicsThreadUnlock();
+        }
+
+        bool Simulator::pluginIsLoaded(const interfaces::pluginStruct& p) const
+        {
+            const auto& name = p.name;
+            const auto it = std::find_if(std::begin(allPlugins), std::end(allPlugins),
+                [&name] (const interfaces::pluginStruct& x) { return x.name == name; });
+            return it != std::end(allPlugins);
         }
 
         interfaces::sReal Simulator::getStepSizeS() const
