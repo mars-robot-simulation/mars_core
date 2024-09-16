@@ -50,6 +50,7 @@
 #include <envire_core/graph/TreeView.hpp>
 
 #include <envire_core/graph/GraphDrawing.hpp>
+#include <envire_types/joints/Continuous.hpp>
 #include <envire_types/joints/Revolute.hpp>
 #include <envire_types/Link.hpp>
 #include <envire_types/Inertial.hpp>
@@ -1347,6 +1348,7 @@ namespace mars
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView)
         {
+            // TODO: Consider min and max position!
             rotateRevolute(envireGraph->getVertex(origin), angle, envireGraph, graphTreeView);
         }
 
@@ -1364,6 +1366,51 @@ namespace mars
                 // so we get the first item
                 // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
                 const auto& it = envireGraph->getItem<envire::core::Item<envire::types::joints::Revolute>>(origin);
+                const auto& joint = it->getData();
+                // get the joint axis
+                //   - get the joint anchor (due to relative positioning and joints have their own frame
+                //     the anchor is always (0,0,0)
+                // the axis should be defined in the joint frame
+                const auto& q = utils::angleAxisToQuaternion(angle, joint.getAxis());
+
+                // get children
+                const auto& children = graphTreeView->tree[origin].children;
+                for(const auto& child : children)
+                {
+                    // apply rotation
+                    auto tf = envireGraph->getTransform(origin, child);
+                    tf.transform.translation = q*tf.transform.translation;
+                    tf.transform.orientation = q*tf.transform.orientation;
+                    envireGraph->updateTransform(origin, child, tf);
+                }
+                // Propagate change of childrens transforms
+                const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+                applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
+            }
+        }
+
+        void Simulator::rotateContinuous( envire::core::FrameId origin,
+                                        double angle,
+                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                        std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            rotateContinuous(envireGraph->getVertex(origin), angle, envireGraph, graphTreeView);
+        }
+
+        // TODO: currently we add the angle to the actual rotation
+        // we should have an option to set an absolute rotation
+        void Simulator::rotateContinuous( const envire::core::GraphTraits::vertex_descriptor origin,
+                                        double angle,
+                                        std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                        std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            // first get the joint
+            if (envireGraph->containsItems<envire::core::Item<envire::types::joints::Continuous>>(origin))
+            {
+                // CAUTION: we assume that there is only one DynamicObjectItem in the frame
+                // so we get the first item
+                // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
+                const auto& it = envireGraph->getItem<envire::core::Item<envire::types::joints::Continuous>>(origin);
                 const auto& joint = it->getData();
                 // get the joint axis
                 //   - get the joint anchor (due to relative positioning and joints have their own frame

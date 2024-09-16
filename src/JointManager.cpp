@@ -520,7 +520,18 @@ namespace mars
                     const auto jointFrameVertex = control->envireGraph_->getVertex(jointFrameName);
 
                     Simulator* const simulator = dynamic_cast<Simulator*>(control->sim);
-                    simulator->rotateRevolute(jointFrameVertex, relativeRotationRad, control->envireGraph_, control->graphTreeView_);
+                    if (control->envireGraph->containsItems<envire::core::Item<envire::types::joints::Continuous>>(jointFrameName))
+                    {
+                        simulator->rotateContinuous(jointFrameVertex, relativeRotationRad, control->envireGraph_, control->graphTreeView_);
+                    }
+                    else if (control->envireGraph->containsItems<envire::core::Item<envire::types::joints::Revolute>>(jointFrameName))
+                    {
+                        simulator->rotateRevolute(jointFrameVertex, relativeRotationRad, control->envireGraph_, control->graphTreeView_);
+                    }
+                    else
+                    {
+                        throw std::logic_error{std::string{"There is no matching envire joint for joint named "} + jointName};
+                    }
                 } else
                 {
                     throw std::logic_error((std::string{"JointManager::setOfflineValue can't handle JointType "} + std::to_string(static_cast<int>(jointType))).c_str());
