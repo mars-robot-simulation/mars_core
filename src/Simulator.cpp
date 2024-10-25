@@ -1441,6 +1441,72 @@ namespace mars
             }
         }
 
+        void Simulator::applyDynamicRevoluteState(envire::core::FrameId origin,
+                                                  double angularVelocity, Vector linearVelocity,
+                                                  std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                                  std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            envire::core::GraphTraits::vertex_descriptor node = envireGraph->getVertex(origin);
+            // check if we realy have a revolute joint at the given frame
+            if (envireGraph->containsItems<envire::core::Item<envire::types::joints::Revolute>>(node))
+            {
+                const auto& it = envireGraph->getItem<envire::core::Item<envire::types::joints::Revolute>>(node);
+                const auto& joint = it->getData();
+                // get the current axis of the joint
+                const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(node)->getData();
+                Vector axis = absolutePose.getRotation()*joint.getAxis();
+                Quaternion q = angleAxisToQuaternion(angularVelocity, axis.normalized());
+                Vector pivot = absolutePose.getPosition();
+                Simulator::applyDynamicState(node, pivot, q, linearVelocity,
+                                             envireGraph, graphTreeView);
+            }
+        }
+
+        // This methods adds a linear velocity and rotation velocity around the
+        // pivot to all dynamic objects underneath origin
+        void Simulator::applyDynamicState( const envire::core::GraphTraits::vertex_descriptor node,
+                                           Vector pivot, Quaternion rotationVelocity, Vector linearVelocity,
+                                           std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                           std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            // check if we have an dynamic object item
+            using DynamicObjectEnvireItem = envire::core::Item<DynamicObjectItem>;
+            if (envireGraph->containsItems<DynamicObjectEnvireItem>(node))
+            {
+                const auto& dynamicObject = envireGraph->getItem<DynamicObjectEnvireItem>(node)->getData().dynamicObject;
+                // apply the state
+                // positions of dynamic objects are stored in world coordinates
+                Vector pos;
+                dynamicObject->getPosition(&pos);
+                Vector newPos = rotationVelocity*(pos-pivot) + pivot;
+                Vector lVelocity;
+                dynamicObject->getLinearVelocity(&lVelocity);
+                lVelocity += linearVelocity + (newPos - pos);
+                dynamicObject->setLinearVelocity(lVelocity);
+                Vector aVelocity;
+                dynamicObject->getAngularVelocity(&aVelocity);
+                double v = aVelocity.norm();
+                aVelocity.normalize();
+                Quaternion q = angleAxisToQuaternion(v, aVelocity);
+                // is the order correct, first q then the rotation the object already has?
+                q = rotationVelocity*q;
+                Eigen::AngleAxis<double> angleAxis(q);
+                Vector aVel = angleAxis.axis().normalized()*angleAxis.angle();
+                dynamicObject->setAngularVelocity(aVel);
+            }
+
+            // apply the the change to children
+            if(graphTreeView->tree.find(node) != graphTreeView->tree.end())
+            {
+                const auto& children = graphTreeView->tree[node].children;
+                for(const auto& child : children)
+                {
+                    Simulator::applyDynamicState(child, pivot,
+                                                 rotationVelocity, linearVelocity,
+                                                 envireGraph, graphTreeView);
+                }
+            }
+        }
 
         void Simulator::newWorld(bool clear_all)
         {

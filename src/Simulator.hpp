@@ -283,6 +283,17 @@ namespace mars
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void applyDynamicRevoluteState(envire::core::FrameId origin,
+                                                  double angularVelocity,
+                                                  utils::Vector linearVelocity,
+                                                  std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                                  std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void applyDynamicState( const envire::core::GraphTraits::vertex_descriptor node,
+                                           utils::Vector pivot, utils::Quaternion rotationVelocity,
+                                           utils::Vector linearVelocity,
+                                           std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                           std::shared_ptr<envire::core::TreeView> &graphTreeView);
+
 
             // @getStepSizeS: Returns step size of the physics simulations in seconds.
             interfaces::sReal getStepSizeS() const;
