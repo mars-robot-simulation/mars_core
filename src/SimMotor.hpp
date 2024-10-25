@@ -229,6 +229,7 @@ namespace mars
             bool effortMotor;
             int pushToDataBroker;
             PID posPID, velPID;
+            interfaces::sReal ffEffortFilter, ffEffortGain;
         };
 
     } // end of namespace core

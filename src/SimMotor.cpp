@@ -69,6 +69,21 @@ namespace mars
             effortMotor = 0;
             feedForwardEffort = feedForwardEffortIntern = 0;
             initPIDs();
+            filterValue = 0.0;
+            if(this->sMotor.config.hasKey("filterValue"))
+            {
+                filterValue = this->sMotor.config["filterValue"];
+            }
+            ffEffortFilter = 0.0;
+            if(this->sMotor.config.hasKey("ffEffortFilter"))
+            {
+                ffEffortFilter = this->sMotor.config["ffEffortFilter"];
+            }
+            ffEffortGain = 0.0;
+            if(this->sMotor.config.hasKey("ffEffortGain"))
+            {
+                ffEffortGain = this->sMotor.config["ffEffortGain"];
+            }
 
             //myPlayJoint = 0;
             active = true;
@@ -378,8 +393,8 @@ namespace mars
         void SimMotor::runEffortPipe(sReal time)
         {
             // limit to range of motion
-            feedForwardEffortIntern = feedForwardEffortIntern*0.8 + feedForwardEffort*0.2;
-            controlValue += 0.0*feedForwardEffort;
+            feedForwardEffortIntern = feedForwardEffortIntern*ffEffortFilter + feedForwardEffort*(1.0 - ffEffortFilter);
+            controlValue += ffEffortGain*feedForwardEffort;
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
@@ -933,6 +948,16 @@ namespace mars
             if(this->sMotor.config.hasKey("filterValue"))
             {
                 filterValue = this->sMotor.config["filterValue"];
+            }
+            ffEffortFilter = 0.0;
+            if(this->sMotor.config.hasKey("ffEffortFilter"))
+            {
+                ffEffortFilter = this->sMotor.config["ffEffortFilter"];
+            }
+            ffEffortGain = 0.0;
+            if(this->sMotor.config.hasKey("ffEffortGain"))
+            {
+                ffEffortGain = this->sMotor.config["ffEffortGain"];
             }
             effortMotor = false;
             if(sMotor.type == MOTOR_TYPE_PID_FORCE ||
