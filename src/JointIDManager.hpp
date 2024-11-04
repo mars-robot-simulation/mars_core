@@ -21,6 +21,11 @@ namespace mars
                 GraphItemEventDispatcher<envire::core::Item<interfaces::JointInterfaceItem>>::subscribe(envireGraph.get());
             }
 
+            ~JointIDManager()
+            {
+                GraphItemEventDispatcher<envire::core::Item<interfaces::JointInterfaceItem>>::unsubscribe();
+            }
+
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::JointInterfaceItem>>& e) override
             {
                 std::string jointName;

@@ -19,8 +19,6 @@
 #include "SensorManager.hpp"
 #include "JointManager.hpp"
 #include "NodeManager.hpp"
-#include "FrameIDManager.hpp"
-#include "JointIDManager.hpp"
 
 //#include "PhysicsMapper.h"
 
@@ -196,15 +194,17 @@ namespace mars
 
         Simulator::~Simulator()
         {
+            // unsubscribe from envire graph
+            unsubscribe();
             for(auto &it: subWorlds)
             {
                 it.second->stopThread = true;
+                it.second->control->control = nullptr; // clear all shared pointer to ControlCenter
                 while(it.second->isRunning())
                 {
                     utils::msleep(1);
                 }
             }
-
             {
                 const auto* const simThread{dynamic_cast<Thread*>(this)};
                 while(simThread->isRunning())
@@ -212,7 +212,7 @@ namespace mars
                     utils::msleep(1);
                 }
             }
-            fprintf(stderr, "Delete mars_sim\n");
+            fprintf(stderr, "Delete mars_core\n");
 
             if(control->cfg)
             {
@@ -233,16 +233,35 @@ namespace mars
                 control->cfg->writeConfig(saveFile.c_str(), "Simulator");
             }
 
+            //libManager->releaseLibrary("log_console");
+            // Due to event connections, we have to take care of the oder the memory is cleared
+            absolutePoseExtender = nullptr;
+            ControlCenter::motors = nullptr;
+            ControlCenter::joints = nullptr;
+            ControlCenter::sensors = nullptr;
+            collisionManager->clear();
+            ControlCenter::collision = nullptr;
+            delete control->nodes;
+            control->nodes = nullptr;
+            ControlCenter::envireGraph = nullptr;
+            ControlCenter::graphTreeView = nullptr;
+            bool releaseGraphics = false;
+            if(control->graphics)
+            {
+                releaseGraphics = true;
+            }
+            control = nullptr;
+            subWorlds.clear();
+
             // TODO: do we need to delete control?
             libManager->releaseLibrary("mars_ode_physics");
             libManager->releaseLibrary("mars_ode_collision");
-            if(control->graphics)
+            if(releaseGraphics)
             {
                 libManager->releaseLibrary("mars_graphics");
             }
             libManager->releaseLibrary("cfg_manager");
             libManager->releaseLibrary("data_broker");
-            //libManager->releaseLibrary("log_console");
         }
 
         void Simulator::newLibLoaded(const std::string &libName)

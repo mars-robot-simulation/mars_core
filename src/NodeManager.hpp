@@ -47,7 +47,7 @@ namespace mars
         {
         public:
             NodeManager(interfaces::ControlCenter *c, lib_manager::LibManager *theManager);
-            virtual ~NodeManager(){}
+            virtual ~NodeManager();
 
             virtual interfaces::NodeId createPrimitiveNode(const std::string &name,
                                                           interfaces::NodeType type,

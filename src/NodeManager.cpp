@@ -65,6 +65,15 @@ namespace mars
             }
         }
 
+        NodeManager::~NodeManager()
+        {
+            if(control->graphics)
+            {
+                GraphicsUpdateInterface *gui = static_cast<GraphicsUpdateInterface*>(this);
+                control->graphics->removeGraphicsUpdateInterface(gui);
+            }
+        }
+
         NodeId NodeManager::createPrimitiveNode(const std::string &name,
                                                 NodeType type,
                                                 bool moveable,

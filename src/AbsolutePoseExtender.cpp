@@ -17,7 +17,7 @@ namespace mars
 
         AbsolutePoseExtender::~AbsolutePoseExtender()
         {
-
+            GraphEventDispatcher::unsubscribe();
         }
 
         void AbsolutePoseExtender::frameAdded(const envire::core::FrameAddedEvent& e)

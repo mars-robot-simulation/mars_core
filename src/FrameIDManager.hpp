@@ -19,6 +19,11 @@ namespace mars
                 GraphEventDispatcher::subscribe(interfaces::ControlCenter::envireGraph.get());
             }
 
+            ~FrameIDManager()
+            {
+                unsubscribe();
+            }
+
             virtual void frameAdded(const envire::core::FrameAddedEvent& e) override
             {
                 addIfUnknown(e.frame);
