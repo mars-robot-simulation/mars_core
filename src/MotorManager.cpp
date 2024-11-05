@@ -16,6 +16,7 @@
 #include <envire_types/motors/DC.hpp>
 #include <envire_types/motors/PID.hpp>
 #include <envire_types/motors/DirectEffort.hpp>
+#include <envire_types/motors/FeedForwardEffort.hpp>
 
 #include <mars_interfaces/sim/SimulatorInterface.h>
 #include <mars_utils/MutexLocker.h>
@@ -404,6 +405,7 @@ namespace mars
                     itemRemover<envire::types::motors::DC>(graph, node);
                     itemRemover<envire::types::motors::PID>(graph, node);
                     itemRemover<envire::types::motors::DirectEffort>(graph, node);
+                    itemRemover<envire::types::motors::FeedForwardEffort>(graph, node);
                 }
             };
 
@@ -428,6 +430,7 @@ namespace mars
                 itemReadder<envire::types::motors::DC>(graph, node);
                 itemReadder<envire::types::motors::PID>(graph, node);
                 itemReadder<envire::types::motors::DirectEffort>(graph, node);
+                itemReadder<envire::types::motors::FeedForwardEffort>(graph, node);
             };
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
