@@ -71,10 +71,6 @@ namespace mars
             const auto& rootVertex = controlCenter_->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             controlCenter_->graphTreeView_->visitDfs(rootVertex, collisionObjectRemover);
 
-            for (auto& contactPlugin : contactPlugins)
-            {
-                contactPlugin->reset();
-            }
             for (auto& collisionItem : collisionItems)
             {
                 collisionItem.collisionInterface->freeSpace();
@@ -89,6 +85,10 @@ namespace mars
             for (auto& collisionItem : collisionItems)
             {
                 collisionItem.collisionInterface->initSpace();
+            }
+            for (auto& contactPlugin : contactPlugins)
+            {
+                contactPlugin->reset();
             }
         }
 
