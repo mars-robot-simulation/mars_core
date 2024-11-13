@@ -7,6 +7,7 @@
 #include "SubWorld.hpp"
 #include <mars_utils/misc.h>
 #include <getopt.h>
+#include <time.h>
 
 namespace mars
 {
@@ -33,7 +34,11 @@ namespace mars
                     //fprintf(stderr, "sleep.");
                     //utils::msleep(1);
 
+#ifdef __APPLE__
+                    nanosleep(&tv, NULL);
+#else
                     clock_nanosleep(CLOCK_MONOTONIC, 0, &tv, 0);
+#endif
                     //select(0, 0, 0, 0, &tv);
                 }
             }

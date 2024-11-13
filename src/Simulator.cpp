@@ -70,8 +70,8 @@
 #include <cctype> // for tolower()
 #include <chrono>
 
-#ifdef __linux__
 #include <time.h>
+#ifdef __linux__
 #include <unistd.h> //for getpid()
 #endif
 
@@ -695,7 +695,11 @@ namespace mars
             {
                 while(it.second->calcStep == true)
                 {
+#ifdef __APPLE__
+                    nanosleep(&tv, NULL);
+#else
                     clock_nanosleep(CLOCK_MONOTONIC, 0, &tv, 0);
+#endif
                     //select(0, 0, 0, 0, &tv);
                 }
             }
