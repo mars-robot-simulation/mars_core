@@ -1007,9 +1007,18 @@ namespace mars
                 LOG_WARN("SimMotor: Setting the \"offline\" position if the simulation is running can produce bad simulation states!");
             }
             if(sMotor.type == MOTOR_TYPE_POSITION ||
-               sMotor.type == MOTOR_TYPE_PID)
+               sMotor.type == MOTOR_TYPE_PID ||
+               sMotor.type == MOTOR_TYPE_FF_EFFORT)
             {
                 controlValue = value;
+            }
+            if(auto validJoint = joint.lock())
+            {
+                std::string jointName;
+                validJoint->getName(&jointName);
+                jointName += "_joint";
+                Simulator::rotateHingeJoint(jointName, value - position1,
+                                            control->envireGraph_, control->graphTreeView_);
             }
             //myJoint->setOfflinePosition(value);
             refreshPositions();
