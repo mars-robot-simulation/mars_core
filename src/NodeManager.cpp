@@ -884,7 +884,7 @@ namespace mars
             const auto& nodeName = idManager_->getName(node_id);
             if (!control->envireGraph_->containsFrame(nodeName))
             {
-                LOG_WARN(std::string{"NodeManager::getDynamicObject: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
+                //LOG_WARN(std::string{"NodeManager::getDynamicObject: Node named \"" + nodeName + "\" does not represent a frame."}.c_str());
                 return nullptr;
             }
 

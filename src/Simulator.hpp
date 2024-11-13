@@ -396,6 +396,7 @@ namespace mars
             std::list<std::string> arg_v_scene_name;
             bool b_SceneChanged;
             bool haveNewPlugin;
+            bool log_warning, log_debug;
 
             // for graphical debuggin
             std::unique_ptr<osg_lines::Lines> contactLines;

@@ -133,7 +133,22 @@ namespace mars
             arg_run    = 0;
             arg_grid   = 0;
             arg_ortho  = 0;
-
+            log_warning = false;
+            log_debug = false;
+            char *envText = getenv("BASE_LOG_LEVEL");
+            if(envText)
+            {
+                string envString = envText;
+                if(envString == "DEBUG" || envString == "ALL")
+                {
+                    log_warning = true;
+                    log_debug = true;
+                }
+                else if(envString == "WARNING")
+                {
+                    log_debug = true;
+                }
+            }
 
             Simulator::activeSimulator = this; // set this Simulator object to the active one
 
@@ -2351,19 +2366,25 @@ namespace mars
 #endif
                 break;
             case data_broker::DB_MESSAGE_TYPE_WARNING:
+                if(log_warning)
+                {
 #ifndef WIN32
-                fprintf(stderr, "\033[0;32mwarning: %s\033[0m\n", message.c_str());
+                    fprintf(stderr, "\033[0;32mwarning: %s\033[0m\n", message.c_str());
 #else
-                fprintf(stderr, "warning: %s\n", message.c_str());
+                    fprintf(stderr, "warning: %s\n", message.c_str());
 #endif
+                }
                 break;
             case data_broker::DB_MESSAGE_TYPE_INFO:
             case data_broker::DB_MESSAGE_TYPE_DEBUG:
+                if(log_debug)
+                {
 #ifndef WIN32
-                fprintf(stderr, "\033[1;34minfo: %s\033[0m\n", message.c_str());
+                    fprintf(stderr, "\033[1;34minfo: %s\033[0m\n", message.c_str());
 #else
-                fprintf(stderr, "info: %s\n", message.c_str());
+                    fprintf(stderr, "info: %s\n", message.c_str());
 #endif
+                }
                 break;
             default:
                 fprintf(stderr, "???: %s\n", message.c_str());
