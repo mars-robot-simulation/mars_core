@@ -1017,7 +1017,7 @@ namespace mars
                 std::string jointName;
                 validJoint->getName(&jointName);
                 jointName += "_joint";
-                Simulator::rotateHingeJoint(jointName, value - position1,
+                Simulator::rotateRevolute(jointName, value - position1,
                                             control->envireGraph_, control->graphTreeView_);
             }
             //myJoint->setOfflinePosition(value);
