@@ -16,9 +16,10 @@ namespace mars
         {
             calcStep = false;
             stopThread = false;
-            struct timeval tv;
+            static struct timespec tv;
+            //struct timeval tv;
             tv.tv_sec = 0;
-            tv.tv_usec = 1000L;
+            tv.tv_nsec = 100L;
 
             while(!stopThread)
             {
@@ -30,8 +31,9 @@ namespace mars
                 else
                 {
                     //fprintf(stderr, "sleep.");
-                    utils::msleep(1);
+                    //utils::msleep(1);
 
+                    clock_nanosleep(CLOCK_MONOTONIC, 0, &tv, 0);
                     //select(0, 0, 0, 0, &tv);
                 }
             }

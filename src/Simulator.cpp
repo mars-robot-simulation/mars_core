@@ -635,9 +635,10 @@ namespace mars
         {
             auto oldState = Status::UNKNOWN;
             long time = 0;
-            struct timeval tv;
+            static struct timespec tv;
+            //struct timeval tv;
             tv.tv_sec = 0;
-            tv.tv_usec = 10L;
+            tv.tv_nsec = 100L;
 
             physicsThreadLock();
 
@@ -694,7 +695,8 @@ namespace mars
             {
                 while(it.second->calcStep == true)
                 {
-                    select(0, 0, 0, 0, &tv);
+                    clock_nanosleep(CLOCK_MONOTONIC, 0, &tv, 0);
+                    //select(0, 0, 0, 0, &tv);
                 }
             }
 
