@@ -9,6 +9,8 @@
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/events/GraphEventPublisher.hpp>
 #include <mars_interfaces/sim/ControlCenter.h>
+#include <mars_interfaces/sim/DynamicObject.hpp>
+#include <envire_types/Link.hpp>
 #include "JointManager.hpp"
 
 
@@ -109,8 +111,48 @@ namespace mars
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
         {
             auto& item = event.item->getData();
-            item.contactPluginInterface->setFrameID(event.frame);
-            contactPlugins.push_back(item.contactPluginInterface.get());
+
+            // we have to search for the next link item to get the frame id of the body
+            // search for physics interface in graph
+            bool done = false;
+            envire::core::FrameId frame = event.frame;
+            bool found = false;
+            while(!done)
+            {
+                try
+                {
+                    using LinkItem = envire::core::Item<envire::types::Link>;
+                    const auto& it = controlCenter_->envireGraph_->getItem<LinkItem>(frame);
+                    found = true;
+                    done = true;
+                }
+                catch (...)
+                {
+                }
+                if(!done)
+                {
+                    const auto& vertex = controlCenter_->envireGraph_->vertex(frame);
+                    const auto& parentVertex = controlCenter_->graphTreeView_->tree[vertex].parent;
+                    // todo: check if this check is correct
+                    if(parentVertex)
+                    {
+                        frame = controlCenter_->envireGraph_->getFrameId(parentVertex);
+                    }
+                    else
+                    {
+                        done = true;
+                    }
+                }
+            }
+            if(found)
+            {
+                item.contactPluginInterface->setFrameID(frame);
+                contactPlugins.push_back(item.contactPluginInterface.get());
+            }
+            else
+            {
+                LOG_ERROR("CollisionManager: Could not find link item in frame %s or above.", event.frame.c_str());
+            }
         }
 
         void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
