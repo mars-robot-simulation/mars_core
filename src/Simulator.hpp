@@ -295,8 +295,7 @@ namespace mars
                                            std::shared_ptr<envire::core::TreeView> &graphTreeView);
 
 
-            // @getStepSizeS: Returns step size of the physics simulations in seconds.
-            interfaces::sReal getStepSizeS() const;
+            interfaces::sReal getStepSizeS() const override;
             virtual interfaces::sReal getVectorCollision(utils::Vector position, utils::Vector ray);
 
         private:
