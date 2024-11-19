@@ -14,6 +14,7 @@
 #include <mars_interfaces/sim/CollisionInterface.hpp>
 #include <mars_interfaces/sim/CollisionHandler.hpp>
 #include <mars_interfaces/sim/ContactPluginInterface.hpp>
+#include <mars_interfaces/sim/ItemPlugin.hpp>
 
 #include <envire_core/items/Item.hpp>
 #include <envire_core/events/GraphItemEventDispatcher.hpp>
@@ -22,7 +23,7 @@ namespace mars
 {
     namespace core
     {
-        class CollisionManager :    public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>,
+        class CollisionManager :    public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ItemPluginItem>>,
                                     public envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>
         {
         public:
@@ -39,8 +40,8 @@ namespace mars
             void reset();
 
         protected:
-            virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;
-            virtual void itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event) override;
+            virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ItemPluginItem>>& event) override;
+            virtual void itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ItemPluginItem>>& event) override;
             virtual void itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event) override;
             virtual void itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event) override;
 
@@ -52,7 +53,7 @@ namespace mars
             std::map<std::pair<std::string, std::string>, std::shared_ptr<interfaces::CollisionHandler>> collisionHandlers;
             std::vector<interfaces::ContactData> contactVector;
             std::vector<interfaces::CollisionInterfaceItem> collisionItems;
-            std::vector<interfaces::ContactPluginInterface*> contactPlugins;
+            std::vector<std::shared_ptr<interfaces::ContactPluginInterface>> contactPlugins;
         };
     } // end of namespace core
 } // end of namespace mars

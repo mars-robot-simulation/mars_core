@@ -12,6 +12,7 @@
 #include <mars_interfaces/sim/DynamicObject.hpp>
 #include <envire_types/Link.hpp>
 #include "JointManager.hpp"
+#include "Simulator.hpp"
 
 
 namespace mars
@@ -20,13 +21,13 @@ namespace mars
     {
         CollisionManager::CollisionManager(const std::shared_ptr<interfaces::ControlCenter>& controlCenter) : controlCenter_{controlCenter.get()}
         {
-            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::subscribe(controlCenter_->envireGraph_.get());
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ItemPluginItem>>::subscribe(controlCenter_->envireGraph_.get());
             envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::subscribe(controlCenter_->envireGraph_.get());
         }
 
         CollisionManager::~CollisionManager()
         {
-            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ContactPluginInterfaceItem>>::unsubscribe();
+            envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::ItemPluginItem>>::unsubscribe();
             envire::core::GraphItemEventDispatcher<envire::core::Item<interfaces::CollisionInterfaceItem>>::unsubscribe();
         }
 
@@ -108,60 +109,38 @@ namespace mars
             assert(contactPlugins.empty());
         }
 
-        void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
+        void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::ItemPluginItem>>& event)
         {
             auto& item = event.item->getData();
 
-            // we have to search for the next link item to get the frame id of the body
-            // search for physics interface in graph
-            bool done = false;
-            envire::core::FrameId frame = event.frame;
-            bool found = false;
-            while(!done)
+            envire::core::FrameId linkFrame;
+            try
             {
-                try
-                {
-                    using LinkItem = envire::core::Item<envire::types::Link>;
-                    const auto& it = controlCenter_->envireGraph_->getItem<LinkItem>(frame);
-                    found = true;
-                    done = true;
-                }
-                catch (...)
-                {
-                }
-                if(!done)
-                {
-                    const auto& vertex = controlCenter_->envireGraph_->vertex(frame);
-                    const auto& parentVertex = controlCenter_->graphTreeView_->tree[vertex].parent;
-                    // todo: check if this check is correct
-                    if(parentVertex)
-                    {
-                        frame = controlCenter_->envireGraph_->getFrameId(parentVertex);
-                    }
-                    else
-                    {
-                        done = true;
-                    }
-                }
+                using LinkItem = envire::core::Item<envire::types::Link>;
+                LinkItem &linkItem = Simulator::searchForTopItem<envire::types::Link>(controlCenter_->envireGraph_,
+                                                                                      controlCenter_->graphTreeView_,
+                                                                                      event.frame, &linkFrame);
+
+                using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
+                PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
+                contactPlugin->setFrameID(linkFrame);
+                contactPlugins.push_back(contactPlugin);
             }
-            if(found)
+            catch (...)
             {
-                item.contactPluginInterface->setFrameID(frame);
-                contactPlugins.push_back(item.contactPluginInterface.get());
-            }
-            else
-            {
-                LOG_ERROR("CollisionManager: Could not find link item in frame %s or above.", event.frame.c_str());
+                LOG_ERROR("CollisionManager: Can't add contact plugin to frame %s.", event.frame.c_str());
             }
         }
 
-        void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ContactPluginInterfaceItem>>& event)
+        void CollisionManager::itemRemoved(const envire::core::TypedItemRemovedEvent<envire::core::Item<interfaces::ItemPluginItem>>& event)
         {
-            auto item = event.item->getData().contactPluginInterface.get();
+            auto item = event.item->getData();
+            using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
+            PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
             auto positionOfItem = std::find_if(std::begin(contactPlugins), std::end(contactPlugins),
-                [&item](const interfaces::ContactPluginInterface* const x)
+                [&contactPlugin](std::shared_ptr<interfaces::ContactPluginInterface> x)
                 {
-                    return x == item;
+                    return x == contactPlugin;
                 });
             assert(positionOfItem != std::end(contactPlugins));
             contactPlugins.erase(positionOfItem);
