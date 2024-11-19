@@ -126,14 +126,14 @@ namespace mars
             const auto items = envire::core::Frame::ItemList{envireGraph->getItems(node, typeIndex)};
 
             // Remove all items
-            for(const auto item : items)
+            for(const auto &item : items)
             {
                 envireGraph->removeItemFromFrame(item);
             }
 
             // Readd all items
             const auto& frameId = envireGraph->getFrameId(node);
-            for (const auto item : items)
+            for (const auto &item : items)
             {
                 envireGraph->addItemToFrame(frameId, item);
             }

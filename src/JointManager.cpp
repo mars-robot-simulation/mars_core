@@ -121,7 +121,7 @@ namespace mars
 
         void JointManager::editJoint(JointData *jointS)
         {
-            if(const auto joint = getJointInterface(jointS->index).lock())
+            if(const auto &joint = getJointInterface(jointS->index).lock())
             {
                 joint->setAnchor(jointS->anchor);
                 joint->setAxis(jointS->axis1);
@@ -137,7 +137,7 @@ namespace mars
         {
             core_objects_exchange obj;
             jointList->clear();
-            for(const auto simJoint : getSimJoints())
+            for(const auto &simJoint : getSimJoints())
             {
                 simJoint->getCoreExchange(&obj);
                 jointList->push_back(obj);
@@ -235,7 +235,7 @@ namespace mars
         {
             vector<std::shared_ptr<mars::core::SimJoint>> simJoints;
             simJoints.reserve(idManager_->size());
-            for(const auto potentialJoint : getJoints())
+            for(const auto &potentialJoint : getJoints())
             {
                 if(const auto& joint = potentialJoint.lock())
                 {
@@ -268,7 +268,7 @@ namespace mars
 
                     const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
                     const auto& items = graph->getItems(node, typeIndex);
-                    for(const auto& item : items)
+                    for(const auto &item : items)
                     {
                         const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
                         auto configMap = jointItemPtr->getData().jointInterface->getConfigMap();
@@ -374,7 +374,7 @@ namespace mars
         void JointManager::changeStepSize(void) 
         {
             // This works because the constructed SimJoints contain a reference to their corresponding JointInterface.
-            for(const auto simJoint : getSimJoints())
+            for(const auto &simJoint : getSimJoints())
             {
                 simJoint->updateStepSize();
             }
@@ -455,7 +455,7 @@ namespace mars
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
                 const auto& items = c->envireGraph_->getItems(node, typeIndex);
-                for(const auto item : items)
+                for(const auto &item : items)
                 {
                     const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
                     auto configMap = jointItemPtr->getData().jointInterface->getConfigMap();
@@ -711,7 +711,7 @@ namespace mars
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
                 const auto& items = c->envireGraph_->getItems(node, typeIndex);
-                for(const auto item : items)
+                for(const auto &item : items)
                 {
                     std::string currentJointName;
                     auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
@@ -756,7 +756,7 @@ namespace mars
 
                 Iterator begin, end;
                 boost::tie(begin, end) = c->envireGraph_->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
-                for(auto item = begin; item != end; item++)
+                for(auto &item = begin; item != end; item++)
                 {
                     std::string currentJointName;
                     if(!item->getData().jointInterface) {
@@ -819,7 +819,7 @@ namespace mars
 
                 Iterator begin, end;
                 boost::tie(begin, end) = c->envireGraph_->getItems<envire::core::Item<interfaces::JointInterfaceItem>>(node);
-                for(auto item = begin; item != end; item++)
+                for(auto &item = begin; item != end; item++)
                 {
                     std::string currentJointName;
                     if(!item->getData().jointInterface) {
@@ -854,7 +854,7 @@ namespace mars
 
                 const auto typeIndex = std::type_index{typeid(envire::core::Item<mars::interfaces::JointInterfaceItem>)};
                 const auto& items = c->envireGraph_->getItems(node, typeIndex);
-                for(const auto item : items)
+                for(const auto &item : items)
                 {
                     const auto jointItemPtr = boost::dynamic_pointer_cast<envire::core::Item<interfaces::JointInterfaceItem>>(item);
                     joints.emplace_back(jointItemPtr->getData().jointInterface);
