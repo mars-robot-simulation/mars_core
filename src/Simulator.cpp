@@ -2668,7 +2668,7 @@ namespace mars
                 d = it.second->control->collision->getVectorCollision(position, ray);
                 if(min < 0 || min > d) min = d;
             }
-            return d;
+            return min;
         }
 
     } // end of namespace core
