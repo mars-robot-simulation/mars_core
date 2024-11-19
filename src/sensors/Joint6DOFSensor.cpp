@@ -63,12 +63,13 @@ namespace mars
                 dbPackage.add("ty", 0.0);
                 dbPackage.add("tz", 0.0);
 
-                char text[55];
-                sprintf(text, "Sensors/%s", config.name.c_str());
-                dbPushId = control->dataBroker->pushData("mars_sim", text,
+                std::string groupName;
+                std::string dataName;
+                getDataBrokerNames(groupName, dataName);
+                dbPushId = control->dataBroker->pushData(groupName, dataName,
                                                          dbPackage, NULL,
                                                          data_broker::DATA_PACKAGE_READ_FLAG);
-                control->dataBroker->registerTimedProducer(this, "mars_sim", text,
+                control->dataBroker->registerTimedProducer(this, groupName, dataName,
                                                            "mars_sim/simTimer", 0);
             }
 
@@ -244,5 +245,10 @@ namespace mars
             return cfg;
         }
 
+        void Joint6DOFSensor::getDataBrokerNames(std::string &groupName, std::string &dataName) const
+        {
+            groupName = "mars_sim";
+            dataName = std::string{"Sensors/"} + config.name;
+        }
     } // end of namespace core
 } // end of namespace mars

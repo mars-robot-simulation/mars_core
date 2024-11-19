@@ -65,6 +65,9 @@ namespace mars
                                                        configmaps::ConfigMap *config);
             virtual configmaps::ConfigMap createConfig() const;
 
+            // TODO: Add to interface?
+            void getDataBrokerNames(std::string& groupName, std::string& dataName) const;
+
         private:
             Joint6DOFConfig config;
             joint6DOFData sensor_data;
