@@ -85,13 +85,16 @@ namespace mars
         void CollisionManager::reset()
         {
             updateTransforms();
-            for (auto& collisionItem : collisionItems)
+            for (auto &collisionItem : collisionItems)
             {
                 collisionItem.collisionInterface->initSpace();
             }
-            for (auto& contactPlugin : contactPlugins)
+            for (auto &contactPluginIt : contactPlugins)
             {
-                contactPlugin->reset();
+                for (auto &contactPlugin : contactPluginIt.second)
+                {
+                    contactPlugin->reset();
+                }
             }
         }
 
@@ -113,18 +116,18 @@ namespace mars
         {
             auto& item = event.item->getData();
 
-            envire::core::FrameId linkFrame;
             try
             {
-                using LinkItem = envire::core::Item<envire::types::Link>;
-                LinkItem &linkItem = Simulator::searchForTopItem<envire::types::Link>(controlCenter_->envireGraph_,
-                                                                                      controlCenter_->graphTreeView_,
-                                                                                      event.frame, &linkFrame);
-
                 using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
                 PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
-                contactPlugin->setFrameID(linkFrame);
-                contactPlugins.push_back(contactPlugin);
+
+                contactPlugin->setFrameID(event.frame);
+                std::vector<int> priorities = contactPlugin->priorities();
+                for(auto &p: priorities)
+                {
+                    std::vector<std::shared_ptr<interfaces::ContactPluginInterface>> &cp = contactPlugins[p];
+                    cp.push_back(contactPlugin);
+                }
             }
             catch (...)
             {
@@ -137,13 +140,18 @@ namespace mars
             auto item = event.item->getData();
             using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
             PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
-            auto positionOfItem = std::find_if(std::begin(contactPlugins), std::end(contactPlugins),
+            for(auto &it: contactPlugins)
+            {
+                auto positionOfItem = std::find_if(std::begin(it.second), std::end(it.second),
                 [&contactPlugin](std::shared_ptr<interfaces::ContactPluginInterface> x)
                 {
                     return x == contactPlugin;
                 });
-            assert(positionOfItem != std::end(contactPlugins));
-            contactPlugins.erase(positionOfItem);
+                if(positionOfItem != std::end(it.second))
+                {
+                    it.second.erase(positionOfItem);
+                }
+            }
         }
 
         void CollisionManager::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<interfaces::CollisionInterfaceItem>>& event)
@@ -200,17 +208,20 @@ namespace mars
 
         void CollisionManager::applyContactPlugins()
         {
+            // todo: we may think of creating a map of frame ids to plugins
+            //       instead of going over all plugins and checking for affects()
             for (auto& contact : contactVector)
             {
-                for (const auto& contactPlugin : contactPlugins)
+                for (const auto& contactPluginsIt : contactPlugins)
                 {
-                    if (!contactPlugin->affects(contact))
+                    for ( const auto& contactPlugin : contactPluginsIt.second)
                     {
-                        continue;
+                        if (!contactPlugin->affects(contact))
+                        {
+                            continue;
+                        }
+                        contactPlugin->updateContact(contact);
                     }
-
-                    contactPlugin->updateContact(contact);
-                    break; // TODO: Apply affecting contact plugin with highest priority.
                 }
             }
         }

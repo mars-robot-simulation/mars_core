@@ -53,7 +53,7 @@ namespace mars
             std::map<std::pair<std::string, std::string>, std::shared_ptr<interfaces::CollisionHandler>> collisionHandlers;
             std::vector<interfaces::ContactData> contactVector;
             std::vector<interfaces::CollisionInterfaceItem> collisionItems;
-            std::vector<std::shared_ptr<interfaces::ContactPluginInterface>> contactPlugins;
+            std::map<int, std::vector<std::shared_ptr<interfaces::ContactPluginInterface>>> contactPlugins;
         };
     } // end of namespace core
 } // end of namespace mars
