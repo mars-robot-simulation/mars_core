@@ -210,9 +210,11 @@ namespace mars
         {
             // todo: we may think of creating a map of frame ids to plugins
             //       instead of going over all plugins and checking for affects()
+            double stepSize = controlCenter_->sim->getStepSizeS();
             bool skipContact = false;
             for (auto& contact : contactVector)
             {
+                contact.simulationStepSize = stepSize;
                 skipContact = false;
                 for (const auto& contactPluginsIt : contactPlugins)
                 {
