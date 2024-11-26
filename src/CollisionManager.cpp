@@ -210,8 +210,10 @@ namespace mars
         {
             // todo: we may think of creating a map of frame ids to plugins
             //       instead of going over all plugins and checking for affects()
+            bool skipContact = false;
             for (auto& contact : contactVector)
             {
+                skipContact = false;
                 for (const auto& contactPluginsIt : contactPlugins)
                 {
                     for ( const auto& contactPlugin : contactPluginsIt.second)
@@ -221,7 +223,30 @@ namespace mars
                             continue;
                         }
                         contactPlugin->updateContact(contact);
+                        if(contact.depth < 0.0001)
+                        {
+                            skipContact = true;
+                            break;
+                        }
                     }
+                    if(skipContact)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // erase contact information of contacs removed by plugins
+            std::vector<interfaces::ContactData>::iterator it = contactVector.begin();
+            while(it != contactVector.end())
+            {
+                if(it->depth < 0.0001)
+                {
+                    it = contactVector.erase(it);
+                }
+                else
+                {
+                    ++it;
                 }
             }
         }
