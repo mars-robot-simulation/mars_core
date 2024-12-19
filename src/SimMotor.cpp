@@ -85,6 +85,14 @@ namespace mars
                 ffEffortGain = this->sMotor.config["ffEffortGain"];
             }
 
+            if(this->sMotor.config.hasKey("frictionCoefficient"))
+            {
+                if (auto validJoint = joint.lock())
+                {
+                    validJoint->setJointFrictionCoefficient(this->sMotor.config["frictionCoefficient"]);
+                }
+            }
+
             //myPlayJoint = 0;
             active = true;
 
