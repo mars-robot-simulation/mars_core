@@ -173,7 +173,7 @@ namespace mars
             interfaces::MotorData sMotor;
             std::weak_ptr<interfaces::JointInterface> joint;
             interfaces::sReal time;
-            interfaces::sReal lastVelocity, velocity, position1, position2, effort;
+            interfaces::sReal lastVelocity, velocity, position1, velocity1, position2, effort;
             interfaces::sReal sensedEffort;
             interfaces::sReal tmpmaxeffort, tmpmaxspeed;
             interfaces::sReal current, temperature, filterValue;
@@ -225,7 +225,7 @@ namespace mars
             // for dataBroker communication
             data_broker::DataPackage dbPackage, cmdPackage;
             unsigned long dbPushId, dbCmdId;
-            long dbIdIndex, dbControlParameterIndex, dbPositionIndex, dbCurrentIndex, dbEffortIndex, dbMaxEffortIndex;
+            long dbIdIndex, dbControlParameterIndex, dbPositionIndex, dbCurrentIndex, dbEffortIndex, dbMaxEffortIndex, dbVelocityIndex, dbTargetVelocityIndex, dbTargetTorqueIndex, dbVelErrorIndex, dbVelIIndex;
             bool effortMotor;
             int pushToDataBroker;
             PID posPID, velPID;

@@ -112,6 +112,11 @@ namespace mars
                 dbPackage.add("current", getCurrent());
                 dbPackage.add("torque", getEffort());
                 dbPackage.add("maxtorque", sMotor.maxEffort);
+                dbPackage.add("velocity", velPID.current_value);
+                dbPackage.add("targetVelocity", velPID.target_value);
+                dbPackage.add("targetTorque", velPID.output_value);
+                dbPackage.add("velocityError", velPID.last_error);
+                dbPackage.add("velocityI", velPID.last_i);
 
                 dbIdIndex = dbPackage.getIndexByName("id");
                 dbControlParameterIndex = dbPackage.getIndexByName("value");
@@ -119,6 +124,11 @@ namespace mars
                 dbCurrentIndex = dbPackage.getIndexByName("current");
                 dbEffortIndex = dbPackage.getIndexByName("torque");
                 dbMaxEffortIndex = dbPackage.getIndexByName("maxtorque");
+                dbVelocityIndex = dbPackage.getIndexByName("velocity");
+                dbTargetVelocityIndex = dbPackage.getIndexByName("targetVelocity");
+                dbTargetTorqueIndex = dbPackage.getIndexByName("targetTorque");
+                dbVelErrorIndex = dbPackage.getIndexByName("velocityError");
+                dbVelIIndex = dbPackage.getIndexByName("velocityI");
 
                 std::string groupName, dataName;
                 getDataBrokerNames(&groupName, &dataName);
@@ -435,14 +445,14 @@ namespace mars
             // set current state
             // todo: better get the velocity directly from the physics state
 
-            velPID.current_value = (*position - posPID.current_value)*(1000.0/time);
+            velPID.current_value = velocity1;//(*position - posPID.current_value)*(1000.0/time);
             posPID.current_value = *position;
 
             posPID.target_value = controlValue;
             posPID.step();
             velPID.target_value = posPID.output_value;
             velPID.step();
-            //fprintf(stderr, "%lu %g %g %g %g %g\n", sMotor.index, *position, controlValue, posPID.current_value, posPID.output_value, velPID.last_error);
+            //fprintf(stderr, "%lu %g %g %g %g %g\n", sMotor.index, *position, controlValue, posPID.current_value, posPID.output_value, velPID.i);
             controlValue = velPID.output_value;
             runEffortPipe(time);
             controlValue = origControlValue;
@@ -657,7 +667,10 @@ namespace mars
             if(auto validJoint = joint.lock())
             {
                 if(sMotor.axis == 1)
+                {
                     position1 = validJoint->getPosition();
+                    velocity1 = validJoint->getVelocity();
+                }
                 else
                     position2 = validJoint->getPosition2();
             }
@@ -669,6 +682,7 @@ namespace mars
             {
                 position1 = validJoint->getPosition();
                 position2 = validJoint->getPosition2();
+                velocity1 = validJoint->getVelocity();
             }
         }
 
@@ -1175,6 +1189,11 @@ namespace mars
             dbPackage->set(dbCurrentIndex, getCurrent());
             dbPackage->set(dbEffortIndex, getEffort());
             dbPackage->set(dbMaxEffortIndex, sMotor.maxEffort);
+            dbPackage->set(dbVelocityIndex, velPID.current_value);
+            dbPackage->set(dbTargetVelocityIndex, velPID.target_value);
+            dbPackage->set(dbTargetTorqueIndex, velPID.output_value);
+            dbPackage->set(dbVelErrorIndex, velPID.last_error);
+            dbPackage->set(dbVelIIndex, velPID.last_i);
         }
 
         void SimMotor::receiveData(const data_broker::DataInfo& info,
@@ -1299,7 +1318,7 @@ namespace mars
             }
             posPID.last_error = 0;
             posPID.last_i = 0;
-
+            //fprintf(stderr, "sMotor.config:\n%s\n", sMotor.config.toYamlString().c_str());
             if(sMotor.config.hasKey("velP"))
             {
                 velPID.p = sMotor.config["velP"];
