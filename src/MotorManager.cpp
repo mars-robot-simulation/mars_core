@@ -372,10 +372,7 @@ namespace mars
          */
         void MotorManager::moveMotor(unsigned long index, double value)
         {
-            const MutexLocker locker{&simMotorsMutex};
-            const auto& iter = simMotors.find(index);
-            if(iter != simMotors.end())
-                iter->second->setControlValue(value);
+            setMotorValue(index, value);
         }
 
 
