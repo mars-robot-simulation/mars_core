@@ -1823,6 +1823,8 @@ namespace mars
         void Simulator::singleStep(void)
         {
             stepping_mutex.lock();
+            simStartTime = dbSimTimePackage[0].d;
+            simRealTime = 0.0;
             simulationStatus = STEPPING;
             stepping_wc.wakeAll();
             stepping_mutex.unlock();
