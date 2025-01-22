@@ -1454,9 +1454,9 @@ namespace mars
             // first get the joint
             if (envireGraph->containsItems<envire::core::Item<envire::types::joints::Continuous>>(origin))
             {
-                // CAUTION: we assume that there is only one DynamicObjectItem in the frame
+                // CAUTION: we assume that there is only one joints::Continuous in the frame
                 // so we get the first item
-                // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
+                // TODO: add handling/warning if there is multiple joints::Continuous for some reason
                 const auto& it = envireGraph->getItem<envire::core::Item<envire::types::joints::Continuous>>(origin);
                 const auto& joint = it->getData();
                 // get the joint axis
