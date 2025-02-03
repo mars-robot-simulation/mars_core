@@ -103,12 +103,12 @@ namespace mars
             lib_manager::LibInterface{theManager},
             exit_sim{false}, allow_draw{true},
             sync_graphics{false}, physics_mutex_count{0},
-            haveNewPlugin{false}
+            haveNewPlugin{false}, tsNeedsInit(true)
         {
             // TODO: Initialize instead of define
             config_dir = DEFAULT_CONFIG_DIR;
             calc_time = 0;
-            avg_step_time = avg_log_time = 0;
+            avg_step_time = avg_log_time = avg_pre_time = avg_contact_time = 0;
             count = 0;
             config_dir = ".";
 
@@ -182,6 +182,8 @@ namespace mars
             dbSimTimePackage.add("simTime", 0.);
             dbSimDebugPackage.add("simUpdate", 0.);
             dbSimDebugPackage.add("worldStep", 0.);
+            dbSimDebugPackage.add("preWorldStep", 0.);
+            dbSimDebugPackage.add("contactStep", 0.);
             dbSimDebugPackage.add("logStep", 0.);
 
             checkOptionalDependency("data_broker");
@@ -634,7 +636,7 @@ namespace mars
         void Simulator::step(bool setState)
         {
             auto oldState = Status::UNKNOWN;
-            long time = 0;
+            long long time = 0;
             static struct timespec tv;
             //struct timeval tv;
             tv.tv_sec = 0;
@@ -648,12 +650,15 @@ namespace mars
                 simulationStatus = STEPPING;
             }
 
-            time = utils::getTime();
+            time = utils::getTimeU();
 
             if(ControlCenter::theDataBroker)
             {
                 ControlCenter::theDataBroker->trigger("mars_sim/prePhysicsUpdate");
             }
+
+            avg_pre_time += static_cast<double>(getTimeDiffU(time))*0.001;
+            time = utils::getTimeU();
 
             for(auto &it: subWorlds)
             {
@@ -683,6 +688,8 @@ namespace mars
                 }
             }
             contactLinesDataMutex.unlock();
+            avg_contact_time += static_cast<double>(getTimeDiffU(time))*0.001;
+            time = utils::getTimeU();
 
             for(const auto &it: subWorlds)
             {
@@ -704,12 +711,12 @@ namespace mars
                 }
             }
 
-            avg_step_time += static_cast<double>(getTimeDiff(time));
+            avg_step_time += static_cast<double>(getTimeDiffU(time))*0.001;
 
             // control->joints->updateJoints(calc_ms);
             control->motors->updateMotors(calc_ms);
 
-            time = utils::getTime();
+            time = utils::getTimeU();
 
             getTimeMutex.lock();
             dbSimTimePackage[0].d += calc_ms;
@@ -720,15 +727,19 @@ namespace mars
                 ControlCenter::theDataBroker->stepTimer("mars_sim/simTimer", calc_ms);
             }
 
-            avg_log_time += static_cast<double>(getTimeDiff(time));
+            avg_log_time += static_cast<double>(getTimeDiffU(time))*0.001;
             if(++count > avg_count_steps)
             {
                 avg_log_time /= count;
                 avg_step_time /= count;
+                avg_pre_time /= count;
+                avg_contact_time /= count;
                 count = 0;
                 dbSimDebugPackage[1].d = avg_step_time;
-                dbSimDebugPackage[2].d = avg_log_time;
-                avg_step_time = avg_log_time = 0.0;
+                dbSimDebugPackage[2].d = avg_pre_time;
+                dbSimDebugPackage[3].d = avg_contact_time;
+                dbSimDebugPackage[4].d = avg_log_time;
+                avg_step_time = avg_log_time = avg_pre_time = avg_contact_time = 0.0;
             }
             pluginLocker.lockForRead();
 
@@ -755,7 +766,7 @@ namespace mars
                         //        activePlugins[i].name.c_str(),
                         //        activePlugins[i].timer);
                         getTimeMutex.lock();
-                        dbSimDebugPackage[i+3].d = activePlugins[i].timer;
+                        dbSimDebugPackage[i+5].d = activePlugins[i].timer;
                         getTimeMutex.unlock();
                         activePlugins[i].timer = 0.0;
                     }
@@ -859,7 +870,6 @@ namespace mars
             //used to remember last time this function was called
             //and as absolute (minimum) wake-up time.
             static struct timespec ts;
-            static bool tsNeedsInit = true;
             if (tsNeedsInit)
             {
                 const auto& retval = clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -907,6 +917,54 @@ namespace mars
             {
                 throw std::runtime_error("clock_gettime(CLOCK_MONOTONIC, ...) failed");
             }
+#elif __APPLE__
+            static struct timespec ts;
+            struct timespec ts_new;
+            constexpr auto second_nsec_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::seconds{1});
+            constexpr auto second_nsec = static_cast<long>(second_nsec_dur.count());
+            if (tsNeedsInit)
+            {
+                const auto& retval = clock_gettime(CLOCK_MONOTONIC, &ts);
+                if (retval != 0)
+                {
+                    throw std::runtime_error("clock_gettime(CLOCK_MONOTONIC, ...) failed");
+                }
+                tsNeedsInit = false;
+            }
+            clock_gettime(CLOCK_MONOTONIC, &ts_new);
+            using ms_dur = std::chrono::duration<double, std::milli>;
+            const auto calc_ns_dur = std::chrono::duration_cast<std::chrono::nanoseconds>(ms_dur{calc_ms});
+            const auto calc_ns = static_cast<long>(calc_ns_dur.count());
+            ts.tv_nsec += calc_ns;
+            while (ts.tv_nsec > second_nsec)
+            {
+                ts.tv_nsec -= second_nsec;
+                ts.tv_sec += 1;
+            }
+
+            //sleep...
+            if(my_real_time)
+            {
+                long diff_sec = ts.tv_sec - ts_new.tv_sec;
+                long diff_nsec = diff_sec*second_nsec + ts.tv_nsec - ts_new.tv_nsec;
+                if(diff_nsec > 0)
+                {
+                    ts_new.tv_sec = 0;
+                    ts_new.tv_nsec = diff_nsec;
+                    const auto& retval = nanosleep(&ts_new, NULL);
+                    if (retval != 0)
+                    {
+                        std::cerr << "WARNING: Your system is too slow!" << std::endl;
+                    }
+                }
+            }
+            //remember time
+            //const auto& retval = clock_gettime(CLOCK_MONOTONIC, &ts);
+            //if (retval != 0)
+            //{
+            //    throw std::runtime_error("clock_gettime(CLOCK_MONOTONIC, ...) failed");
+            //}
+
 #else
             if(my_real_time)
             {
@@ -1855,15 +1913,17 @@ namespace mars
             }
             if(bfound)
             {
-                size_t offset = 3;
+                size_t offset = 5;
                 tmpPackage.add(dbSimDebugPackage[0]);
                 tmpPackage.add(dbSimDebugPackage[1]);
                 tmpPackage.add(dbSimDebugPackage[2]);
+                tmpPackage.add(dbSimDebugPackage[3]);
+                tmpPackage.add(dbSimDebugPackage[4]);
                 for(size_t k = 0; k < activePlugins.size(); ++k)
                 {
                     if(i==k)
                     {
-                        offset = 4;
+                        offset = 6;
                     }
                     tmpPackage.add(dbSimDebugPackage[k+offset]);
                 }
@@ -2007,15 +2067,17 @@ namespace mars
                 {
                     activePlugins.erase(p_iter);
                     data_broker::DataPackage tmpPackage;
-                    size_t offset = 3;
+                    size_t offset = 5;
                     tmpPackage.add(dbSimDebugPackage[0]);
                     tmpPackage.add(dbSimDebugPackage[1]);
                     tmpPackage.add(dbSimDebugPackage[2]);
+                    tmpPackage.add(dbSimDebugPackage[3]);
+                    tmpPackage.add(dbSimDebugPackage[4]);
                     for(size_t k=0; k<activePlugins.size(); ++k)
                     {
                         if(i==k)
                         {
-                            offset = 4;
+                            offset = 6;
                         }
                         tmpPackage.add(dbSimDebugPackage[k+offset]);
                     }
@@ -2178,6 +2240,10 @@ namespace mars
 
             if(_property.paramId == cfgRealtime.paramId)
             {
+                if(my_real_time != _property.bValue)
+                {
+                    tsNeedsInit = true;
+                }
                 my_real_time = _property.bValue;
                 return;
             }

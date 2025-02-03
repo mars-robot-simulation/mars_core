@@ -358,10 +358,11 @@ namespace mars
             utils::WaitCondition stepping_wc; ///< Used for preventing active waiting for a single step or start event.
             utils::Mutex getTimeMutex;
             int physics_mutex_count;
-            double avg_log_time, avg_step_time;
+            double avg_log_time, avg_step_time, avg_pre_time, avg_contact_time;
             int count, avg_count_steps;
             interfaces::sReal calc_time;
             long simStartTime, simRealTime;
+            bool tsNeedsInit;
 
             // physics
             std::shared_ptr<interfaces::CollisionInterface> collisionSpace;
