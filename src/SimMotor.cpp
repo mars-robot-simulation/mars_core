@@ -1316,6 +1316,8 @@ namespace mars
             posPID.d = sMotor.d;
             posPID.max_out = sMotor.maxSpeed;
             posPID.min_out = -sMotor.maxSpeed;
+            posPID.limit_pos_error = true;
+
             if(sMotor.config.hasKey("filetPos"))
             {
                 posPID.filter_value = sMotor.config["filterPos"];

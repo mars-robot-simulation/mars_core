@@ -22,6 +22,7 @@ namespace mars
             interfaces::sReal filter_value;
             interfaces::sReal min_out, max_out, max_i;
             interfaces::sReal output_value;
+            bool limit_pos_error;
         };
     }
 }
