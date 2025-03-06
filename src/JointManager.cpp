@@ -7,6 +7,12 @@
  * modules.
  */
 
+#include <envire_types/registration/TypeCreatorFactory.hpp>
+#include <envire_types/joints/Fixed.hpp>
+#include <envire_types/joints/Revolute.hpp>
+#include <envire_types/joints/Continuous.hpp>
+#include <envire_types/joints/Prismatic.hpp>
+
 #include "JointManager.hpp"
 #include "SimJoint.hpp"
 #include "Simulator.hpp"
@@ -19,14 +25,7 @@
 
 #include <stdexcept>
 
-#include <envire_types/registration/TypeCreatorFactory.hpp>
-#include <envire_types/joints/Fixed.hpp>
-#include <envire_types/joints/Revolute.hpp>
-#include <envire_types/joints/Continuous.hpp>
-#include <envire_types/joints/Prismatic.hpp>
-
 #include <data_broker/DataBrokerInterface.h>
-
 #include <mars_interfaces/utils.h>
 #include <mars_interfaces/MARSDefs.h>
 #include <mars_interfaces/sim/JointInterface.h>
@@ -211,7 +210,7 @@ namespace mars
         void JointManager::removeJointByIDs(unsigned long id1, unsigned long id2)
         {
             const auto id = getIDByNodeIDs(id1, id2);
-            if(id != 0) 
+            if(id != 0)
             {
                 removeJoint(id);
                 return;
@@ -223,7 +222,7 @@ namespace mars
             if(const auto joint = getJointInterface(id).lock())
             {
                 const auto simJoint = std::make_shared<core::SimJoint>(control, constructJointData(joint));
-                // TODO: 
+                // TODO:
                 // simJoint->setAttachedNodes(node1, node2);
                 simJoint->setPhysicalJoint(joint);
                 return simJoint;
@@ -240,7 +239,7 @@ namespace mars
                 if(const auto& joint = potentialJoint.lock())
                 {
                     const auto simJoint = std::make_shared<core::SimJoint>(control, constructJointData(joint));
-                    // TODO: 
+                    // TODO:
                     // simJoint->setAttachedNodes(node1, node2);
                     simJoint->setPhysicalJoint(joint);
                     simJoints.emplace_back(std::move(simJoint));
@@ -288,16 +287,39 @@ namespace mars
         void JointManager::reloadJoints(void)
         {
             envire::core::EnvireGraph* const graph = control->envireGraph_.get();
-            auto readdFunctor = [&graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            std::list<const envire::core::GraphTraits::vertex_descriptor> nodelist;
+            auto readdFunctor = [&graph, &nodelist](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
+            {
+                std::list<const envire::core::GraphTraits::vertex_descriptor>::iterator it;
+                envire::core::FrameId frame1, frame2;
+                frame1 = graph->getFrameId(node);
+                bool inserted = false;
+                for(it=nodelist.begin(); it!=nodelist.end(); ++it)
+                {
+                    frame2 = graph->getFrameId(*it);
+                    if(frame1 < frame2)
+                    {
+                        inserted = true;
+                        nodelist.insert(it, node);
+                        break;
+                    }
+                }
+                if(!inserted)
+                {
+                    nodelist.push_back(node);
+                }
+            };
+
+            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
+            control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
+
+            for(auto &node: nodelist)
             {
                 itemReadder<envire::types::joints::Fixed>(graph, node);
                 itemReadder<envire::types::joints::Continuous>(graph, node);
                 itemReadder<envire::types::joints::Prismatic>(graph, node);
                 itemReadder<envire::types::joints::Revolute>(graph, node);
-            };
-
-            const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
-            control->graphTreeView_->visitBfs(rootVertex, readdFunctor);
+            }
         }
 
         void JointManager::updateJoints(sReal calc_ms)
@@ -308,7 +330,7 @@ namespace mars
 
         void JointManager::clearAllJoints(bool clear_all)
         {
-            
+
             envire::core::EnvireGraph* const graph = control->envireGraph_.get();
             auto removeFunctor = [clear_all, &graph](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
@@ -371,7 +393,7 @@ namespace mars
         }
 
 
-        void JointManager::changeStepSize(void) 
+        void JointManager::changeStepSize(void)
         {
             // This works because the constructed SimJoints contain a reference to their corresponding JointInterface.
             for(const auto &simJoint : getSimJoints())
@@ -480,7 +502,7 @@ namespace mars
         {
             const auto& frameId1 = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(id1);
             const auto& frameId2 = dynamic_cast<NodeManager*>(control->nodes)->getLinkName(id2);
-      
+
             if(const auto joint = getJointInterface(frameId1, frameId2).lock())
             {
                 std::string jointName;
@@ -566,7 +588,7 @@ namespace mars
             return 0.0;
         }
 
-        sReal JointManager::getHighStop2(unsigned long id) const 
+        sReal JointManager::getHighStop2(unsigned long id) const
         {
             if(const auto joint = getJointInterface(id).lock())
             {
@@ -694,7 +716,7 @@ namespace mars
         {
             envire::core::ItemBase::Ptr foundItem = nullptr;
             interfaces::ControlCenter *c = control;
-            auto jointInterfaceSearchFunctor = [&foundItem, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            auto jointInterfaceSearchFunctor = [&foundItem, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 // a item with the given name is already found
                 if(foundItem)
@@ -746,7 +768,7 @@ namespace mars
             auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
             std::shared_ptr<interfaces::JointInterface> *foundJointPtr = &foundJoint;
             interfaces::ControlCenter *c = control;
-            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 // a joint with the given name is already found
                 if(*foundJointPtr)
@@ -809,7 +831,7 @@ namespace mars
             auto foundJoint = std::shared_ptr<interfaces::JointInterface>{nullptr};
             std::shared_ptr<interfaces::JointInterface> *foundJointPtr = &foundJoint;
             const interfaces::ControlCenter *c = control;
-            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent) 
+            auto jointInterfaceSearchFunctor = [foundJointPtr, jointName, c](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
                 // a joint with the given name is already found
                 if(*foundJointPtr)

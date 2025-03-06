@@ -10,15 +10,15 @@
 #pragma once
 
 #include <envire_core/items/Item.hpp>
+#include <envire_core/graph/EnvireGraph.hpp>
+#include <envire_core/graph/GraphTypes.hpp>
+
 #include <mars_interfaces/sim/ControlCenter.h>
 #include <mars_interfaces/sim/JointInterface.h>
 #include <mars_interfaces/sim/JointManagerInterface.h>
 #include <mars_interfaces/JointData.h>
 #include <mars_utils/Mutex.h>
 
-#include <envire_core/items/Item.hpp>
-#include <envire_core/graph/EnvireGraph.hpp>
-#include <envire_core/graph/GraphTypes.hpp>
 
 #include "JointIDManager.hpp"
 
