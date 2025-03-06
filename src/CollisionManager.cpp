@@ -204,6 +204,34 @@ namespace mars
                     }
                 }
             }
+            // sort contact vector by contact depth to generate dertinism for fast_world_step
+            // only works as long as the contact detph is not exactly the same
+            std::vector<interfaces::ContactData> contactVector1;
+            for(const auto& contact: contactVector)
+            {
+                if(contactVector.size() == 0)
+                {
+                    contactVector1.push_back(contact);
+                }
+                else
+                {
+                    bool inserted = false;
+                    for(std::vector<interfaces::ContactData>::iterator it=contactVector1.begin(); it<contactVector1.end(); ++it)
+                    {
+                        if(it->depth > contact.depth)
+                        {
+                            inserted = true;
+                            contactVector1.insert(it, contact);
+                            break;
+                        }
+                    }
+                    if(inserted == false)
+                    {
+                        contactVector1.push_back(contact);
+                    }
+                }
+            }
+            contactVector.swap(contactVector1);
         }
 
         void CollisionManager::applyContactPlugins()
