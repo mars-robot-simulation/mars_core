@@ -2686,7 +2686,7 @@ namespace mars
         void Simulator::reloadObjects()
         {
             envire::core::EnvireGraph* const graph = control->envireGraph_.get();
-            std::list<const envire::core::GraphTraits::vertex_descriptor> nodelist;
+            std::list<envire::core::GraphTraits::vertex_descriptor> nodelist;
             auto linkReadder = [&graph, &nodelist](VertexDesc node, VertexDesc parent)
             {
                 nodelist.push_back(node);

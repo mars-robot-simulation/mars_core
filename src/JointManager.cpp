@@ -287,10 +287,10 @@ namespace mars
         void JointManager::reloadJoints(void)
         {
             envire::core::EnvireGraph* const graph = control->envireGraph_.get();
-            std::list<const envire::core::GraphTraits::vertex_descriptor> nodelist;
+            std::list<envire::core::GraphTraits::vertex_descriptor> nodelist;
             auto readdFunctor = [&graph, &nodelist](envire::core::GraphTraits::vertex_descriptor node, envire::core::GraphTraits::vertex_descriptor parent)
             {
-                std::list<const envire::core::GraphTraits::vertex_descriptor>::iterator it;
+                std::list<envire::core::GraphTraits::vertex_descriptor>::const_iterator it;
                 envire::core::FrameId frame1, frame2;
                 frame1 = graph->getFrameId(node);
                 bool inserted = false;
