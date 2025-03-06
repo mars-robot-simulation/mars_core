@@ -2685,23 +2685,28 @@ namespace mars
 
         void Simulator::reloadObjects()
         {
-            auto controlPtr = control.get();
-            auto linkReadder = [controlPtr](VertexDesc node, VertexDesc parent)
+            envire::core::EnvireGraph* const graph = control->envireGraph_.get();
+            std::list<const envire::core::GraphTraits::vertex_descriptor> nodelist;
+            auto linkReadder = [&graph, &nodelist](VertexDesc node, VertexDesc parent)
             {
-                itemReadder<envire::types::Link>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::Inertial>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Box>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Capsule>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Cylinder>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Mesh>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Plane>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Sphere>(controlPtr->envireGraph_.get(), node);
-                itemReadder<envire::types::geometry::Heightfield>(controlPtr->envireGraph_.get(), node);
+                nodelist.push_back(node);
             };
 
             physicsThreadLock();
             const auto& rootVertex = control->envireGraph_->getVertex(SIM_CENTER_FRAME_NAME);
             control->graphTreeView_->visitDfs(rootVertex, linkReadder);
+            for(auto &node: nodelist)
+            {
+                itemReadder<envire::types::Link>(graph, node);
+                itemReadder<envire::types::Inertial>(graph, node);
+                itemReadder<envire::types::geometry::Box>(graph, node);
+                itemReadder<envire::types::geometry::Capsule>(graph, node);
+                itemReadder<envire::types::geometry::Cylinder>(graph, node);
+                itemReadder<envire::types::geometry::Mesh>(graph, node);
+                itemReadder<envire::types::geometry::Plane>(graph, node);
+                itemReadder<envire::types::geometry::Sphere>(graph, node);
+                itemReadder<envire::types::geometry::Heightfield>(graph, node);
+            }
             physicsThreadUnlock();
         }
 
