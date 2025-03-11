@@ -230,7 +230,6 @@ namespace mars
                 package.get(positionIndices[i], &position[i]);
             }
 
-            Eigen::Vector3d position;
             package.get(positionIndices[0], &position.x());
             package.get(positionIndices[1], &position.y());
             package.get(positionIndices[2], &position.z());
@@ -492,6 +491,19 @@ namespace mars
             cfg->dataName << (*config)["dataName"];
 
             ConfigMap::iterator it2;
+            if((it = config->find("pos_offset")) != config->end())
+            {
+                cfg->pos_offset.x() = (*config)["pos_offset"]["x"];
+                cfg->pos_offset.y() = (*config)["pos_offset"]["y"];
+                cfg->pos_offset.z() = (*config)["pos_offset"]["z"];
+            }
+            if((it = config->find("ori_offset")) != config->end())
+            {
+                cfg->ori_offset.x() = (*config)["ori_offset"]["x"];
+                cfg->ori_offset.y() = (*config)["ori_offset"]["y"];
+                cfg->ori_offset.z() = (*config)["ori_offset"]["z"];
+                cfg->ori_offset.w() = (*config)["ori_offset"]["w"];
+            }
             if((it = config->find("rotation_offset")) != config->end())
             {
                 if(it->second.hasKey("yaw"))
