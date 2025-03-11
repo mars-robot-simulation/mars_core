@@ -239,6 +239,10 @@ namespace mars
             package.get(rotationIndices[2], &orientation.z());
             package.get(rotationIndices[3], &orientation.w());
 
+            // handle pos_offset and ori_offset
+            orientation = orientation * config.ori_offset;
+            position = position + orientation*config.pos_offset;
+
             poseMutex.lock();
             current_pose.setIdentity();
             current_pose.rotate(orientation);
