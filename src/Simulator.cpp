@@ -47,6 +47,9 @@
 #include <envire_core/graph/EnvireGraph.hpp>
 #include <envire_core/graph/TreeView.hpp>
 
+#include <envire_smurf_loader/Model.hpp>
+#include <envire_types/registration/TypeCreatorFactory.hpp>
+
 #include <envire_core/graph/GraphDrawing.hpp>
 #include <envire_types/joints/Continuous.hpp>
 #include <envire_types/joints/Revolute.hpp>
@@ -198,6 +201,23 @@ namespace mars
             setupManagers(theManager);
             setupPhysics();
             setupCollisions();
+
+            // create mainWorld
+            envire::core::FrameId worldFrame = "World::default";
+            ControlCenter::envireGraph->addFrame(worldFrame);
+            Vector pos(0, 0, 0);
+            Quaternion q;
+            q.x() = q.y(), q.z() = 0.0;
+            q.w() = 1.0;
+            envire::core::Transform worldPose(pos, q);
+            ControlCenter::envireGraph->addTransform(SIM_CENTER_FRAME_NAME, worldFrame, worldPose);
+
+            configmaps::ConfigMap worldMap;
+            worldMap["name"] = worldFrame;
+            worldMap["prefix"] = "";
+            std::string className(envire::smurf_loader::base_types_namespace + std::string("World"));
+            envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, worldMap);
+            ControlCenter::envireGraph->addItemToFrame(worldFrame, item);
 
             getTimeMutex.lock();
             realStartTime = utils::getTime();
@@ -418,6 +438,7 @@ namespace mars
                 collisionSpace = collisionSpaceLoader->createCollisionSpace(control.get());
                 collisionSpace->initSpace();
                 ControlCenter::collision = collisionSpace;
+                control->collision = collisionSpace;
                 if(control->graphics)
                 {
                     control->graphics->addGraphicsUpdateInterface(this);
@@ -427,6 +448,12 @@ namespace mars
                     contactLines->setColor(color_transparent_red);
                     contactLines->drawStrip(false);
                 }
+                // add collision item into graph
+                CollisionInterfaceItem collisionItem;
+                collisionItem.collisionInterface = collisionSpace;
+                collisionItem.pluginName = "mars_ode_collision";
+                auto collisionItemPtr = envire::core::Item<interfaces::CollisionInterfaceItem>::Ptr{new envire::core::Item<interfaces::CollisionInterfaceItem>{collisionItem}};
+                control->envireGraph_->addItemToFrame(SIM_CENTER_FRAME_NAME, collisionItemPtr);
             }
             else
             {
@@ -2736,6 +2763,9 @@ namespace mars
             //       - don't continue with subworlds if collision distance
             //         is already lower then bounding box collision
             double min = -1, d;
+            d = control->collision->getVectorCollision(position, ray);
+            if(min < 0 || min > d) min = d;
+
             for(auto &it: subWorlds)
             {
                 d = it.second->control->collision->getVectorCollision(position, ray);

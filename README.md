@@ -10,3 +10,7 @@ This package provides some core classes managing the simulation itself and provi
 
 mars_interfaces are distributed under the
 [3-clause BSD license](https://opensource.org/licenses/BSD-3-Clause).
+
+
+## Todo / Notes:
+  - envire_smurf_loader dependency is only required for the geometry_namespace string -> maybe move geometry_namespace to envire_types
