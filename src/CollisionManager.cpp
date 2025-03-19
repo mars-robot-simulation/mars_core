@@ -179,9 +179,13 @@ namespace mars
             decltype(collisionHandlers)::iterator handlerIt;
             for(size_t l=0; l<collisionItems.size(); ++l)
             {
+                const auto& ci1 = collisionItems[l].collisionInterface;
+                // first handle contacts within the space
+                ci1->generateContacts();
+                ci1->getContacts(contactVector);
+
                 for(size_t k=l+1; k<collisionItems.size(); ++k)
                 {
-                    const auto& ci1 = collisionItems[l].collisionInterface;
                     const auto& ci2 = collisionItems[k].collisionInterface;
                     const auto& ci1PluginName = collisionItems[l].pluginName;
                     const auto& ci2PluginName = collisionItems[k].pluginName;
