@@ -30,7 +30,12 @@
 
 #include <stdexcept>
 
+#include <envire_smurf_loader/Model.hpp>
+#include <envire_types/registration/TypeCreatorFactory.hpp>
+
 #include <mars_utils/MutexLocker.h>
+
+using namespace configmaps;
 
 namespace mars
 {
@@ -83,15 +88,15 @@ namespace mars
                                                 const Quaternion &orientation,
                                                 bool disablePhysics)
         {
-            throw std::logic_error("NodeManager::createPrimitiveNode not implemented yet");
-            // NodeData s;
-            // s.initPrimitive(type, extension, mass);
-            // s.name = name;
-            // s.pos = pos;
-            // s.rot = orientation;
-            // s.movable = moveable;
-            // s.noPhysical = disablePhysics;
-            // return addNode(&s);
+            //throw std::logic_error("NodeManager::createPrimitiveNode not implemented yet");
+            NodeData s;
+            s.initPrimitive(type, extension, mass);
+            s.name = name;
+            s.pos = pos;
+            s.rot = orientation;
+            s.movable = moveable;
+            s.noPhysical = disablePhysics;
+            return addNode(&s);
         }
 
         /**
@@ -106,19 +111,169 @@ namespace mars
         NodeId NodeManager::addNode(NodeData *nodeS, bool reload,
                                     bool loadGraphics)
         {
-            if (!nodeS->noPhysical)
+            envire::core::Transform framePose(nodeS->pos, nodeS->rot);
+            envire::core::Transform zeroPose;
+            zeroPose.setIdentity();
+
+            ConfigMap config, material;
+            nodeS->toConfigMap(&config);
+            nodeS->material.toConfigMap(&material);
+            config["material"] = material;
+
+            std::string objectType = "";
+            if (config["physicmode"].toString() == "plane")
             {
-                // TODO:
-                //  * Add or find world frame with collision object
-                //  * Add suited child frames
-                //  * Create suited envire items
-                //  * Add envire items to child frames
+                objectType = "Plane";
+                config["size"]["x"] = config["extend"]["x"];
+                config["size"]["y"] = config["extend"]["y"];
+                // a plane is never movable
+                //nodeS->noPhysical = true;
+            }
+            else if (config["physicmode"].toString() == "box")
+            {
+                objectType = "Box";
+                config["size"]["x"] = config["extend"]["x"];
+                config["size"]["y"] = config["extend"]["y"];
+                config["size"]["z"] = config["extend"]["z"];
+            }
+            else if (config["physicmode"].toString() == "cylinder")
+            {
+                objectType = "Cylinder";
+            }
+            else if (config["physicmode"].toString() == "sphere")
+            {
+                objectType = "Sphere";
+            }
+            else if (config["physicmode"].toString() == "capsule")
+            {
+                objectType = "Capsule";
+            }
+            else if (config["physicmode"].toString() == "mesh")
+            {
+                objectType = "Mesh";
+            }
+            else if (config["physicmode"].toString() == "heightfield")
+            {
+                objectType = "Heightfield";
             }
 
-            // TODO: Implement handling of nodes
-            // return nodeS->index;
+            if (objectType == ""){
+                LOG_ERROR_S << "Can not add object " << objectType
+                            << ", because the object type " << objectType << " is not known.";
+                return 0;
+            }
+            if(config.hasKey("material") && !config["material"].isMap())
+            {
+                config["material_name"] = config["material"];
+                config.erase("material");
+            }
 
-            throw std::logic_error("NodeManager::addNode not implemented yet");
+            // add new frame for the link
+            envire::core::FrameId linkFrame = nodeS->name;
+            ControlCenter::envireGraph->addFrame(linkFrame);
+            ControlCenter::envireGraph->addTransform("World::default", linkFrame, framePose);
+
+            if(nodeS->movable == true && nodeS->noPhysical == false)
+            {
+                // create link object to store it in the graph
+                {
+                    configmaps::ConfigMap linkMap;
+                    linkMap["name"] = linkFrame;
+
+                    std::string className(envire::smurf_loader::base_types_namespace + std::string("Link"));
+                    envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, linkMap);
+                    if (!item)
+                    {
+                        LOG_ERROR_S << "Can not add link " << linkMap["name"].toString()
+                                    << ", probably the link type " << className << " is not registered.";
+                        return 0;
+                    }
+                    ControlCenter::envireGraph->addItemToFrame(linkFrame, item);
+                }
+
+                // create inertial
+                {
+                    // todo handle non physical nodes
+                    envire::core::FrameId inertiaFrame = linkFrame + "_inertia";
+                    ControlCenter::envireGraph->addFrame(inertiaFrame);
+                    ControlCenter::envireGraph->addTransform(linkFrame, inertiaFrame, zeroPose);
+
+                    // fill the config with inertia information
+                    configmaps::ConfigMap inertiaMap;
+                    inertiaMap["name"] = linkFrame;
+                    inertiaMap["mass"] = nodeS->mass;
+                    inertiaMap["density"] = nodeS->density;
+                    if(nodeS->inertia_set)
+                    {
+                        inertiaMap["xx"] = nodeS->inertia[0][0];
+                        inertiaMap["xy"] = nodeS->inertia[0][1];
+                        inertiaMap["xz"] = nodeS->inertia[0][2];
+                        inertiaMap["yy"] = nodeS->inertia[1][1];
+                        inertiaMap["yz"] = nodeS->inertia[1][2];
+                        inertiaMap["zz"] = nodeS->inertia[2][2];
+                    } else
+                    {
+                        if(objectType == "Box") {
+                            inertiaMap["createFromBox"] = true;
+                            inertiaMap["x"] = config["extend"]["x"];
+                            inertiaMap["y"] = config["extend"]["y"];
+                            inertiaMap["z"] = config["extend"]["z"];
+                        }
+                        else if(objectType == "Sphere") {
+                            inertiaMap["createFromSphere"] = true;
+                            inertiaMap["x"] = config["extend"]["x"];
+                        }
+                        // todo: add capsule and cylinder
+                    }
+
+                    // create and add into the graph envire item with the object corresponding to config type
+                    std::string className(envire::smurf_loader::base_types_namespace + std::string("Inertial"));
+                    envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, inertiaMap);
+                    if (!item)
+                    {
+                        LOG_ERROR_S << "Can not add inertia " << inertiaMap["name"].toString()
+                                    << ", probably the inertia type " << className << " is not registered.";
+                        return 0;
+                    }
+                    ControlCenter::envireGraph->addItemToFrame(inertiaFrame, item);
+                }
+            }
+
+            // create and add into the graph envire item with the object corresponding to config type
+            std::string visualClassName(envire::smurf_loader::geometry_namespace + objectType);
+            envire::core::ItemBase::Ptr visualItem = envire::types::TypeCreatorFactory::createItem(visualClassName, config);
+            if (!visualItem) {
+                LOG_ERROR_S << "Can not add visual " << objectType
+                            << ", probably the visual type " << objectType << " is not registered.";
+                return 0;
+            }
+            visualItem->setTag("visual");
+
+            envire::core::FrameId visualFrame = config["name"].getString() + "_" + "visual";
+            ControlCenter::envireGraph->addFrame(visualFrame);
+            ControlCenter::envireGraph->addTransform(linkFrame, visualFrame, zeroPose);
+            ControlCenter::envireGraph->addItemToFrame(visualFrame, visualItem);
+
+            // TODO: load the node as base type into the graph, add HeightMap type into base type
+            if(nodeS->noPhysical == false)
+            {
+                // create and add into the graph envire item with the object corresponding to config type
+                std::string collisionClassName(envire::smurf_loader::geometry_namespace + objectType);
+                envire::core::ItemBase::Ptr colisionItem = envire::types::TypeCreatorFactory::createItem(collisionClassName, config);
+                if (!colisionItem) {
+                    LOG_ERROR_S << "Can not add collision " << objectType
+                                << ", probably the collision type " << objectType << " is not registered.";
+                    return 0;
+                }
+                colisionItem->setTag("collision");
+
+                envire::core::FrameId collisionFrame = config["name"].getString() + "_" + "collision";
+                ControlCenter::envireGraph->addFrame(collisionFrame);
+                ControlCenter::envireGraph->addTransform(linkFrame, collisionFrame, zeroPose);
+                ControlCenter::envireGraph->addItemToFrame(collisionFrame, colisionItem);
+            }
+            // todo: handle hash of node ids for backward compatibility
+            return 0;
         }
 
         /**
@@ -1492,7 +1647,7 @@ namespace mars
             //         }
 
             //         iter->second->setVisualRep(val);
-            //         if(id != 0) 
+            //         if(id != 0)
             //         {
             //             break;
             //         }
@@ -1968,7 +2123,7 @@ namespace mars
             //     for(auto it: simNodes)
             //     {
             //         if(it.second->getGroupID() == sNode.groupID ||
-            //             it.second->getGroupID() == nodeS->groupID) 
+            //             it.second->getGroupID() == nodeS->groupID)
             //         {
             //             control->joints->reattacheJoints(it.second->getID());
             //         }
