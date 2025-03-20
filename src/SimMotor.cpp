@@ -92,6 +92,10 @@ namespace mars
                     validJoint->setJointFrictionCoefficient(this->sMotor.config["frictionCoefficient"]);
                 }
             }
+            if(this->sMotor.config.hasKey("maxEffortControl"))
+            {
+                maxEffortControl = this->sMotor.config["maxEffortControl"];
+            }
 
             //myPlayJoint = 0;
             active = true;
@@ -331,8 +335,7 @@ namespace mars
             case MOTOR_TYPE_DIRECT_EFFORT:
                 controlValue = sMotor.value;
                 controlLimit = &(sMotor.maxEffort);
-                if(sMotor.config.hasKey("maxEffortControl") and
-                   (bool)(sMotor.config["maxEffortControl"]) == true)
+                if(maxEffortControl)
                 {
                     controlParameter = &velocity;
                     setJointControlParameter = &JointInterface::setVelocity;
@@ -347,8 +350,7 @@ namespace mars
             case MOTOR_TYPE_FF_EFFORT:
                 controlValue = sMotor.value;
                 controlLimit = &(sMotor.maxEffort);
-                if(sMotor.config.hasKey("maxEffortControl") and
-                   (bool)(sMotor.config["maxEffortControl"]) == true)
+                if(maxEffortControl)
                 {
                     controlParameter = &velocity;
                     setJointControlParameter = &JointInterface::setVelocity;
@@ -416,8 +418,7 @@ namespace mars
             controlValue = std::max(-sMotor.maxEffort,
                                     std::min(controlValue, sMotor.maxEffort));
 
-            if(sMotor.config.hasKey("maxEffortControl") &&
-               (bool)sMotor.config["maxEffortControl"] == true)
+            if(maxEffortControl)
             {
                 if(controlValue >= 0)
                 {
@@ -982,6 +983,11 @@ namespace mars
                 ffEffortGain = this->sMotor.config["ffEffortGain"];
             }
             effortMotor = false;
+            maxEffortControl = false;
+            if(this->sMotor.config.hasKey("maxEffortControl"))
+            {
+                maxEffortControl = this->sMotor.config["maxEffortControl"];
+            }
             if(sMotor.type == MOTOR_TYPE_PID_FORCE ||
                sMotor.type == MOTOR_TYPE_EFFORT)
             {
@@ -989,9 +995,7 @@ namespace mars
             } else if(sMotor.type == MOTOR_TYPE_DIRECT_EFFORT)
             {
                 effortMotor = true;
-                ConfigMap map = sMotor.config;
-                if(map.hasKey("maxEffortControl") and
-                   (bool)map["maxEffortControl"])
+                if(maxEffortControl)
                 {
                     effortMotor = false;
                 }

@@ -226,7 +226,7 @@ namespace mars
             data_broker::DataPackage dbPackage, cmdPackage;
             unsigned long dbPushId, dbCmdId;
             long dbIdIndex, dbControlParameterIndex, dbPositionIndex, dbCurrentIndex, dbEffortIndex, dbMaxEffortIndex, dbVelocityIndex, dbTargetVelocityIndex, dbTargetTorqueIndex, dbVelErrorIndex, dbVelIIndex;
-            bool effortMotor;
+            bool effortMotor, maxEffortControl;
             int pushToDataBroker;
             PID posPID, velPID;
             interfaces::sReal ffEffortFilter, ffEffortGain;
