@@ -16,6 +16,7 @@
 #include <mars_interfaces/sim/CollisionInterface.hpp>
 #include <cfg_manager/CFGManagerInterface.h>
 #include <mars_utils/MutexLocker.h>
+#include <mars_utils/misc.h>
 
 #include <cmath>
 #include <cstdio>
@@ -48,6 +49,7 @@ namespace mars
             config(config)
             // TODO: Initialize instead of setting various members
         {
+            time = 0;
             updateRate = config.updateRate;
             orientation.setIdentity();
             maxDistance = config.maxDistance;
@@ -177,13 +179,14 @@ namespace mars
             this->wait();
         }
 
-        bool RotatingRaySensor::getPointcloud(std::vector<utils::Vector>& pcloud)
+        bool RotatingRaySensor::getPointcloud(std::vector<utils::Vector>& pcloud, long long *time)
         {
             mars::utils::MutexLocker lock(&mutex_pointcloud);
             if(full_scan)
             {
                 full_scan = false;
                 pcloud.swap(pointcloud_full);
+                if(time) *time = this->time;
                 return true;
             }
             else
@@ -414,6 +417,7 @@ namespace mars
                         // the orientation of the sensor in the unturned sensor frame.
                         vec_local = rot * current_pose2.inverse() * (*it);
                         pointcloud_full.push_back(vec_local);
+                        time = getTime();
                     }
                     mutex_pointcloud.unlock();
                     fromCloud->clear();

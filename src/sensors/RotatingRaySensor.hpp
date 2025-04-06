@@ -91,7 +91,7 @@ namespace mars
              * current local frame. This prevents strong distortions on slower computers.
              * If a full scan is not available an empty pointcloud will be returned.
              */
-            bool getPointcloud(std::vector<utils::Vector>& pointcloud);
+            bool getPointcloud(std::vector<utils::Vector>& pointcloud, long long *time = NULL);
 
             /**
              * Copies the current full pointcloud to a double array with (x,y,z).
@@ -166,6 +166,7 @@ namespace mars
             std::list<utils::Vector> pointcloud2; // TODO Replace with array with fix size.
             std::list<utils::Vector> *toCloud, *fromCloud; // TODO Replace with array with fix size.
             std::vector<utils::Vector> pointcloud_full; // Stores the full scan.
+            long long time;
             bool convertPointCloud;
             int nextCloud;
             double vertical_resolution;
