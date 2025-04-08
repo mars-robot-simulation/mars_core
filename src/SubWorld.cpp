@@ -20,7 +20,7 @@ namespace mars
             static struct timespec tv;
             //struct timeval tv;
             tv.tv_sec = 0;
-            tv.tv_nsec = 100L;
+            tv.tv_nsec = 10000L;
 
             while(!stopThread)
             {
