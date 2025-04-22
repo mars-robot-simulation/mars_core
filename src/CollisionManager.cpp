@@ -274,7 +274,7 @@ namespace mars
             std::vector<interfaces::ContactData>::iterator it = contactVector.begin();
             while(it != contactVector.end())
             {
-                if(it->depth < 0.0001)
+                if(it->depth < -0.0001)
                 {
                     it = contactVector.erase(it);
                 }
