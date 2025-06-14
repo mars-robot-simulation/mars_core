@@ -215,6 +215,7 @@ namespace mars
             configmaps::ConfigMap worldMap;
             worldMap["name"] = worldFrame;
             worldMap["prefix"] = "";
+            worldMap["noDynamics"] = true;
             std::string className(envire::smurf_loader::base_types_namespace + std::string("World"));
             envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, worldMap);
             ControlCenter::envireGraph->addItemToFrame(worldFrame, item);
@@ -720,7 +721,10 @@ namespace mars
 
             for(const auto &it: subWorlds)
             {
-                it.second->calcStep = true;
+                if(it.second->isRunning())
+                {
+                    it.second->calcStep = true;
+                }
                 // while(it.second->calcStep == true) {
                 //     select(0, 0, 0, 0, &tv);
                 // }
@@ -2652,7 +2656,7 @@ namespace mars
         void Simulator::itemAdded(const envire::core::TypedItemAddedEvent<envire::core::Item<::envire::types::World>>& e)
         {
             const auto& world = e.item->getData();
-
+            ConfigMap worldConfig = world.getFullConfigMap();
             auto* subWorld = new SubWorld{};
             // use the control with new physic
             subWorld->control = std::make_shared<SubControlCenter>();
@@ -2679,7 +2683,13 @@ namespace mars
 
             //world->control->physics->draw_contact_points = cfgDrawContact.bValue;
             subWorlds[subWorld->control->getPrefix()] = std::unique_ptr<SubWorld>(subWorld);
-            subWorld->start();
+            if(worldConfig.hasKey("noDynamics") && (bool)worldConfig["noDynamics"] == true)
+            {
+                LOG_DEBUG("Don't start world thread for: %s", world.getPrefix().c_str());
+            } else
+            {
+                subWorld->start();
+            }
 
             // store the control center of the subworld in its own frame in the graph
             using SubControlItem = envire::core::Item<std::shared_ptr<interfaces::SubControlCenter>>;
