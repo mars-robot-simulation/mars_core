@@ -417,7 +417,7 @@ namespace mars
                         // the orientation of the sensor in the unturned sensor frame.
                         vec_local = rot * current_pose2.inverse() * (*it);
                         pointcloud_full.push_back(vec_local);
-                        time = getTime();
+                        time = control->sim->getTime();
                     }
                     mutex_pointcloud.unlock();
                     fromCloud->clear();
