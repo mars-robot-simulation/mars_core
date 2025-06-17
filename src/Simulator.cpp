@@ -1598,6 +1598,67 @@ namespace mars
             applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
         }
 
+        void Simulator::translate( envire::core::FrameId origin,
+                                   Vector v)
+        {
+            // TODO: Consider min and max position!
+            Simulator::translate(control->envireGraph_->getVertex(origin), v,
+                                 control->envireGraph_, control->graphTreeView_);
+        }
+
+        void Simulator::translate( envire::core::FrameId origin,
+                                   Vector v,
+                                   std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                   std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+            // TODO: Consider min and max position!
+            translate(envireGraph->getVertex(origin), v, envireGraph, graphTreeView);
+        }
+
+        void Simulator::translate( const envire::core::GraphTraits::vertex_descriptor origin,
+                                   Vector v,
+                                   std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                   std::shared_ptr<envire::core::TreeView> &graphTreeView)
+        {
+
+            // rotate origin as well
+            if (true) {
+                const VertexDesc parent = graphTreeView->tree[origin].parent;
+                auto tf = envireGraph->getTransform(parent, origin);
+                std::string p = envireGraph->getFrameId(parent);
+                std::string o = envireGraph->getFrameId(origin);
+                tf.transform.translation += v;
+                envireGraph->updateTransform(parent, origin, tf);
+
+                // get abolute pose
+                tf = envireGraph->getTransform(envireGraph->getVertex(SIM_CENTER_FRAME_NAME), origin);
+
+                // apply origin state
+                if (envireGraph->containsItems<envire::core::Item<DynamicObjectItem>>(origin))
+                {
+                    // CAUTION: we assume that there is only one DynamicObjectItem in the frame
+                    // so we get the first item
+                    // TODO: add handling/warning if there is multiple DynamicObjectItem for some reason
+                    auto& object = envireGraph->getItem<envire::core::Item<DynamicObjectItem>>(origin)->getData().dynamicObject;
+                    object->setPosition(tf.transform.translation);
+                }
+
+                if (envireGraph->containsItems<envire::core::Item<interfaces::AbsolutePose>>(origin))
+                {
+                    // CAUTION: we assume that there is only one AbsolutePose in the frame
+                    // so we get the first item
+                    // TODO: add handling/warning if there is multiple AbsolutePose for some reason
+                    auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+                    absolutePose.setPosition(tf.transform.translation);
+                }
+
+            }
+
+            // Propagate change of childrens transforms
+            const auto& absolutePose = envireGraph->getItem<envire::core::Item<interfaces::AbsolutePose>>(origin)->getData();
+            applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
+        }
+
         void Simulator::rotateContinuous( envire::core::FrameId origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,

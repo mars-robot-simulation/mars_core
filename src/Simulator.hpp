@@ -276,6 +276,7 @@ namespace mars
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                         std::shared_ptr<envire::core::TreeView> &graphTreeView);
+
             virtual void rotate( envire::core::FrameId origin, double angle, utils::Vector axis) override;
             static void rotate( envire::core::FrameId origin,
                                 double angle, utils::Vector axis,
@@ -285,6 +286,17 @@ namespace mars
                                 double angle, utils::Vector axis,
                                 std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
                                 std::shared_ptr<envire::core::TreeView> &graphTreeView);
+
+            virtual void translate( envire::core::FrameId origin, utils::Vector v) override;
+            static void translate( envire::core::FrameId origin,
+                                   utils::Vector v,
+                                   std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                   std::shared_ptr<envire::core::TreeView> &graphTreeView);
+            static void translate( const envire::core::GraphTraits::vertex_descriptor origin,
+                                   utils::Vector v,
+                                   std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
+                                   std::shared_ptr<envire::core::TreeView> &graphTreeView);
+
             static void rotateContinuous( envire::core::FrameId origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
