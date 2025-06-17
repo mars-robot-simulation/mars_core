@@ -2019,6 +2019,50 @@ namespace mars
             }
         }
 
+        void Simulator::connectDynamicObjects(const std::string &name1, const std::string &name2)
+        {
+            // 1. get physics plugins for name 1 and name 2
+            std::shared_ptr<SubControlCenter> sub1 = getSubControl(name1);
+            if(!name2.empty())
+            {
+                std::shared_ptr<SubControlCenter> sub2 = getSubControl(name2);
+                // 2. check if both are the same if name2 is given
+                if(sub1 != sub2)
+                {
+                    LOG_ERROR("Simulator::connectDynamicsObjects: at the moment only objects sharing the same sub world can be connected dynamically.");
+                    return;
+                }
+            }
+            // 3. create fixed joint in phyisics
+            ConfigMap config;
+            std::string jointName = name1+"-"+name2+"_connections";
+            if(jointMap.find(jointName) == jointMap.end())
+            {
+                config["name"] = jointName;
+                config["type"] = "fixed";
+                config["parent_link_name"] = name1;
+                config["child_link_name"] = name2;
+                std::shared_ptr<JointInterface> j = sub1->physics->createJoint(control->dataBroker, config);
+                jointMap[jointName] = j;
+            }
+        }
+
+        void Simulator::disconnectDynamicObjects(const std::string &name1, const std::string &name2)
+        {
+            // create joint name based on object names
+            std::shared_ptr<SubControlCenter> sub1 = getSubControl(name1);
+            if(sub1)
+            {
+                std::string jointName = name1+"-"+name2+"_connections";
+                sub1->physics->destroyJoint(jointName);
+                const auto& it = jointMap.find(jointName);
+
+                if(it != jointMap.end()) {
+                    jointMap.erase(it);
+                }
+            }
+        }
+
         void Simulator::connectNodes(unsigned long id1, unsigned long id2)
         {
             // JointData connect_joint;

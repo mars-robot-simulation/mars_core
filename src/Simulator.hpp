@@ -149,6 +149,9 @@ namespace mars
             virtual void disconnectNodes(unsigned long id1, unsigned long id2) override;
             virtual void rescaleEnvironment(interfaces::sReal x, interfaces::sReal y, interfaces::sReal z) override;
 
+            virtual void connectDynamicObjects(const std::string &name1, const std::string &name2) override;
+            virtual void disconnectDynamicObjects(const std::string &name1, const std::string &name2) override;
+
             // scenes
             virtual int loadScene(const std::string &filename,
                                   const std::string &robotname,bool threadsave=false, bool blocking=false) override;
@@ -417,6 +420,7 @@ namespace mars
             bool b_SceneChanged;
             bool haveNewPlugin;
             bool log_warning, log_debug;
+            std::map<std::string, std::shared_ptr<interfaces::JointInterface>> jointMap;
 
             // for graphical debuggin
             std::unique_ptr<osg_lines::Lines> contactLines;
