@@ -250,7 +250,7 @@ namespace mars
                         }
                         else if(objectType == "Sphere") {
                             inertiaMap["createFromSphere"] = true;
-                            inertiaMap["x"] = config["extend"]["x"];
+                            inertiaMap["x"] = config["radius"];
                         }
                         // todo: add capsule and cylinder
                     }
