@@ -169,9 +169,38 @@ namespace mars
             }
 
             // add new frame for the link
+            std::string worldFrame = "World::default";
+            if(nodeS->movable == true && nodeS->noPhysical == false)
+            {
+                worldFrame = "World::collect";
+            }
+
+            // check if we have the world frame
+            auto desc = ControlCenter::envireGraph->vertex(worldFrame);
+            if(desc == envire::core::GraphTraits::null_vertex())
+            {
+                // create mainWorld
+                ControlCenter::envireGraph->addFrame(worldFrame);
+                Vector pos(0, 0, 0);
+                Quaternion q;
+                q.x() = q.y(), q.z() = 0.0;
+                q.w() = 1.0;
+                envire::core::Transform worldPose(pos, q);
+                ControlCenter::envireGraph->addTransform("World::default", worldFrame, worldPose);
+
+                configmaps::ConfigMap worldMap;
+                worldMap["name"] = worldFrame;
+                worldMap["prefix"] = "";
+                //worldMap["noDynamics"] = true;
+                std::string className(envire::smurf_loader::base_types_namespace + std::string("World"));
+                envire::core::ItemBase::Ptr item = envire::types::TypeCreatorFactory::createItem(className, worldMap);
+                ControlCenter::envireGraph->addItemToFrame(worldFrame, item);
+            }
+
+
             envire::core::FrameId linkFrame = nodeS->name;
             ControlCenter::envireGraph->addFrame(linkFrame);
-            ControlCenter::envireGraph->addTransform("World::default", linkFrame, framePose);
+            ControlCenter::envireGraph->addTransform(worldFrame, linkFrame, framePose);
 
             if(nodeS->movable == true && nodeS->noPhysical == false)
             {
