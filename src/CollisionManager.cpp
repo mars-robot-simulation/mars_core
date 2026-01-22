@@ -116,22 +116,24 @@ namespace mars
         {
             auto& item = event.item->getData();
 
-            try
+            using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
+            PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
+            if(contactPlugin)
             {
-                using PluginPtr = std::shared_ptr<interfaces::ContactPluginInterface>;
-                PluginPtr contactPlugin = std::dynamic_pointer_cast<interfaces::ContactPluginInterface>(item.itemPlugin);
-
-                contactPlugin->setFrameID(event.frame);
-                std::vector<int> priorities = contactPlugin->priorities();
-                for(auto &p: priorities)
+                try
                 {
-                    std::vector<std::shared_ptr<interfaces::ContactPluginInterface>> &cp = contactPlugins[p];
-                    cp.push_back(contactPlugin);
+                    contactPlugin->setFrameID(event.frame);
+                    std::vector<int> priorities = contactPlugin->priorities();
+                    for(auto &p: priorities)
+                    {
+                        std::vector<std::shared_ptr<interfaces::ContactPluginInterface>> &cp = contactPlugins[p];
+                        cp.push_back(contactPlugin);
+                    }
                 }
-            }
-            catch (...)
-            {
-                LOG_ERROR("CollisionManager: Can't add contact plugin to frame %s.", event.frame.c_str());
+                catch (...)
+                {
+                    LOG_ERROR("CollisionManager: Can't add contact plugin to frame %s.", event.frame.c_str());
+                }
             }
         }
 
