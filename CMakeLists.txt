@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(mars_core VERSION 2.0.0 DESCRIPTION "This library contains the core functionality of mars2")
 
 find_package(Boost COMPONENTS serialization)
