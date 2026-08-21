@@ -291,6 +291,10 @@ namespace mars
                                 std::shared_ptr<envire::core::TreeView> &graphTreeView);
 
             virtual void translate( envire::core::FrameId origin, utils::Vector v) override;
+            virtual void setPose(const std::string &frameId,
+                                 const utils::Vector &v,
+                                 const utils::Quaternion &q) override;
+
             static void translate( envire::core::FrameId origin,
                                    utils::Vector v,
                                    std::shared_ptr<envire::core::EnvireGraph> &envireGraph,

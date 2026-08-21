@@ -1659,6 +1659,18 @@ namespace mars
             applyChildPositions(origin, base::TransformWithCovariance{static_cast<base::Position>(absolutePose.getPosition()), static_cast<base::Quaterniond>(absolutePose.getRotation())}, envireGraph, graphTreeView);
         }
 
+        void Simulator::setPose(const std::string &frameId, const utils::Vector &v,
+                                const utils::Quaternion &q)
+        {
+            const envire::core::GraphTraits::vertex_descriptor vertex = control->envireGraph_->getVertex(frameId);
+            const envire::core::GraphTraits::vertex_descriptor parent = control->graphTreeView_->tree[vertex].parent;
+            auto tf = control->envireGraph_->getTransform(parent, vertex);
+            tf.transform.translation = v;
+            tf.transform.orientation = q;
+            control->envireGraph_->updateTransform(parent, vertex, tf);
+
+        }
+
         void Simulator::rotateContinuous( envire::core::FrameId origin,
                                         double angle,
                                         std::shared_ptr<envire::core::EnvireGraph> &envireGraph,
